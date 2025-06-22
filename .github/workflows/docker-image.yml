@@ -26,7 +26,6 @@ jobs:
       run: chmod +x ./gradlew
     - name: Build with Gradle
       run: ./gradlew bootJar
-    - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag dcbot:$(date +%s)
       
