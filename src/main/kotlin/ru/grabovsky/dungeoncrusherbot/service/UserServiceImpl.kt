@@ -12,13 +12,14 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImpl(
     private val userRepository: UserRepository
 ) : UserService {
-    override fun createOrUpdateUser(user: TgUser) {
+    override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
         val userFromTelegram= UserMapper.fromTelegramToEntity(user)
         if (userFromTelegram != entity) {
             userRepository.saveAndFlush(userFromTelegram)
             logger.info { "Save user entity with id = ${user.id}" }
         }
+        return userFromTelegram
     }
 
     override fun saveUser(user: User) {

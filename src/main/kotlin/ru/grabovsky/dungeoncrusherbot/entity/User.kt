@@ -21,6 +21,8 @@ data class User(
     var lastName: String?,
     @Column(name = "username")
     var userName: String?,
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
+    var maze: Maze? = null,
     @CreationTimestamp
     @Column(name = "created_at")
     @JsonSerialize(using= InstantSerializer::class)

@@ -25,7 +25,7 @@ class Bot(
 
     init {
         registerAll(*commands.toTypedArray())
-        SetMyCommands(commands.map { BotCommand(it.commandIdentifier, it.description) })
+        SetMyCommands(commands.sortedBy { it.sortOrder }.map { BotCommand(it.commandIdentifier, it.description) })
             .also { client.execute(it) }
     }
     override fun getBotToken() = config.token
