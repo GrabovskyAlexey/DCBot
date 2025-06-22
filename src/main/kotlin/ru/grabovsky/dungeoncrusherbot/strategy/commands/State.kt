@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.bot.commands
+package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
 enum class State {
     START,

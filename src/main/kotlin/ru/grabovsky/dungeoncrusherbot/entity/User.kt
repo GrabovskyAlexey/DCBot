@@ -1,14 +1,13 @@
 package ru.grabovsky.dungeoncrusherbot.entity
 
-import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
-import jakarta.persistence.ManyToMany
-import jakarta.persistence.Table
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
+import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import ru.grabovsky.dungeoncrusherbot.util.DefaultInstantDeserializer
+import java.time.Instant
 
 @Entity
 @Table(name = "users", schema = "dc_bot")
@@ -22,6 +21,16 @@ data class User(
     var lastName: String?,
     @Column(name = "username")
     var userName: String?,
+    @CreationTimestamp
+    @Column(name = "created_at")
+    @JsonSerialize(using= InstantSerializer::class)
+    @JsonDeserialize(using= DefaultInstantDeserializer::class)
+    val createdAt: Instant = Instant.now(),
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    @JsonSerialize(using= InstantSerializer::class)
+    @JsonDeserialize(using= DefaultInstantDeserializer::class)
+    val updatedAt: Instant = Instant.now(),
     @ManyToMany(fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE])
     @JoinTable(
         name = "user_subscribe",

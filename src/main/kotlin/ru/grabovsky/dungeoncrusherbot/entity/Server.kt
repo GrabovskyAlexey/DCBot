@@ -10,8 +10,6 @@ data class Server(
     val id: Int,
     @Column(name = "name")
     val name: String,
-//    @ManyToMany(mappedBy = "servers")
-//    val user: MutableSet<User> = mutableSetOf(),
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "server_sieges",
@@ -20,6 +18,4 @@ data class Server(
         inverseJoinColumns = [JoinColumn(name = "siege_id")]
     )
     val sieges: MutableSet<Siege> = hashSetOf()
-
-
 )
