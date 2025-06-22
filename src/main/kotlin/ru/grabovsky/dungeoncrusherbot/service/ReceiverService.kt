@@ -1,38 +1,56 @@
 package ru.grabovsky.dungeoncrusherbot.service
 
-import jakarta.persistence.EntityNotFoundException
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Update
-import ru.grabovsky.dungeoncrusherbot.bot.commands.State
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.repository.ServerRepository
-import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import org.telegram.telegrambots.meta.api.objects.User
+import org.telegram.telegrambots.meta.api.objects.message.Message
+import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveCallbackEvent
+import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveMessageEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
 
 @Service
-class ReceiverService(
-    private val userRepository: UserRepository,
-    private val serverRepository: ServerRepository,
-    private val messageService: MessageService
-) {
+class ReceiverServiceImpl(
+    private val stateService: StateService,
+    private val applicationEventPublisher: ApplicationEventPublisher
+): ReceiverService {
 
-    fun handleUpdate(update: Update) {
-        if (update.hasCallbackQuery()) {
-            processCallback(update.callbackQuery)
+    override fun execute(update: Update) {
+        when {
+            update.hasCallbackQuery() -> processCallback(update.callbackQuery)
+            update.hasMessage() -> processMessage(update.message)
         }
     }
 
-    private fun processCallback(callback: CallbackQuery) {
-        val data = callback.data.split(" ")
-        val server = serverRepository.findServerById(data[1].toInt()) ?: throw EntityNotFoundException("Not found server with id: ${data[1]}")
-        val tgUser = callback.from
-        val user = userRepository.findUserByUserId(tgUser.id)
-            ?: User(tgUser.id, tgUser.firstName, tgUser.lastName, tgUser.userName)
-        when(data[0]) {
-            "SUBSCRIBE" -> user.servers.add(server)
-            "UNSUBSCRIBE" -> user.servers.removeIf { it == server }
+    private fun processMessage(message: Message) {
+        val user = message.from
+        val state = getState(user)
+        if (state.state.markType == MarkType.DELETE) {
+            state.deletedMessages.add(message.messageId)
+            stateService.saveState(state)
         }
-        userRepository.save(user)
-        messageService.sendMessage(tgUser, callback.message.chat, State.SUBSCRIBE, callback.message.messageId)
+        applicationEventPublisher.publishEvent(
+            TelegramReceiveMessageEvent(user, state.state, message)
+        )
+    }
+
+    private fun processCallback(callbackQuery: CallbackQuery) {
+        val user = callbackQuery.from
+        val chat = callbackQuery.message.chat
+        val state = getState(user)
+        applicationEventPublisher.publishEvent(
+            TelegramReceiveCallbackEvent(user, state.state, callbackQuery)
+        )
+    }
+
+    private fun getState(user: User) =
+        stateService.getState(user)
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

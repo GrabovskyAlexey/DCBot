@@ -16,4 +16,8 @@ telegram:
   name: ${TELEGRAM_BOT_NAME}
   token: ${TELEGRAM_BOT_TOKEN}
 server:
-  port: ${USE_PORT}
+  port: ${USE_PORT:8080}
+
+logging:
+  file:
+    name: bot.log

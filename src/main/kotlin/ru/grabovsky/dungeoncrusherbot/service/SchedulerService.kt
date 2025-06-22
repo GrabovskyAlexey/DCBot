@@ -3,12 +3,13 @@ package ru.grabovsky.dungeoncrusherbot.service
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import java.time.*
 
 @Service
 class SchedulerService(
     private val userRepository: UserRepository,
-    private val messageService: MessageService
+    private val telegramBotService: TelegramBotService
 ) {
 
     @Scheduled(cron = "0 0 * ? * *")
@@ -27,7 +28,7 @@ class SchedulerService(
             }
         }.filterValues { it.isNotEmpty() }
         usersToNotify.forEach {
-            messageService.sendNotification(it.key, it.value)
+            telegramBotService.sendNotification(it.key, it.value)
         }
     }
 

@@ -2,15 +2,16 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import org.springframework.stereotype.Service
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer
-import ru.grabovsky.dungeoncrusherbot.bot.commands.State
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.io.StringWriter
 
 @Service
-class MessageServiceGenerate(
+class MessageGenerateServiceImpl(
     private val freeMarkerConfigurer: FreeMarkerConfigurer,
-) {
-    fun process(state: State, freemarkerData: Any?): String {
-        val template = state.name.lowercase()
+): MessageGenerateService {
+    override fun process(state: StateCode, freemarkerData: Any?): String {
+        val template = state.template ?: state.name.lowercase()
         return processed(freemarkerData?.let { mapOf("data" to it) }?: emptyMap(), "$template.ftl")
     }
 

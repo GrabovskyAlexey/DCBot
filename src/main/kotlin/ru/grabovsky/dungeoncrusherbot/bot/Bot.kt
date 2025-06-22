@@ -10,9 +10,10 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.grabovsky.dungeoncrusherbot.bot.commands.AbstractCommand
 import ru.grabovsky.dungeoncrusherbot.config.BotConfig
-import ru.grabovsky.dungeoncrusherbot.service.ReceiverService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
+import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractCommand
+
 
 @Component
 class Bot(
@@ -32,7 +33,7 @@ class Bot(
     override fun getUpdatesConsumer() = this
 
     override fun processNonCommandUpdate(update: Update) {
-        receiverService.handleUpdate(update)
+        receiverService.execute(update)
     }
 
     @AfterBotRegistration
