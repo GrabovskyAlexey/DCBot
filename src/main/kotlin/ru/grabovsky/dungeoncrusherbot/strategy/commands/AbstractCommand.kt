@@ -10,7 +10,8 @@ import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
 
 abstract class AbstractCommand(
     command: Command,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    val sortOrder: Int = command.order
 ): BotCommand(command.command, command.text), BotCommands {
     fun classStateCode() = this.currentStateCode("Command")
 

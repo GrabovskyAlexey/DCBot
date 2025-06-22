@@ -3,3 +3,5 @@ databaseChangeLog:
       file: liquibase/changelog/1.create_tables.sql
   - include:
       file: liquibase/changelog/2.update_tables.sql
+  - include:
+      file: liquibase/changelog/3.create_maze_table.sql

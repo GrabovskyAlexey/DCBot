@@ -1,0 +1,81 @@
+package ru.grabovsky.dungeoncrusherbot.service
+
+import org.springframework.stereotype.Service
+import ru.grabovsky.dungeoncrusherbot.entity.Direction
+import ru.grabovsky.dungeoncrusherbot.entity.Direction.*
+import ru.grabovsky.dungeoncrusherbot.entity.Location
+import ru.grabovsky.dungeoncrusherbot.entity.Maze
+import ru.grabovsky.dungeoncrusherbot.entity.Step
+import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
+
+@Service
+class MazeServiceImpl(
+    private val mazeRepository: MazeRepository
+) : MazeService {
+    override fun getMaze() {
+        TODO("Not yet implemented")
+    }
+
+    override fun processStep(maze: Maze, direction: Direction) {
+        val currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
+        val nextLocation = when (direction) {
+            LEFT -> walkLeft(currentLocation)
+            RIGHT -> walkRight(currentLocation)
+            CENTER -> Location(currentLocation.level + 1, currentLocation.offset, currentLocation.direction)
+        }
+        maze.steps.add(
+            Step(
+                direction = direction,
+                startLocation = currentLocation,
+                finishLocation = nextLocation
+            )
+        )
+        maze.currentLocation = nextLocation
+        mazeRepository.saveAndFlush(maze)
+    }
+
+    override fun refreshMaze(maze: Maze) {
+        maze.currentLocation = Location(0, 0, CENTER)
+        maze.steps.clear()
+        mazeRepository.saveAndFlush(maze)
+    }
+
+    private fun walkLeft(startLocation: Location): Location {
+        val nextLevel = startLocation.level + 1
+        var offset = when (startLocation.direction) {
+            LEFT, CENTER -> startLocation.offset + 1
+            RIGHT -> startLocation.offset - 1
+        }
+        val direction = when (startLocation.direction) {
+            RIGHT -> if (offset == 0) CENTER else RIGHT
+            CENTER -> LEFT
+            LEFT -> {
+                if (offset > 7) {
+                    offset = 7
+                    RIGHT
+                } else LEFT
+            }
+        }
+        return Location(nextLevel, offset, direction)
+    }
+
+    private fun walkRight(startLocation: Location): Location {
+        val nextLevel = startLocation.level + 1
+        var offset = when (startLocation.direction) {
+            RIGHT, CENTER -> startLocation.offset + 1
+            LEFT -> startLocation.offset - 1
+        }
+        val direction = when (startLocation.direction) {
+            LEFT -> if (offset == 0) CENTER else LEFT
+            CENTER -> RIGHT
+            RIGHT -> {
+                if (offset > 7) {
+                    offset = 7
+                    LEFT
+                } else RIGHT
+            }
+        }
+        return Location(nextLevel, offset, direction)
+    }
+}
