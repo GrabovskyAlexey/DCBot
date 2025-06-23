@@ -23,7 +23,7 @@ class StateServiceImpl(
         )
         state.apply {
             this.state = code
-            this.callbackData = callbackData
+//            this.callbackData = callbackData
         }.also { stateRepository.saveAndFlush(it) }
     }
 

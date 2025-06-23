@@ -19,6 +19,7 @@ class MazeServiceImpl(
 
     override fun processStep(maze: Maze, direction: Direction) {
         val currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
+        if (currentLocation.level >= 500) return
         val nextLocation = when (direction) {
             LEFT -> walkLeft(currentLocation)
             RIGHT -> walkRight(currentLocation)

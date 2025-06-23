@@ -33,11 +33,11 @@ class MazeMessage(
                 text = "↗\uFE0F",
                 data = "RIGHT"
             ),
-//            InlineMarkupDataDto(
-//                rowPos = 2,
-//                text = "\uD83D\uDDD1 Сбросить прогресс",
-//                data = "REFRESH"
-//            ),
+            InlineMarkupDataDto(
+                rowPos = 2,
+                text = "\uD83E\uDDB6 Последние 20 шагов",
+                data = "HISTORY"
+            ),
         )
     }
 }
