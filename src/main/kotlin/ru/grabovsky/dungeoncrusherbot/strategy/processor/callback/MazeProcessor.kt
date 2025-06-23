@@ -7,20 +7,21 @@ import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Location
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 
 @Component
 class MazeProcessor(
     private val userService: UserService,
-    private val mazeService: MazeService
-) : CallbackProcessor {
-    override fun execute(
+    private val mazeService: MazeService,
+    stateService: StateService
+) : CallbackProcessor(stateService) {
+    override fun process(
         user: User,
         callbackQuery: CallbackQuery
     ): ExecuteStatus {
         val user = userService.getUser(user.id)!!
         val maze = user.maze ?: Maze(user = user)
-        val startLocation = maze.currentLocation ?: Location(0, 0, Direction.CENTER)
         when (callbackQuery.data) {
             "LEFT" -> mazeService.processStep(maze, Direction.LEFT)
             "RIGHT" -> mazeService.processStep(maze, Direction.RIGHT)

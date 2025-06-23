@@ -7,8 +7,9 @@ import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Location
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 
 @Component
-class UpdateMazeProcessor(userService: UserService, mazeService: MazeService
-): MazeProcessor(userService, mazeService)
+class UpdateMazeProcessor(userService: UserService, mazeService: MazeService, stateService: StateService
+): MazeProcessor(userService, mazeService, stateService)

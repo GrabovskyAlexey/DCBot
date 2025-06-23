@@ -34,13 +34,30 @@ data class Step(
     val direction: Direction,
     val startLocation: Location,
     val finishLocation: Location
-)
+) {
+    override fun toString(): String {
+        return when(direction) {
+            Direction.LEFT -> "$startLocation ↖\uFE0F $finishLocation"
+            Direction.CENTER -> "$startLocation ⬆\uFE0F $finishLocation"
+            Direction.RIGHT -> "$startLocation ↗\uFE0F $finishLocation"
+        }
+    }
+
+}
 
 data class Location(
     val level: Int,
     val offset: Int,
     val direction: Direction
-)
+) {
+    override fun toString(): String {
+        return when(direction) {
+            Direction.CENTER -> "Этаж $level 0"
+            Direction.LEFT -> "Этаж $level L$offset"
+            Direction.RIGHT -> "Этаж $level R$offset"
+        }
+    }
+}
 
 enum class Direction {
     LEFT, CENTER, RIGHT

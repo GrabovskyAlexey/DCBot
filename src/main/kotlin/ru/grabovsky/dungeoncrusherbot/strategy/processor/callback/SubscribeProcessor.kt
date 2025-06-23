@@ -4,15 +4,17 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Component
 class SubscribeProcessor(
     private val userService: UserService,
-    private val serverService: ServerService
-): CallbackProcessor {
-    override fun execute(
+    private val serverService: ServerService,
+    stateService: StateService
+): CallbackProcessor(stateService) {
+    override fun process(
         user: TgUser,
         callbackQuery: CallbackQuery
     ): ExecuteStatus {
