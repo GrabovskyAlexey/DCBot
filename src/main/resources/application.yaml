@@ -21,3 +21,4 @@ server:
 logging:
   file:
     name: bot.log
+    path: /var/log

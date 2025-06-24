@@ -16,8 +16,10 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.MessageContext
@@ -29,6 +31,8 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.poibot.dto.InlineMarkupDataDto
 import ru.grabovsky.poibot.dto.ReplyMarkupDto
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @Service
 class TelegramBotServiceImpl(
@@ -37,8 +41,9 @@ class TelegramBotServiceImpl(
     private val stateContext: StateContext,
     private val messageContext: MessageContext<DataModel>,
     private val applicationEventPublisher: ApplicationEventPublisher,
-    private val stateService: StateService
-): TelegramBotService {
+    private val stateService: StateService,
+    private val notifyHistoryService: NotifyHistoryService
+) : TelegramBotService {
 
     override fun processState(user: User, stateCode: StateCode) {
         when (stateCode.action) {
@@ -59,7 +64,7 @@ class TelegramBotServiceImpl(
     private fun sendMessage(user: User, stateCode: StateCode) {
         val result = telegramClient.execute(getSendMessage(user, stateCode))
         val state = stateService.getState(user)
-        when(stateCode.markType) {
+        when (stateCode.markType) {
             MarkType.DELETE -> state.deletedMessages.add(result.messageId)
             MarkType.UPDATE -> state.updateMessageId = result.messageId
             else -> {}
@@ -77,7 +82,7 @@ class TelegramBotServiceImpl(
 
     private fun deleteMessage(user: User) {
         val state = stateService.getState(user)
-        if(state.deletedMessages.isNotEmpty()) {
+        if (state.deletedMessages.isNotEmpty()) {
             telegramClient.execute(getDeleteMessages(user.id, state.deletedMessages))
         }
         state.deletedMessages.clear()
@@ -161,11 +166,12 @@ class TelegramBotServiceImpl(
         return ReplyKeyboardMarkup.builder().keyboard(keyboardRows).build()
     }
 
-    override fun sendNotification(chatId: Long, servers: List<Server>){
-        if(servers.isEmpty()) {
+    override fun sendNotification(chatId: Long, servers: List<Server>) {
+        if (servers.isEmpty()) {
             return
         }
-        val message = messageServiceGenerate.process(StateCode.NOTIFICATION,
+        val message = messageServiceGenerate.process(
+            StateCode.NOTIFICATION,
             ServerDto(servers.sortedBy { it.id }.map { it.id })
         )
         val sendMessage = SendMessage.builder()
@@ -175,7 +181,31 @@ class TelegramBotServiceImpl(
 
         sendMessage.enableMarkdown(true)
 
-        telegramClient.execute(sendMessage)
+        val result = telegramClient.execute(sendMessage)
+        NotifyHistory(
+            userId = chatId,
+            messageId = result.messageId,
+            text = result.text,
+            sendTime = Instant.now()
+        ).also {
+            notifyHistoryService.saveHistory(it)
+        }
+
+    }
+
+    override fun deleteOldNotify() {
+        logger.info { "Start deleting old messages"}
+        val deleteTimestamp = Instant.now().minus(12, ChronoUnit.HOURS)
+        val messageForDelete = notifyHistoryService.getNotDeletedHistoryEvent()
+            .filter { it.userId != null }
+            .filter { it.sendTime.isBefore(deleteTimestamp) }
+            .groupBy { it.userId!! }
+        logger.info { "Message for deleting empty: ${messageForDelete.isEmpty()}" }
+        for (entry in messageForDelete) {
+            val deleteMessage = getDeleteMessages(entry.key, entry.value.map { it.messageId })
+            telegramClient.execute(deleteMessage)
+            notifyHistoryService.markAsDeleted(entry.value)
+        }
     }
 
     companion object {
