@@ -7,4 +7,5 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 interface TelegramBotService {
     fun processState(user: User, stateCode: StateCode)
     fun sendNotification(chatId: Long, servers: List<Server> = emptyList())
+    fun deleteOldNotify()
 }

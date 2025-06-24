@@ -3,13 +3,15 @@ package ru.grabovsky.dungeoncrusherbot.service
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import java.time.*
 
 @Service
 class SchedulerService(
     private val userRepository: UserRepository,
-    private val telegramBotService: TelegramBotService
+    private val telegramBotService: TelegramBotService,
+    private val notifyHistoryService: NotifyHistoryService
 ) {
 
     @Scheduled(cron = "0 0 * ? * *")
@@ -39,5 +41,10 @@ class SchedulerService(
         (this.dayOfWeek == DayOfWeek.SUNDAY && this.hour > 21) ||
                 (this.dayOfWeek == DayOfWeek.MONDAY && this.hour < 3)
 
+    @Scheduled(cron = "0 0 * ? * *")
+    fun deleteOldNotify() {
+        telegramBotService.deleteOldNotify()
+        notifyHistoryService.deleteOldEvents()
+    }
 }
 
