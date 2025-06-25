@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to server
-        uses: D3rHase/ssh-command-action@v0.2.2
+        uses: D3rHase/ssh-command-action@v0.3.1
         with:
           host: '${{ secrets.SSH_HOST }}'
           port: '${{ secrets.SSH_PORT }}'
