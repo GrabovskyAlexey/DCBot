@@ -1,10 +1,13 @@
 name: Docker Image CI
 
 on:
-  push:
-    branches: [ "master" ]
-    tags:
-      - v*.*.*
+  release:
+    types:
+      - created
+#  push:
+#    branches: [ "master" ]
+#    tags:
+#      - v*.*.*
 
 env:
     REGISTRY: ghcr.io
@@ -26,7 +29,7 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v4
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     - name: Make gradlew executable
       run: chmod +x ./gradlew
     - name: Build with Gradle
@@ -50,7 +53,7 @@ jobs:
             type=semver,pattern={{major}}
             type=ref,event=branch
     - name: Build and push Docker image
-      uses: docker/build-push-action@v5.3.0
+      uses: docker/build-push-action@v6
       with:
         context: .
         push: true
