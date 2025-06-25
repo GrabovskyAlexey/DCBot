@@ -62,6 +62,7 @@ jobs:
         uses: D3rHase/ssh-command-action@v0.2.2
         with:
           host: '${{ secrets.SSH_HOST }}'
+          port: '${{ secrets.SSH_PORT }}'
           private_key: '${{ secrets.SSH_KEY }}'
           user: '${{ secrets.SSH_USER }}'
           command: |
