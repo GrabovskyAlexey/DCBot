@@ -1,4 +1,4 @@
-package ru.grabovsky.poibot.dto
+package ru.grabovsky.dungeoncrusherbot.dto
 
 data class ReplyMarkupDto(
     val requestLocation: Boolean,

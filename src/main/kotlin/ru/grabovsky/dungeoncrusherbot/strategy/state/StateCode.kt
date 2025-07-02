@@ -10,8 +10,12 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     UPDATE_MAZE(UPDATE_MESSAGE, markType = MarkType.UPDATE),
     CONFIRM_REFRESH_MAZE(UPDATE_MESSAGE),
     HELP(SEND_MESSAGE, false),
+    NOTIFY(SEND_MESSAGE, markType = MarkType.UPDATE),
+    UPDATE_NOTIFY(UPDATE_MESSAGE, markType = MarkType.UPDATE),
     WAITING(NOTHING),
-    NOTIFICATION(NOTHING)
+    NOTIFICATION_SIEGE(NOTHING),
+    NOTIFICATION_MINE(NOTHING),
+    RELEASE_NOTES(NOTHING),
 }
 
 enum class StateAction {

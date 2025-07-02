@@ -1,5 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -16,8 +17,12 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.dto.ReplyMarkupDto
+import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
+import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
@@ -29,8 +34,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.poibot.dto.InlineMarkupDataDto
-import ru.grabovsky.poibot.dto.ReplyMarkupDto
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -42,7 +45,8 @@ class TelegramBotServiceImpl(
     private val messageContext: MessageContext<DataModel>,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val stateService: StateService,
-    private val notifyHistoryService: NotifyHistoryService
+    private val notifyHistoryService: NotifyHistoryService,
+    private val objectMapper: ObjectMapper
 ) : TelegramBotService {
 
     override fun processState(user: User, stateCode: StateCode) {
@@ -56,8 +60,8 @@ class TelegramBotServiceImpl(
         if (stateCode.pause) {
             return
         }
-        stateContext.next(user, stateCode)?.let { stateCode ->
-            applicationEventPublisher.publishEvent(TelegramStateEvent(user, stateCode))
+        stateContext.next(user, stateCode)?.let { state ->
+            applicationEventPublisher.publishEvent(TelegramStateEvent(user, state))
         }
     }
 
@@ -145,7 +149,7 @@ class TelegramBotServiceImpl(
             inlineKeyboardButtonsInner = mutableListOf()
             entry.value.forEach { markup: InlineMarkupDataDto ->
                 val button = InlineKeyboardButton(markup.text)
-                button.callbackData = markup.data
+                button.callbackData = objectMapper.writeValueAsString(markup.data)
                 inlineKeyboardButtonsInner.add(button)
             }
             inlineKeyboardButtons.add(inlineKeyboardButtonsInner.toMutableList())
@@ -166,14 +170,21 @@ class TelegramBotServiceImpl(
         return ReplyKeyboardMarkup.builder().keyboard(keyboardRows).build()
     }
 
-    override fun sendNotification(chatId: Long, servers: List<Server>) {
-        if (servers.isEmpty()) {
-            return
+    override fun sendNotification(chatId: Long, type: NotificationType, servers: List<Server>) {
+        val message = when (type) {
+            NotificationType.SIEGE -> {
+                if (servers.isEmpty()) {
+                    return
+                }
+                messageServiceGenerate.process(
+                    StateCode.NOTIFICATION_SIEGE,
+                    ServerDto(servers.sortedBy { it.id }.map { it.id })
+                )
+            }
+
+            NotificationType.MINE -> messageServiceGenerate.process(StateCode.NOTIFICATION_MINE)
         }
-        val message = messageServiceGenerate.process(
-            StateCode.NOTIFICATION,
-            ServerDto(servers.sortedBy { it.id }.map { it.id })
-        )
+
         val sendMessage = SendMessage.builder()
             .chatId(chatId)
             .text(message)
@@ -194,18 +205,39 @@ class TelegramBotServiceImpl(
     }
 
     override fun deleteOldNotify() {
-        logger.info { "Start deleting old messages"}
-        val deleteTimestamp = Instant.now().minus(12, ChronoUnit.HOURS)
+        logger.info { "Start deleting old messages" }
+        val deleteTimestamp = Instant.now().minus(2, ChronoUnit.HOURS)
         val messageForDelete = notifyHistoryService.getNotDeletedHistoryEvent()
             .filter { it.userId != null }
             .filter { it.sendTime.isBefore(deleteTimestamp) }
             .groupBy { it.userId!! }
-        logger.info { "Message for deleting empty: ${messageForDelete.isEmpty()}" }
         for (entry in messageForDelete) {
+            if(entry.value.isEmpty()) continue
             val deleteMessage = getDeleteMessages(entry.key, entry.value.map { it.messageId })
-            telegramClient.execute(deleteMessage)
-            notifyHistoryService.markAsDeleted(entry.value)
+            runCatching {
+                logger.info { "Start delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
+                telegramClient.execute(deleteMessage)
+                notifyHistoryService.markAsDeleted(entry.value)
+            }.onSuccess {
+                logger.info { "Success delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
+            }.onFailure { error ->
+                logger.info { "Error delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds} with message ${error.message}" }
+            }
         }
+        logger.info { "Finish deleting old messages" }
+    }
+
+    override fun sendReleaseNotes(
+        chatId: Long,
+        updateMessage: UpdateMessage
+    ) {
+        val message = messageServiceGenerate.process(StateCode.RELEASE_NOTES, updateMessage)
+        val sendMessage = SendMessage.builder()
+            .chatId(chatId)
+            .text(message)
+            .build()
+        sendMessage.enableMarkdown(true)
+        telegramClient.execute(sendMessage)
     }
 
     companion object {

@@ -2,11 +2,13 @@ package ru.grabovsky.dungeoncrusherbot.strategy.message
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
+import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
-import ru.grabovsky.poibot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
 class SubscribeMessage(
@@ -29,7 +31,7 @@ class SubscribeMessage(
             val markUp = InlineMarkupDataDto(
                 rowPos = row,
                 text = if (isSubscribed) "✅ ${server.id}" else "❌ ${server.id}",
-                data = if (isSubscribed) "UNSUBSCRIBE ${server.id}" else "SUBSCRIBE ${server.id}"
+                data = CallbackObject(StateCode.SUBSCRIBE, if (isSubscribed) "UNSUBSCRIBE ${server.id}" else "SUBSCRIBE ${server.id}")
             )
             count++
             if(count >= 5) {

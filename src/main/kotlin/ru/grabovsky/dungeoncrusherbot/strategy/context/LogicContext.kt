@@ -20,9 +20,9 @@ class LogicContext(
         messageProcessors[stateCode]?.execute(user, message = message)
     }
 
-    fun execute(user: User, callbackQuery: CallbackQuery, stateCode: StateCode): ExecuteStatus {
+    fun execute(user: User, callbackData: String, stateCode: StateCode): ExecuteStatus {
         return callbackProcessors[stateCode]
-            ?.execute(user, callbackQuery = callbackQuery)
+            ?.execute(user, callbackData = callbackData)
             ?: ExecuteStatus.NOTHING
                 .also { logger.warn {"Callback not found with state: $stateCode" } }
     }

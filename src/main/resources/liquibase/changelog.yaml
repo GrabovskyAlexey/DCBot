@@ -7,3 +7,5 @@ databaseChangeLog:
       file: liquibase/changelog/3.create_maze_table.sql
   - include:
       file: liquibase/changelog/4.create_notify_history_table.sql
+  - include:
+      file: liquibase/changelog/5.update_tables.sql
