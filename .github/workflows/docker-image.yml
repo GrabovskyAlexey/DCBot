@@ -57,10 +57,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to server
-        uses: appleboy/ssh-action@v1
+        uses: D3rHase/ssh-command-action@latest
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_path: update_dcbot.sh
+          user: ${{ secrets.SSH_USER }}
+          private_key: ${{ secrets.VPS_SSH_KEY }}
+          host_fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
+          command: |
+            ./update_dcbot.sh
