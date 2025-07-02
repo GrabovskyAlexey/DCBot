@@ -45,7 +45,7 @@ class ApplicationListener(
     }
 
     fun processCallbackEvent(event: TelegramReceiveCallbackEvent) {
-        when (logicContext.execute(event.user, event.callback, event.stateCode)) {
+        when (logicContext.execute(event.user, event.callbackData, event.stateCode)) {
             FINAL -> { stateContext.next(event.user, event.stateCode) }
             NOTHING -> null // TODO реализовать отправку ошибки пользователю
         }?.let {

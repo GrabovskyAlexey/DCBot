@@ -7,5 +7,5 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 data class TelegramReceiveCallbackEvent(
     override val user: User,
     override val stateCode: StateCode,
-    val callback: CallbackQuery
+    val callbackData: String
 ): TelegramEvent

@@ -44,8 +44,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
             type=ref,event=branch
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -59,11 +57,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to server
-        uses: D3rHase/ssh-command-action@v0.3.1
+        uses: appleboy/ssh-action@v1
         with:
-          host: '${{ secrets.SSH_HOST }}'
-          port: '${{ secrets.SSH_PORT }}'
-          private_key: '${{ secrets.SSH_KEY }}'
-          user: '${{ secrets.SSH_USER }}'
-          command: |
+          host: ${{ secrets.VPS_SSH_HOST }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: /
             ./update_dcbot.sh

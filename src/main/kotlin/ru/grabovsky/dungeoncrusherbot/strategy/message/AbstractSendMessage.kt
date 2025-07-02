@@ -5,8 +5,8 @@ import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
-import ru.grabovsky.poibot.dto.InlineMarkupDataDto
-import ru.grabovsky.poibot.dto.ReplyMarkupDto
+import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.dto.ReplyMarkupDto
 
 @Component
 abstract class AbstractSendMessage<T: DataModel?>(private val messageGenerateService: MessageGenerateService) {

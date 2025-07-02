@@ -3,7 +3,7 @@ package ru.grabovsky.dungeoncrusherbot.service
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
-import ru.grabovsky.dungeoncrusherbot.exception.StateNotFoundException
+import ru.grabovsky.dungeoncrusherbot.framework.exception.StateNotFoundException
 import ru.grabovsky.dungeoncrusherbot.repository.StateRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode

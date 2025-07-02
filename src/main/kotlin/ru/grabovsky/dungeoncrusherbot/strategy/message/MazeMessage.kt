@@ -2,12 +2,11 @@ package ru.grabovsky.dungeoncrusherbot.strategy.message
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
+import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
-import ru.grabovsky.poibot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
 class MazeMessage(
@@ -21,27 +20,32 @@ class MazeMessage(
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = "↖\uFE0F",
-                data = "LEFT"
+                data = CallbackObject(
+                    StateCode.UPDATE_MAZE,"LEFT")
             ),
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = "⬆\uFE0F",
-                data = "CENTER"
+                data = CallbackObject(
+                    StateCode.UPDATE_MAZE,"CENTER")
             ),
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = "↗\uFE0F",
-                data = "RIGHT"
+                data = CallbackObject(
+                    StateCode.UPDATE_MAZE,"RIGHT")
             ),
             InlineMarkupDataDto(
                 rowPos = 2,
                 text = "\uD83E\uDDB6 Последние 20 шагов",
-                data = "HISTORY"
+                data = CallbackObject(
+                    StateCode.UPDATE_MAZE,"HISTORY")
             ),
             InlineMarkupDataDto(
                 rowPos = 3,
                 text = "\uD83D\uDDD1 Сбросить прогресс",
-                data = "REFRESH_MAZE"
+                data = CallbackObject(
+                    StateCode.UPDATE_MAZE,"REFRESH_MAZE")
             ),
         )
     }
