@@ -63,6 +63,6 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           user: ${{ secrets.SSH_USER }}
           private_key: ${{ secrets.VPS_SSH_KEY }}
-          host_fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
+          #host_fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           command: |
             ./update_dcbot.sh
