@@ -39,7 +39,7 @@ class SchedulerService(
         logger.info { "Schedule siege time: $time" }
         val users = userRepository.findAll()
         val usersToNotify = users
-            .filter { user -> user.notificationSubscribe.any{ it.type == NotificationType.SIEGE && it.enabled == isBefore} }
+            .filter { user -> user.notificationSubscribe.any{ it.type == NotificationType.SIEGE && it.enabled == isBefore} || !isBefore }
             .associate {
                 it.userId to it.servers.filter { server ->
                     server.sieges.any { siege ->
