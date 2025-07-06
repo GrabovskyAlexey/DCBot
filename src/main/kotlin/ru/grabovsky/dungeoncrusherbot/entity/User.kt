@@ -66,4 +66,8 @@ data class User(
         result = 31 * result + (userName?.hashCode() ?: 0)
         return result
     }
+
+    override fun toString(): String {
+        return "User(userName=$userName, lastName=$lastName, firstName=$firstName, userId=$userId, createdAt=$createdAt, updatedAt=$updatedAt)"
+    }
 }
