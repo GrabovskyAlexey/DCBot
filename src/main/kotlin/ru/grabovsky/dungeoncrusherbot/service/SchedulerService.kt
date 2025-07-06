@@ -39,7 +39,14 @@ class SchedulerService(
         logger.info { "Schedule siege time: $time" }
         val users = userRepository.findAll()
         val usersToNotify = users
-            .filter { user -> user.notificationSubscribe.any{ it.type == NotificationType.SIEGE && it.enabled == isBefore} || !isBefore }
+            .filter { user ->
+                if (isBefore) {
+                    user.notificationSubscribe.any { it.type == NotificationType.SIEGE && it.enabled }
+                } else {
+                    user.notificationSubscribe.any { it.type == NotificationType.SIEGE && !it.enabled }
+                            || user.notificationSubscribe.none { it.type == NotificationType.SIEGE }
+                }
+            }
             .associate {
                 it.userId to it.servers.filter { server ->
                     server.sieges.any { siege ->
@@ -66,10 +73,10 @@ class SchedulerService(
     }
 
     @Scheduled(cron = "0 0 0,12 ? * *")
-    fun sendClanMineNotification(){
+    fun sendClanMineNotification() {
         val users = userRepository.findAll()
         val usersToNotify = users
-            .filter { user -> user.notificationSubscribe.any{ it.type == NotificationType.MINE } }
+            .filter { user -> user.notificationSubscribe.any { it.type == NotificationType.MINE } }
 
         usersToNotify.forEach {
             telegramBotService.sendNotification(it.userId, NotificationType.MINE)

@@ -19,5 +19,8 @@ data class UserState(
     var updateMessageId: Int? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "delete_message_ids")
-    val deletedMessages: MutableList<Int> = mutableListOf()
+    val deletedMessages: MutableList<Int> = mutableListOf(),
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "update_messages_by_state")
+    val updateMessageByState: MutableMap<StateCode, Int> = mutableMapOf()
 )

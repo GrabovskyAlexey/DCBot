@@ -11,3 +11,5 @@ databaseChangeLog:
       file: liquibase/changelog/5.update_tables.sql
   - include:
       file: liquibase/changelog/6.release_notes.sql
+  - include:
+      file: liquibase/changelog/7.update_tables.sql
