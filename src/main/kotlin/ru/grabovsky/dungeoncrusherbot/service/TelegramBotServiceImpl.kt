@@ -70,7 +70,7 @@ class TelegramBotServiceImpl(
         val state = stateService.getState(user)
         when (stateCode.markType) {
             MarkType.DELETE -> state.deletedMessages.add(result.messageId)
-            MarkType.UPDATE -> state.updateMessageId = result.messageId
+            MarkType.UPDATE -> state.updateMessageByState[stateCode] = result.messageId
             else -> {}
         }
         stateService.saveState(state)
@@ -78,9 +78,11 @@ class TelegramBotServiceImpl(
 
     private fun editMessage(user: User, stateCode: StateCode) {
         val state = stateService.getState(user)
-        state.updateMessageId?.let {
-            telegramClient.execute(getEditMessage(user, stateCode, it))
-        }
+
+        val messageId = state.updateMessageByState[stateCode.linkedStateCode]
+            ?: state.updateMessageId
+        requireNotNull(messageId) {"Not found update message id for user: ${user.userName ?: user.firstName} and state: $stateCode"}
+        telegramClient.execute(getEditMessage(user, stateCode, messageId))
         stateService.saveState(state)
     }
 
