@@ -72,7 +72,7 @@ class SchedulerService(
         notifyHistoryService.deleteOldEvents()
     }
 
-    @Scheduled(cron = "0 0 0,12 ? * *")
+    @Scheduled(cron = "0 59 23,11 ? * *")
     fun sendClanMineNotification() {
         val users = userRepository.findAll()
         val usersToNotify = users

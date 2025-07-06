@@ -29,7 +29,9 @@ class RunAfterStartup(
         val users = userRepository.findAll()
         for (message in updateMessages) {
             users.forEach {
-                telegramBotService.sendReleaseNotes(it.userId, message)
+                runCatching {
+                    telegramBotService.sendReleaseNotes(it.userId, message)
+                }.onFailure { error -> logger.warn { "Couldn't send update message version: ${message.version} for user: $it" } }
             }
             message.sent = true
         }
