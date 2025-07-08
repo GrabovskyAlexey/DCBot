@@ -20,7 +20,7 @@ class ConfirmRefreshMazeProcessor(
         val userFromDb = userService.getUser(user.id)!!
         val maze = userFromDb.maze ?: Maze(user = userFromDb)
         when (callbackData) {
-            "REFRESH_MAZE_CONFIRM" -> mazeService.refreshMaze(maze)
+            "CONFIRM" -> mazeService.refreshMaze(maze)
             else -> {}
         }
 
