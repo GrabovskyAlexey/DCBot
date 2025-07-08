@@ -21,14 +21,14 @@ class ConfirmRefreshMazeMessage(
                 rowPos = 1,
                 text = "✅ДА",
                 data = CallbackObject(
-                    StateCode.CONFIRM_REFRESH_MAZE, "REFRESH_MAZE_CONFIRM"
+                    StateCode.CONFIRM_REFRESH_MAZE, "CONFIRM"
                 ),
             ),
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = "❌НЕТ",
                 data = CallbackObject(
-                    StateCode.CONFIRM_REFRESH_MAZE, "REFRESH_MAZE_NOT_CONFIRM"
+                    StateCode.CONFIRM_REFRESH_MAZE, "NOT_CONFIRM"
                 )
             ),
         )

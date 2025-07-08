@@ -8,7 +8,7 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     UPDATE_SUBSCRIBE(UPDATE_MESSAGE, linkedStateCode = SUBSCRIBE),
     MAZE(SEND_MESSAGE, markType = MarkType.UPDATE),
     UPDATE_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
-    CONFIRM_REFRESH_MAZE(UPDATE_MESSAGE),
+    CONFIRM_REFRESH_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
     HELP(SEND_MESSAGE, false),
     NOTIFY(SEND_MESSAGE, markType = MarkType.UPDATE),
     UPDATE_NOTIFY(UPDATE_MESSAGE, linkedStateCode = NOTIFY),
