@@ -19,9 +19,9 @@ class MazeDataRepository(
         val state = stateService.getState(user)
         if (state.callbackData == "HISTORY") {
             stateService.updateState(user, currentStateCode("DataRepository"))
-            maze.steps.takeLast(20).map {
-                "${it.startLocation.level} "
-            }
+//            maze.steps.takeLast(20).map {
+//                "${it.startLocation.level} "
+//            }
             return MazeDto(location, maze.steps.takeLast(20).map { it.toString() })
         }
         return MazeDto(location)
