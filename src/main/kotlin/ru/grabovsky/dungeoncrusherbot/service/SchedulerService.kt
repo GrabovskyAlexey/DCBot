@@ -55,7 +55,7 @@ class SchedulerService(
                 }
             }.filterValues { it.isNotEmpty() }
         usersToNotify.forEach {
-            telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value)
+            telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value, isBefore)
         }
     }
 

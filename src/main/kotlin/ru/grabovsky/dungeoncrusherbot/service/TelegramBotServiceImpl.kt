@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessages
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.User
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
@@ -27,11 +28,13 @@ import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.VerificationService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.MessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.time.Instant
@@ -46,6 +49,7 @@ class TelegramBotServiceImpl(
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val stateService: StateService,
     private val notifyHistoryService: NotifyHistoryService,
+    private val verificationService: VerificationService,
     private val objectMapper: ObjectMapper
 ) : TelegramBotService {
 
@@ -54,6 +58,7 @@ class TelegramBotServiceImpl(
             SEND_MESSAGE -> sendMessage(user, stateCode)
             UPDATE_MESSAGE -> editMessage(user, stateCode)
             DELETE_MESSAGES -> deleteMessage(user)
+            VERIFICATION -> verify(user, stateCode)
             NOTHING -> {}
         }
 
@@ -110,7 +115,7 @@ class TelegramBotServiceImpl(
             .messageId(messageId)
             .build()
         editMessage.enableMarkdown(true)
-        logger.info { "Edit message: $editMessage" }
+        logger.debug { "Edit message: $editMessage" }
 
         return editMessage
     }
@@ -120,6 +125,10 @@ class TelegramBotServiceImpl(
             .chatId(chatId)
             .messageIds(messageIds)
             .build()
+    }
+
+    private fun verify(user: User, stateCode: StateCode) {
+        verificationService.verify(user, stateCode)
     }
 
     private fun getSendMessage(user: User, stateCode: StateCode): SendMessage {
@@ -172,7 +181,7 @@ class TelegramBotServiceImpl(
         return ReplyKeyboardMarkup.builder().keyboard(keyboardRows).build()
     }
 
-    override fun sendNotification(chatId: Long, type: NotificationType, servers: List<Server>) {
+    override fun sendNotification(chatId: Long, type: NotificationType, servers: List<Server>, isBefore: Boolean?) {
         val message = when (type) {
             NotificationType.SIEGE -> {
                 if (servers.isEmpty()) {
@@ -180,7 +189,7 @@ class TelegramBotServiceImpl(
                 }
                 messageServiceGenerate.process(
                     StateCode.NOTIFICATION_SIEGE,
-                    ServerDto(servers.sortedBy { it.id }.map { it.id })
+                    ServerDto(servers.sortedBy { it.id }.map { it.id }, isBefore)
                 )
             }
 
@@ -203,7 +212,6 @@ class TelegramBotServiceImpl(
         ).also {
             notifyHistoryService.saveHistory(it)
         }
-
     }
 
     override fun deleteOldNotify() {

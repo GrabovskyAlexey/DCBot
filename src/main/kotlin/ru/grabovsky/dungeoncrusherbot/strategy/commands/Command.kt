@@ -8,6 +8,7 @@ enum class Command(
     START("start", "Начать пользоваться ботом", 1),
     SUBSCRIBE("subscribe", "Подписаться на осады", 2),
     MAZE("maze", "Лабиринт", 3),
+    RESOURCES("resources", "Учет ресурсов", 4),
     NOTIFY("notify", "Настройка уведомлений", 5),
     HELP("help", "Помощь", 99);
 }
