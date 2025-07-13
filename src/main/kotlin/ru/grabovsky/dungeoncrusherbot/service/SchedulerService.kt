@@ -39,7 +39,7 @@ class SchedulerService(
 
     private fun sendSiegeNotification(time: LocalTime, isBefore: Boolean) {
         logger.info { "Schedule siege time: $time" }
-        val users = userRepository.findAll()
+        val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users
             .filter { user ->
                 if (isBefore) {
@@ -80,7 +80,7 @@ class SchedulerService(
 
     @Scheduled(cron = "0 59 23,11 ? * *")
     fun sendClanMineNotification() {
-        val users = userRepository.findAll()
+        val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users
             .filter { user -> user.notificationSubscribe.any { it.type == NotificationType.MINE } }
 

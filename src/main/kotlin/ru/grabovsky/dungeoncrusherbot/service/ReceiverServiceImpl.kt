@@ -42,7 +42,7 @@ class ReceiverServiceImpl(
     }
 
     private fun processCallback(callbackQuery: CallbackQuery) {
-        logger.info {"Start process callback: $callbackQuery"}
+        logger.debug {"Start process callback: $callbackQuery"}
         val user = callbackQuery.from
         val state = getState(user)
         val event = runCatching {

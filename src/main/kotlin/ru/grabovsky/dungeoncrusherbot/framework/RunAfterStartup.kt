@@ -26,7 +26,7 @@ class RunAfterStartup(
             logger.info { "Update messages is empty" }
             return
         }
-        val users = userRepository.findAll()
+        val users = userRepository.findAllNotBlockedUser()
         for (message in updateMessages) {
             users.forEach {
                 runCatching {
