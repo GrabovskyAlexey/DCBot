@@ -1,6 +1,6 @@
 <#if (data.servers)??>
 <#if data.before>
-<#assign prefix ="Через 5 минут начнеться">
+<#assign prefix ="Через 5 минут начнется">
 <#else>
 <#assign prefix ="Началась">
 </#if>

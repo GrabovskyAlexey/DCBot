@@ -102,7 +102,7 @@ class TelegramBotServiceImpl(
 
 
     private fun getEditMessage(user: User, stateCode: StateCode, messageId: Int): EditMessageText {
-        logger.info { "Get update message for state: $stateCode" }
+        logger.info { "Get update message for state: $stateCode, user: ${user.userName ?: user.firstName}" }
         val message = messageContext.getMessage(user, stateCode)
             ?: throw IllegalStateException("message is null")
 
@@ -132,7 +132,7 @@ class TelegramBotServiceImpl(
     }
 
     private fun getSendMessage(user: User, stateCode: StateCode): SendMessage {
-        logger.info { "Get send message for state: $stateCode" }
+        logger.info { "Get send message for state: $stateCode, user: ${user.userName ?: user.firstName}" }
         val message = messageContext.getMessage(user, stateCode)
             ?: throw IllegalStateException("message is null")
 
@@ -152,7 +152,6 @@ class TelegramBotServiceImpl(
     }
 
     private fun List<InlineMarkupDataDto>.getInlineKeyboardMarkup(): InlineKeyboardMarkup {
-
         var inlineKeyboardButtonsInner: MutableList<InlineKeyboardButton>
         val inlineKeyboardButtons: MutableList<MutableList<InlineKeyboardButton>> = mutableListOf()
 
@@ -181,11 +180,11 @@ class TelegramBotServiceImpl(
         return ReplyKeyboardMarkup.builder().keyboard(keyboardRows).build()
     }
 
-    override fun sendNotification(chatId: Long, type: NotificationType, servers: List<Server>, isBefore: Boolean?) {
+    override fun sendNotification(chatId: Long, type: NotificationType, servers: List<Server>, isBefore: Boolean?): Boolean {
         val message = when (type) {
             NotificationType.SIEGE -> {
                 if (servers.isEmpty()) {
-                    return
+                    return false
                 }
                 messageServiceGenerate.process(
                     StateCode.NOTIFICATION_SIEGE,
@@ -203,15 +202,19 @@ class TelegramBotServiceImpl(
 
         sendMessage.enableMarkdown(true)
 
-        val result = telegramClient.execute(sendMessage)
-        NotifyHistory(
-            userId = chatId,
-            messageId = result.messageId,
-            text = result.text,
-            sendTime = Instant.now()
-        ).also {
-            notifyHistoryService.saveHistory(it)
-        }
+        return runCatching {
+            telegramClient.execute(sendMessage)
+                .also { result ->
+                    NotifyHistory(
+                        userId = chatId,
+                        messageId = result.messageId,
+                        text = result.text,
+                        sendTime = Instant.now()
+                    ).also {
+                        notifyHistoryService.saveHistory(it)
+                    }
+                }
+        }.isSuccess
     }
 
     override fun deleteOldNotify() {

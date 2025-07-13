@@ -25,6 +25,8 @@ data class User(
     var maze: Maze? = null,
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
     var resources: Resources? = null,
+    @Column(name = "is_blocked")
+    var isBlocked: Boolean = false,
     @CreationTimestamp
     @Column(name = "created_at")
     @JsonSerialize(using= InstantSerializer::class)

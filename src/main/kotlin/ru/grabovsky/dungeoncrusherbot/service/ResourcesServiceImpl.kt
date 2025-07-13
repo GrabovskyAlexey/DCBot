@@ -49,7 +49,6 @@ class ResourcesServiceImpl(
             }
             REMOVE_VOID -> {
                 serverData.voidCount -= amount
-                if (serverData.voidCount < 0) serverData.voidCount = 0
                 updateHistory(history, ResourcesHistory(
                     LocalDate.now(),
                     ResourceType.VOID,
