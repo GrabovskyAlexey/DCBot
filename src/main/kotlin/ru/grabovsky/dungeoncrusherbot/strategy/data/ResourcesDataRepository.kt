@@ -14,7 +14,7 @@ class ResourcesDataRepository(
         val resources = userService.getUser(user.id)?.resources
         return resources?.let {res ->
             res.data.servers.filterValues { it.hasData() }
-                .map { ServerResourceDto(it.key, it.value.draadorCount, it.value.voidCount, 0,it.value.exchange) }
+                .map { ServerResourceDto(it.key, it.value.draadorCount, it.value.voidCount, it.value.balance,it.value.exchange) }
         }?.let { ResourceDto(it) } ?: ResourceDto()
     }
 }

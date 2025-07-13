@@ -32,6 +32,9 @@ class UserServiceImpl(
             }
             userRepository.saveAndFlush(userFromTelegram)
             logger.info { "Save user entity with id = ${user.id}" }
+        } else {
+            entity.isBlocked = false
+            userRepository.saveAndFlush(entity)
         }
         return userFromTelegram
     }

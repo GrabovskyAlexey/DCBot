@@ -1,5 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Direction.*
@@ -8,6 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.entity.Step
 import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
+import kotlin.system.measureTimeMillis
 
 @Service
 class MazeServiceImpl(
@@ -18,22 +20,25 @@ class MazeServiceImpl(
     }
 
     override fun processStep(maze: Maze, direction: Direction) {
-        val currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
-        if (currentLocation.level >= 500) return
-        val nextLocation = when (direction) {
-            LEFT -> walkLeft(currentLocation)
-            RIGHT -> walkRight(currentLocation)
-            CENTER -> Location(currentLocation.level + 1, currentLocation.offset, currentLocation.direction)
-        }
-        maze.steps.add(
-            Step(
-                direction = direction,
-                startLocation = currentLocation,
-                finishLocation = nextLocation
+        measureTimeMillis {
+            val currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
+            if (currentLocation.level >= 500) return
+            val nextLocation = when (direction) {
+                LEFT -> walkLeft(currentLocation)
+                RIGHT -> walkRight(currentLocation)
+                CENTER -> Location(currentLocation.level + 1, currentLocation.offset, currentLocation.direction)
+            }
+            updateHistory(
+                maze.steps,
+                Step(
+                    direction = direction,
+                    startLocation = currentLocation,
+                    finishLocation = nextLocation
+                )
             )
-        )
-        maze.currentLocation = nextLocation
-        mazeRepository.saveAndFlush(maze)
+            maze.currentLocation = nextLocation
+            mazeRepository.saveAndFlush(maze)
+        }.also { logger.info { "Maze process complete: ${it}ms" } }
     }
 
     override fun refreshMaze(maze: Maze) {
@@ -78,5 +83,16 @@ class MazeServiceImpl(
             }
         }
         return Location(nextLevel, offset, direction)
+    }
+
+    private fun updateHistory(history: MutableList<Step>, item: Step) {
+        while (history.size >= 20) {
+            history.removeFirst()
+        }
+        history.addLast(item)
+    }
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

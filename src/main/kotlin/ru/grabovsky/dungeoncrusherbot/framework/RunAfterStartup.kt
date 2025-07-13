@@ -31,7 +31,11 @@ class RunAfterStartup(
             users.forEach {
                 runCatching {
                     telegramBotService.sendReleaseNotes(it.userId, message)
-                }.onFailure { error -> logger.warn { "Couldn't send update message version: ${message.version} for user: $it with error: ${error.message}" } }
+                }.onFailure { error ->
+                    logger.warn { "Couldn't send update message version: ${message.version} for user: $it with error: ${error.message}" }
+                    it.isBlocked = true
+                    userRepository.save(it)
+                }
             }
             message.sent = true
         }

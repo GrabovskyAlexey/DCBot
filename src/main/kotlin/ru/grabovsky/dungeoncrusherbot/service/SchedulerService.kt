@@ -4,10 +4,12 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
+import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import java.time.*
+import kotlin.collections.forEach
 import kotlin.math.absoluteValue
 
 @Service
@@ -55,7 +57,11 @@ class SchedulerService(
                 }
             }.filterValues { it.isNotEmpty() }
         usersToNotify.forEach {
-            telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value, isBefore)
+            val result = telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value, isBefore)
+            if(!result) {
+                val user = users.firstOrNull {u -> u.userId == it.key }
+                user?.let {u -> processBlockedUser(u) }
+            }
         }
     }
 
@@ -79,8 +85,17 @@ class SchedulerService(
             .filter { user -> user.notificationSubscribe.any { it.type == NotificationType.MINE } }
 
         usersToNotify.forEach {
-            telegramBotService.sendNotification(it.userId, NotificationType.MINE)
+            val result = telegramBotService.sendNotification(it.userId, NotificationType.MINE)
+            if(!result) {
+                processBlockedUser(it)
+            }
         }
+    }
+
+    private fun processBlockedUser(user: User) {
+        logger.warn { "User: ${user.userName ?: user.firstName} block bot" }
+        user.isBlocked = true
+        userRepository.save(user)
     }
 
     companion object {
