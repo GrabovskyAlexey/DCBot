@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotifyDto

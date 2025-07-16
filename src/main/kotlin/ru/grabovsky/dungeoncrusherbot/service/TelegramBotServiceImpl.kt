@@ -8,7 +8,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessages
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
@@ -34,7 +33,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.time.Instant
@@ -228,11 +226,11 @@ class TelegramBotServiceImpl(
             if(entry.value.isEmpty()) continue
             val deleteMessage = getDeleteMessages(entry.key, entry.value.map { it.messageId })
             runCatching {
-                logger.info { "Start delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
+                logger.debug { "Start delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
                 telegramClient.execute(deleteMessage)
                 notifyHistoryService.markAsDeleted(entry.value)
             }.onSuccess {
-                logger.info { "Success delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
+                logger.debug { "Success delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds}" }
             }.onFailure { error ->
                 logger.info { "Error delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds} with message ${error.message}" }
             }

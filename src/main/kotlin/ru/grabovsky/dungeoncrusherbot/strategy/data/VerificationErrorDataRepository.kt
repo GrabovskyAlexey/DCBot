@@ -4,11 +4,8 @@ import org.springframework.stereotype.Repository
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.VerificationErrorDto
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
-import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
 
 @Repository
 class VerificationErrorDataRepository(

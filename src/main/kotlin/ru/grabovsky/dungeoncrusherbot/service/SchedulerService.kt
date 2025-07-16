@@ -9,7 +9,6 @@ import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import java.time.*
-import kotlin.collections.forEach
 import kotlin.math.absoluteValue
 
 @Service
@@ -54,15 +53,21 @@ class SchedulerService(
                     server.sieges.any { siege ->
                         siege.siegeTime.equalsWithGap(time, 1)
                     }
+                }.filter { server ->
+                    !getDisabledNotificationServer(it).contains(server.id)
                 }
             }.filterValues { it.isNotEmpty() }
         usersToNotify.forEach {
             val result = telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value, isBefore)
-            if(!result) {
-                val user = users.firstOrNull {u -> u.userId == it.key }
-                user?.let {u -> processBlockedUser(u) }
+            if (!result) {
+                val user = users.firstOrNull { u -> u.userId == it.key }
+                user?.let { u -> processBlockedUser(u) }
             }
         }
+    }
+
+    private fun getDisabledNotificationServer(user: User): Set<Int> {
+        return user.resources?.data?.servers?.filter { it.value.notifyDisable }?.keys ?: emptySet()
     }
 
     private fun LocalTime.equalsWithGap(time: LocalTime, minutes: Int) =
@@ -78,6 +83,18 @@ class SchedulerService(
         notifyHistoryService.deleteOldEvents()
     }
 
+    @Scheduled(cron = "0 0 0 ? * MON")
+    fun clearDisableNotify() {
+        logger.info { "Start enable all server siege notification" }
+        val users = userRepository.findAll()
+        users.onEach { user ->
+            user.resources?.data?.servers?.onEach { server ->
+                server.value.notifyDisable = false
+            }
+        }
+        userRepository.saveAllAndFlush(users)
+    }
+
     @Scheduled(cron = "0 59 23,11 ? * *")
     fun sendClanMineNotification() {
         val users = userRepository.findAllNotBlockedUser()
@@ -86,7 +103,7 @@ class SchedulerService(
 
         usersToNotify.forEach {
             val result = telegramBotService.sendNotification(it.userId, NotificationType.MINE)
-            if(!result) {
+            if (!result) {
                 processBlockedUser(it)
             }
         }

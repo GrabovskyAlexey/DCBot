@@ -2,7 +2,6 @@ package ru.grabovsky.dungeoncrusherbot.strategy.context
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.CallbackProcessor

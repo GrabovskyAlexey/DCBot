@@ -4,10 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Component
 class ResourcesCommand(

@@ -12,12 +12,13 @@ import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
 class ServerResourceDataRepository(
     private val userService: UserService,
     private val stateService: StateService
-): AbstractDataRepository<ServerResourceDto>() {
+) : AbstractDataRepository<ServerResourceDto>() {
     override fun getData(user: User): ServerResourceDto {
         val userFromDb = userService.getUser(user.id)
         val resources = userFromDb?.resources
-        val lastServerId = resources?.lastServerId ?:throw IllegalStateException("Not found last server id for resources user: ${user.userName ?: user.firstName}")
-        val serverData = resources.data.servers.computeIfAbsent(lastServerId) {key -> ServerResourceData()}
+        val lastServerId = resources?.lastServerId
+            ?: throw IllegalStateException("Not found last server id for resources user: ${user.userName ?: user.firstName}")
+        val serverData = resources.data.servers.computeIfAbsent(lastServerId) { key -> ServerResourceData() }
         val state = stateService.getState(user)
 
         val history = resources.history[lastServerId]
@@ -28,6 +29,16 @@ class ServerResourceDataRepository(
             null
         }
         userService.saveUser(userFromDb)
-        return ServerResourceDto(lastServerId, serverData.draadorCount, serverData.voidCount, serverData.balance, serverData.exchange, historyItems, history != null)
+        return ServerResourceDto(
+            lastServerId,
+            serverData.draadorCount,
+            serverData.voidCount,
+            serverData.balance,
+            serverData.exchange,
+            historyItems,
+            history != null,
+            notifyDisable = serverData.notifyDisable,
+            isMain = lastServerId == resources.data.mainServerId
+        )
     }
 }

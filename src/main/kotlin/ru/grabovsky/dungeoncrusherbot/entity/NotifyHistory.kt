@@ -1,7 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.entity
 
 import jakarta.persistence.*
-import org.hibernate.annotations.ColumnDefault
 import java.time.Instant
 
 @Entity

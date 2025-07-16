@@ -1,13 +1,12 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.processor.callback
 
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.User as tgUser
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import org.telegram.telegrambots.meta.api.objects.User as tgUser
 
 @Component
 class NotifyProcessor(

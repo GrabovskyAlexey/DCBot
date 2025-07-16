@@ -20,7 +20,7 @@ class UserServiceImpl(
         val entity = userRepository.findUserByUserId(user.id)
         val userFromTelegram= UserMapper.fromTelegramToEntity(user)
         if (userFromTelegram != entity) {
-            logger.info { "Save new user" }
+            logger.info { "Save new user: $userFromTelegram" }
             userFromTelegram.apply {
                 this.maze = Maze(user = this)
                 this.notificationSubscribe.addAll(

@@ -7,5 +7,7 @@ data class ServerResourceDto(
     val balance: Int = 0,
     val exchange: String? = null,
     val history: List<String>? = null,
-    val hasHistory: Boolean = false
+    val hasHistory: Boolean = false,
+    val notifyDisable: Boolean = false,
+    val isMain: Boolean
 ) : DataModel

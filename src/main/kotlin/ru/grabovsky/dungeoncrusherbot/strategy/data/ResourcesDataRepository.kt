@@ -9,12 +9,22 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 @Repository
 class ResourcesDataRepository(
     private val userService: UserService
-): AbstractDataRepository<ResourceDto>() {
+) : AbstractDataRepository<ResourceDto>() {
     override fun getData(user: User): ResourceDto {
         val resources = userService.getUser(user.id)?.resources
-        return resources?.let {res ->
+        return resources?.let { res ->
             res.data.servers.filterValues { it.hasData() }
-                .map { ServerResourceDto(it.key, it.value.draadorCount, it.value.voidCount, it.value.balance,it.value.exchange) }
+                .map {
+                    ServerResourceDto(
+                        it.key,
+                        it.value.draadorCount,
+                        it.value.voidCount,
+                        it.value.balance,
+                        it.value.exchange,
+                        notifyDisable = it.value.notifyDisable,
+                        isMain = it.key == res.data.mainServerId
+                    )
+                }
         }?.let { ResourceDto(it) } ?: ResourceDto()
     }
 }
