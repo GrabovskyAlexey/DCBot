@@ -39,7 +39,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
             ),
             InlineMarkupDataDto(
                 rowPos = 97,
-                text = if (data?.notifyDisable == true) "✅ Включить уведомления" else "❌ Отключить уведомления",
+                text = if (data?.notifyDisable == true) "❌ Продолжить ловлю" else "✅ Закончил ловить",
                 data = CallbackObject(StateCode.SERVER_RESOURCE, "DISABLE_NOTIFY")
             ),
             InlineMarkupDataDto(
@@ -77,9 +77,17 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                         ),
                         InlineMarkupDataDto(
                             rowPos = 5,
-                            text = "✅ Сделать основным",
+                            text = "\uD83D\uDC51 Сделать основным",
                             data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
                         ),
+                    )
+                )
+            } else {
+                it.add(
+                    InlineMarkupDataDto(
+                        rowPos = 5,
+                        text = "\uD83D\uDEAB Отменить назначение основным",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
                     )
                 )
             }

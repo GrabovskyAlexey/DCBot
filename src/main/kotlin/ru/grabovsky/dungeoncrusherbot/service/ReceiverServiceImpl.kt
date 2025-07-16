@@ -13,11 +13,13 @@ import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveCallbackEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveMessageEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
 
 @Service
 class ReceiverServiceImpl(
     private val stateService: StateService,
+    private val userService: UserService,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val objectMapper: ObjectMapper
 ) : ReceiverService {
@@ -31,6 +33,7 @@ class ReceiverServiceImpl(
 
     private fun processMessage(message: Message) {
         val user = message.from
+        userService.createOrUpdateUser(user)
         val state = getState(user)
         if (state.state.markType == MarkType.DELETE) {
             state.deletedMessages.add(message.messageId)
@@ -44,6 +47,7 @@ class ReceiverServiceImpl(
     private fun processCallback(callbackQuery: CallbackQuery) {
         logger.debug {"Start process callback: $callbackQuery"}
         val user = callbackQuery.from
+        userService.createOrUpdateUser(user)
         val state = getState(user)
         val event = runCatching {
             val data = objectMapper.readValue(callbackQuery.data, CallbackObject::class.java)

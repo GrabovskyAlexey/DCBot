@@ -29,6 +29,7 @@ class ServerResourceProcessor(
         when (data[0]) {
             "REMOVE_EXCHANGE" -> serverResource.exchange = null
             "SET_MAIN" -> userFromDb.resources?.data?.mainServerId = lastServerId
+            "REMOVE_MAIN" -> userFromDb.resources?.data?.mainServerId = null
             "DISABLE_NOTIFY" -> serverResource.notifyDisable = !serverResource.notifyDisable
         }
         userService.saveUser(userFromDb)
