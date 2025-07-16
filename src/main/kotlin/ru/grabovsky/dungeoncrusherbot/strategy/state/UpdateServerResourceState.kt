@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
-import kotlin.ranges.contains
 
 @Component
 class UpdateServerResourceState(private val stateService: StateService) : State {

@@ -28,6 +28,8 @@ class ServerResourceProcessor(
                 ?: return ExecuteStatus.NOTHING.also { logger.warn { "Not found server resource by id: $lastServerId for user: ${user.userName ?: user.firstName}" } }
         when (data[0]) {
             "REMOVE_EXCHANGE" -> serverResource.exchange = null
+            "SET_MAIN" -> userFromDb.resources?.data?.mainServerId = lastServerId
+            "DISABLE_NOTIFY" -> serverResource.notifyDisable = !serverResource.notifyDisable
         }
         userService.saveUser(userFromDb)
         return ExecuteStatus.FINAL

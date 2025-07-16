@@ -2,11 +2,11 @@ package ru.grabovsky.dungeoncrusherbot.strategy.context
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
+import ru.grabovsky.dungeoncrusherbot.dto.MessageModelDto
 import ru.grabovsky.dungeoncrusherbot.strategy.data.AbstractDataRepository
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.dungeoncrusherbot.dto.MessageModelDto
 
 @Component
 class MessageContext<T : DataModel>(

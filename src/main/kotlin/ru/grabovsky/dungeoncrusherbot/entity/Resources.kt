@@ -26,6 +26,7 @@ data class Resources(
 )
 
 data class ResourcesData(
+    var mainServerId: Int? = null,
     val servers: MutableMap<Int, ServerResourceData> = mutableMapOf()
 )
 
@@ -34,6 +35,7 @@ data class ServerResourceData(
     var draadorCount: Int = 0,
     var voidCount: Int = 0,
     var balance: Int = 0,
+    var notifyDisable: Boolean = false
 ) {
     fun hasData() = exchange != null || draadorCount != 0 || voidCount != 0 || balance != 0
 }
@@ -42,20 +44,22 @@ data class ResourcesHistory(
     val date: LocalDate,
     val resource: ResourceType,
     val type: DirectionType,
-    val quantity: Int
+    val quantity: Int,
+    val fromServer: Int? = null
 ) {
     override fun toString(): String {
+        val postfix = if(fromServer != null) "c $fromServer сервера" else ""
         val resource = when(resource) {
             ResourceType.DRAADOR -> "🪆"
             ResourceType.VOID -> "🟣"
         }
         return when(type) {
-            DirectionType.ADD -> "*${date.format(df)}* - $quantity $resource получено"
-            DirectionType.INCOMING -> "*${date.format(df)}* - $quantity $resource принято"
-            DirectionType.OUTGOING -> "*${date.format(df)}* - $quantity $resource передано"
-            DirectionType.TRADE -> "*${date.format(df)}* - $quantity $resource продано"
-            DirectionType.REMOVE -> "*${date.format(df)}* - $quantity $resource потрачено"
-            DirectionType.CATCH -> "*${date.format(df)}* - $quantity $resource поймано"
+            DirectionType.ADD -> "*${date.format(df)}* - $quantity $resource получено $postfix"
+            DirectionType.INCOMING -> "*${date.format(df)}* - $quantity $resource принято $postfix"
+            DirectionType.OUTGOING -> "*${date.format(df)}* - $quantity $resource передано $postfix"
+            DirectionType.TRADE -> "*${date.format(df)}* - $quantity $resource продано $postfix"
+            DirectionType.REMOVE -> "*${date.format(df)}* - $quantity $resource потрачено $postfix"
+            DirectionType.CATCH -> "*${date.format(df)}* - $quantity $resource поймано $postfix"
         }
     }
 }
