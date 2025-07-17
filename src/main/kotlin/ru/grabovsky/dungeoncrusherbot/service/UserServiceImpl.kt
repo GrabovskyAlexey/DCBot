@@ -21,7 +21,7 @@ class UserServiceImpl(
         val userFromTelegram = UserMapper.fromTelegramToEntity(user)
         when {
             userFromTelegram.userId != entity?.userId -> createNewUser(userFromTelegram)
-            userFromTelegram != user -> updateUser(entity, user)
+            userFromTelegram != entity -> updateUser(entity, user)
         }
         return userFromTelegram
     }
