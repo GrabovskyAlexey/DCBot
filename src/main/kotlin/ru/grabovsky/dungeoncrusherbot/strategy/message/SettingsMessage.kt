@@ -6,33 +6,38 @@ import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotifyDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
-class NotifyMessage(
+class SettingsMessage(
     messageGenerateService: MessageGenerateService,
-) : AbstractSendMessage<NotifyDto>(messageGenerateService) {
+) : AbstractSendMessage<SettingsDto>(messageGenerateService) {
     override fun inlineButtons(
         user: User,
-        data: NotifyDto?
+        data: SettingsDto?
     ): List<InlineMarkupDataDto> {
         return listOf(
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = getText(data, NotificationType.SIEGE),
-                data = CallbackObject(StateCode.UPDATE_NOTIFY, "NOTIFY_SIEGE")
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_SIEGE")
             ),
             InlineMarkupDataDto(
                 rowPos = 2,
                 text = getText(data, NotificationType.MINE),
-                data = CallbackObject(StateCode.UPDATE_NOTIFY, "NOTIFY_MINE")
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_MINE")
+            ),
+            InlineMarkupDataDto(
+                rowPos = 3,
+                text = if(data?.cbEnabled == true) "❌ Отключить учет КБ" else "✅ Включить учет КБ",
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "CB_ENABLE")
             )
         )
     }
 
 
-    private fun getText(dto: NotifyDto?, type: NotificationType): String {
+    private fun getText(dto: SettingsDto?, type: NotificationType): String {
         return when(type) {
             NotificationType.SIEGE -> {
                 if (dto?.siegeEnabled == true) {

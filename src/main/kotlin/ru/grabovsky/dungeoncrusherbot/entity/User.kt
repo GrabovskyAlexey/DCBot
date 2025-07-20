@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UpdateTimestamp
+import org.hibernate.type.SqlTypes
 import ru.grabovsky.dungeoncrusherbot.util.DefaultInstantDeserializer
 import java.time.Instant
 
@@ -27,6 +29,12 @@ data class User(
     var resources: Resources? = null,
     @Column(name = "is_blocked")
     var isBlocked: Boolean = false,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "settings")
+    var settings: UserSettings = UserSettings(),
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "notes")
+    var notes: MutableList<String> = mutableListOf(),
     @CreationTimestamp
     @Column(name = "created_at")
     @JsonSerialize(using= InstantSerializer::class)
@@ -74,4 +82,12 @@ data class User(
     override fun toString(): String {
         return "User(userName=$userName, lastName=$lastName, firstName=$firstName, userId=$userId, createdAt=$createdAt, updatedAt=$updatedAt)"
     }
+}
+
+data class UserSettings(
+    var resourcesCb: Boolean = false
+)
+
+enum class SettingTypes{
+    CB
 }

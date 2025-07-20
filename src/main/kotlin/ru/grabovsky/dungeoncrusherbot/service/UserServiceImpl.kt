@@ -10,6 +10,8 @@ import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
@@ -27,7 +29,7 @@ class UserServiceImpl(
     }
 
     private fun updateUser(entity: User, user: TgUser) {
-        logger.info { "Update user: $user" }
+        logger.info { "Update user: $user, entity: $entity" }
         entity.isBlocked = false
         entity.firstName = user.firstName
         entity.lastName = user.lastName
@@ -57,6 +59,24 @@ class UserServiceImpl(
     @Transactional
     override fun getUser(userId: Long) = userRepository.findUserByUserId(userId)
 
+    override fun processNote(user: User, note: String, state: StateCode) {
+        when(state) {
+            ADD_NOTE -> addNote(user, note)
+            REMOVE_NOTE -> removeNote(user, note)
+            else -> {}
+        }
+    }
+
+    private fun addNote(user: User, note: String) {
+        user.notes.add(note)
+        userRepository.saveAndFlush(user)
+    }
+
+    private fun removeNote(user: User, note: String) {
+        val id = note.toInt() - 1
+        user.notes.removeAt(id)
+        userRepository.saveAndFlush(user)
+    }
 
     companion object {
         val logger = KotlinLogging.logger {}

@@ -15,16 +15,14 @@ class ServerResourceState(private val stateService: StateService) : State {
             "ADD_EXCHANGE" -> ADD_EXCHANGE
             "ADD_VOID" -> ADD_VOID
             "REMOVE_VOID" -> REMOVE_VOID
+            "ADD_CB" -> ADD_CB
+            "REMOVE_CB" -> REMOVE_CB
             "ADD_DRAADOR" -> ADD_DRAADOR
             "SEND_DRAADOR" -> SEND_DRAADOR
             "RECEIVE_DRAADOR" -> RECEIVE_DRAADOR
             "SELL_DRAADOR" -> SELL_DRAADOR
             else -> SERVER_RESOURCE
         }
-    }
-
-    companion object {
-        val verifyState = listOf("")
     }
 }
 

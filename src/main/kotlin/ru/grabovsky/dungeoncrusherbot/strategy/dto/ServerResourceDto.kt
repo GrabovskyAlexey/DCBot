@@ -9,5 +9,8 @@ data class ServerResourceDto(
     val history: List<String>? = null,
     val hasHistory: Boolean = false,
     val notifyDisable: Boolean = false,
-    val isMain: Boolean
+    val main: Boolean,
+    val cbEnabled: Boolean,
+    val cbCount: Int,
+    val notes: List<String> = emptyList()
 ) : DataModel

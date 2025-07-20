@@ -26,6 +26,7 @@ class ResourcesServiceImpl(
 
         when (state) {
             ADD_VOID, REMOVE_VOID -> processVoid(serverData, value, history, state)
+            ADD_CB, REMOVE_CB -> processCb(serverData, value, history, state)
             ADD_DRAADOR, SELL_DRAADOR, SEND_DRAADOR -> processDraador(serverData, value, history, state)
             RECEIVE_DRAADOR -> receiveDraador(resources, value, lastServerId)
             ADD_EXCHANGE -> serverData.exchange = value
@@ -61,6 +62,42 @@ class ResourcesServiceImpl(
                     history, ResourcesHistory(
                         LocalDate.now(),
                         ResourceType.VOID,
+                        DirectionType.REMOVE,
+                        amount
+                    )
+                )
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun processCb(
+        serverData: ServerResourceData,
+        value: String,
+        history: MutableList<ResourcesHistory>,
+        state: StateCode
+    ) {
+        val amount = value.toInt()
+        when (state) {
+            ADD_CB -> {
+                serverData.cbCount += amount
+                updateHistory(
+                    history, ResourcesHistory(
+                        LocalDate.now(),
+                        ResourceType.CB,
+                        DirectionType.ADD,
+                        amount
+                    )
+                )
+            }
+
+            REMOVE_CB -> {
+                serverData.cbCount -= amount
+                updateHistory(
+                    history, ResourcesHistory(
+                        LocalDate.now(),
+                        ResourceType.CB,
                         DirectionType.REMOVE,
                         amount
                     )

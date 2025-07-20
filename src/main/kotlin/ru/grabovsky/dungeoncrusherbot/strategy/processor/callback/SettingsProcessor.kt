@@ -9,7 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import org.telegram.telegrambots.meta.api.objects.User as tgUser
 
 @Component
-class NotifyProcessor(
+class SettingsProcessor(
     private val userService: UserService,
     stateService: StateService
 ) : CallbackProcessor(stateService) {
@@ -21,6 +21,7 @@ class NotifyProcessor(
         when (callbackData) {
             "NOTIFY_SIEGE" -> processNotify(userFromDb, NotificationType.SIEGE)
             "NOTIFY_MINE" -> processNotify(userFromDb, NotificationType.MINE)
+            "CB_ENABLE" -> userFromDb.settings.resourcesCb = !userFromDb.settings.resourcesCb
         }
 
         userService.saveUser(userFromDb)

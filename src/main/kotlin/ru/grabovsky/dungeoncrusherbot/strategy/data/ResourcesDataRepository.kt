@@ -11,7 +11,9 @@ class ResourcesDataRepository(
     private val userService: UserService
 ) : AbstractDataRepository<ResourceDto>() {
     override fun getData(user: User): ResourceDto {
-        val resources = userService.getUser(user.id)?.resources
+        val userFromDb = userService.getUser(user.id)
+        val resources = userFromDb?.resources
+        val cbEnabled = userFromDb?.settings?.resourcesCb ?: false
         return resources?.let { res ->
             res.data.servers.filterValues { it.hasData() }
                 .map {
@@ -22,7 +24,9 @@ class ResourcesDataRepository(
                         it.value.balance,
                         it.value.exchange,
                         notifyDisable = it.value.notifyDisable,
-                        isMain = it.key == res.data.mainServerId
+                        main = it.key == res.data.mainServerId,
+                        cbEnabled = cbEnabled,
+                        cbCount = it.value.cbCount
                     )
                 }
         }?.let { ResourceDto(it) } ?: ResourceDto()
