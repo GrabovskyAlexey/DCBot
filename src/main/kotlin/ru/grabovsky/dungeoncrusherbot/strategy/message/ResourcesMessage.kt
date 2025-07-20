@@ -20,7 +20,7 @@ class ResourcesMessage(
         data: ResourceDto?
     ): List<InlineMarkupDataDto> {
         val allServers = serverService.getAllServers()
-        val mainServerId = data?.servers?.firstOrNull { it.isMain }?.id
+        val mainServerId = data?.servers?.firstOrNull { it.main }?.id
         val result: MutableList<InlineMarkupDataDto> = mutableListOf()
         var row = 1
         var count = 0

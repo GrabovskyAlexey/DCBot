@@ -48,16 +48,32 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                 data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
             )
         ).also {
-            if (data?.exchange != null && !data.isMain) {
+            if (data?.exchange != null && !data.main) {
                 it.add(
                     InlineMarkupDataDto(
-                        rowPos = 1,
+                        rowPos = 5,
                         text = "\uD83D\uDCB1 Удалить обменник",
                         data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_EXCHANGE")
                     )
                 )
             }
-            if (data?.isMain != true) {
+            if (data?.cbEnabled == true) {
+                it.addAll(
+                    listOf(
+                        InlineMarkupDataDto(
+                            rowPos = 5,
+                            text = "\uD83D\uDE08 Добавить",
+                            data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_CB")
+                        ),
+                        InlineMarkupDataDto(
+                            rowPos = 5,
+                            text = "\uD83D\uDE08 Удалить",
+                            data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_CB")
+                        ),
+                    )
+                )
+            }
+            if (data?.main != true) {
                 it.addAll(
                     listOf(
                         InlineMarkupDataDto(
@@ -76,7 +92,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                             data = CallbackObject(StateCode.SERVER_RESOURCE, "SEND_DRAADOR")
                         ),
                         InlineMarkupDataDto(
-                            rowPos = 5,
+                            rowPos = 6,
                             text = "\uD83D\uDC51 Сделать основным",
                             data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
                         ),
@@ -85,7 +101,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
             } else {
                 it.add(
                     InlineMarkupDataDto(
-                        rowPos = 5,
+                        rowPos = 6,
                         text = "\uD83D\uDEAB Отменить назначение основным",
                         data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
                     )

@@ -29,6 +29,7 @@ class ServerResourceDataRepository(
             null
         }
         userService.saveUser(userFromDb)
+        val isMain = lastServerId == resources.data.mainServerId
         return ServerResourceDto(
             lastServerId,
             serverData.draadorCount,
@@ -38,7 +39,10 @@ class ServerResourceDataRepository(
             historyItems,
             history != null,
             notifyDisable = serverData.notifyDisable,
-            isMain = lastServerId == resources.data.mainServerId
+            main = isMain,
+            cbEnabled = userFromDb.settings.resourcesCb,
+            cbCount = serverData.cbCount,
+            notes = if (isMain) userFromDb.notes else emptyList()
         )
     }
 }

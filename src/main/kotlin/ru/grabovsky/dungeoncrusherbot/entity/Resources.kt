@@ -35,9 +35,10 @@ data class ServerResourceData(
     var draadorCount: Int = 0,
     var voidCount: Int = 0,
     var balance: Int = 0,
-    var notifyDisable: Boolean = false
+    var notifyDisable: Boolean = false,
+    var cbCount: Int = 0
 ) {
-    fun hasData() = exchange != null || draadorCount != 0 || voidCount != 0 || balance != 0 || notifyDisable
+    fun hasData() = exchange != null || draadorCount != 0 || voidCount != 0 || balance != 0 || cbCount != 0 || notifyDisable
 }
 
 data class ResourcesHistory(
@@ -52,6 +53,7 @@ data class ResourcesHistory(
         val resource = when(resource) {
             ResourceType.DRAADOR -> "🪆"
             ResourceType.VOID -> "🟣"
+            ResourceType.CB -> "\uD83D\uDE08"
         }
         return when(type) {
             DirectionType.ADD -> "*${date.format(df)}* - $quantity $resource получено $postfix"
@@ -65,7 +67,7 @@ data class ResourcesHistory(
 }
 
 enum class ResourceType {
-    DRAADOR, VOID
+    DRAADOR, VOID, CB
 }
 
 enum class DirectionType {

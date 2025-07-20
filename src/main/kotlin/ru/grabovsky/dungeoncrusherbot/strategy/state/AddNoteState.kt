@@ -4,6 +4,6 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
 
 @Component
-class UpdateNotifyState : State {
-    override fun getNextState(user: User): StateCode? = StateCode.UPDATE_NOTIFY
+class AddNoteState : State {
+    override fun getNextState(user: User): StateCode? = StateCode.VERIFY
 }

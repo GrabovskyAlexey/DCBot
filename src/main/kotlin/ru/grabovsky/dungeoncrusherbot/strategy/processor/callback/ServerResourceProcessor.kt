@@ -6,12 +6,14 @@ import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Component
 class ServerResourceProcessor(
     private val userService: UserService,
-    stateService: StateService,
+    private val stateService: StateService,
+    service: StateService,
 ) : CallbackProcessor(stateService) {
     override fun process(
         user: TgUser,
@@ -32,6 +34,9 @@ class ServerResourceProcessor(
             "REMOVE_MAIN" -> userFromDb.resources?.data?.mainServerId = null
             "DISABLE_NOTIFY" -> serverResource.notifyDisable = !serverResource.notifyDisable
         }
+        val state = stateService.getState(user)
+        state.prevState = StateCode.UPDATE_SERVER_RESOURCE
+        stateService.saveState(state)
         userService.saveUser(userFromDb)
         return ExecuteStatus.FINAL
     }

@@ -15,8 +15,10 @@ class VerificationErrorDataRepository(
     override fun getData(user: User): VerificationErrorDto {
         val stateCode = stateService.getState(user).verification?.stateCode
         return when(stateCode) {
-            ADD_DRAADOR, SELL_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, ADD_VOID, REMOVE_VOID -> VerificationErrorDto("Введите положительное число")
+            ADD_DRAADOR, SELL_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, ADD_VOID, REMOVE_VOID, ADD_CB, REMOVE_CB -> VerificationErrorDto("Введите положительное число")
             ADD_EXCHANGE -> VerificationErrorDto("Введите корректный ник")
+            ADD_NOTE -> VerificationErrorDto("Заметка должна содержать только текст")
+            REMOVE_NOTE -> VerificationErrorDto("Введите корректный номер заметки для удаления")
             else -> VerificationErrorDto("Неопознанная ошибка")
         }
     }

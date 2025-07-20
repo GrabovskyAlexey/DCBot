@@ -13,6 +13,9 @@ data class UserState(
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     var state: StateCode,
+    @Column(name = "prev_state")
+    @Enumerated(EnumType.STRING)
+    var prevState: StateCode? = null,
     @Column(name = "callback_data")
     var callbackData: String? = null,
     @Column(name = "update_message_id")
