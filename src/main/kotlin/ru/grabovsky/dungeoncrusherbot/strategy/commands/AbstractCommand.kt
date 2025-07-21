@@ -1,5 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.meta.api.objects.User
@@ -16,10 +17,19 @@ abstract class AbstractCommand(
     fun classStateCode() = this.currentStateCode("Command")
 
     override fun execute(telegramClient: TelegramClient, user: User, chat: Chat, arguments: Array<out String>) {
-        prepare(user, chat, arguments)
+        logger.info { "Process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id}" }
+        runCatching {
+            prepare(user, chat, arguments)
 
-        eventPublisher.publishEvent(
-            TelegramStateEvent(user, classStateCode())
-        )
+            eventPublisher.publishEvent(
+                TelegramStateEvent(user, classStateCode())
+            )
+        }.onFailure { error ->
+            logger.info { "Error process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id} with error: $error" }
+        }
+    }
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

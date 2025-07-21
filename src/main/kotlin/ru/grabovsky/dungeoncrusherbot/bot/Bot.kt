@@ -33,6 +33,7 @@ class Bot(
     override fun getUpdatesConsumer() = this
 
     override fun processNonCommandUpdate(update: Update) {
+        logger.debug { "Get update: $update" }
         receiverService.execute(update)
     }
 
