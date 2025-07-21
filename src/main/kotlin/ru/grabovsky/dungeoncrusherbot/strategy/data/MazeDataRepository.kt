@@ -14,16 +14,13 @@ class MazeDataRepository(
 ): AbstractDataRepository<MazeDto>() {
     override fun getData(user: User): MazeDto {
         val userFromDb = userService.getUser(user.id)
-        val location = userFromDb?.maze?.currentLocation ?: return MazeDto()
+        val location = userFromDb?.maze?.currentLocation ?: return MazeDto(sameSteps = false)
         val maze = userFromDb.maze!!
         val state = stateService.getState(user)
         if (state.callbackData == "HISTORY") {
             stateService.updateState(user, currentStateCode("DataRepository"))
-//            maze.steps.takeLast(20).map {
-//                "${it.startLocation.level} "
-//            }
-            return MazeDto(location, maze.steps.takeLast(20).map { it.toString() })
+            return MazeDto(location, maze.steps.takeLast(20).map { it.toString() }, sameSteps = maze.sameSteps)
         }
-        return MazeDto(location)
+        return MazeDto(location, sameSteps = maze.sameSteps)
     }
 }

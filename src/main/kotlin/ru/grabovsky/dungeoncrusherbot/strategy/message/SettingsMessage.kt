@@ -32,6 +32,11 @@ class SettingsMessage(
                 rowPos = 3,
                 text = if(data?.cbEnabled == true) "❌ Отключить учет КБ" else "✅ Включить учет КБ",
                 data = CallbackObject(StateCode.UPDATE_SETTINGS, "CB_ENABLE")
+            ),
+            InlineMarkupDataDto(
+                rowPos = 99,
+                text = "✍\uFE0F Отправить пожелание\\сообщение об ошибке",
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "SEND_REPORT")
             )
         )
     }

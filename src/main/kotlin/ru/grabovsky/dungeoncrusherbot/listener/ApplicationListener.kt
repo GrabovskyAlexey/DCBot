@@ -3,6 +3,7 @@ package ru.grabovsky.dungeoncrusherbot.listener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import ru.grabovsky.dungeoncrusherbot.event.TelegramAdminMessageEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveCallbackEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveMessageEvent
@@ -28,6 +29,12 @@ class ApplicationListener(
             is TelegramStateEvent -> processStateEvent(event)
             is TelegramReceiveCallbackEvent -> processCallbackEvent(event)
         }
+    }
+
+    @EventListener
+    fun onAdminMessageEvent(event: TelegramAdminMessageEvent) {
+        logger.info { "Process admin message with chatId:${event.chatId}, message: ${event.dto}" }
+        telegramBotService.sendAdminMessage(event.chatId, event.dto)
     }
 
     fun processMessageEvent(event: TelegramReceiveMessageEvent) {

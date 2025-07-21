@@ -29,6 +29,8 @@ data class User(
     var resources: Resources? = null,
     @Column(name = "is_blocked")
     var isBlocked: Boolean = false,
+    @Column(name = "is_admin")
+    var isAdmin: Boolean = false,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "settings")
     var settings: UserSettings = UserSettings(),

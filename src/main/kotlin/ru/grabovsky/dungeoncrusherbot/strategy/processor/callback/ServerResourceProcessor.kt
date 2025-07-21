@@ -12,8 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 @Component
 class ServerResourceProcessor(
     private val userService: UserService,
-    private val stateService: StateService,
-    service: StateService,
+    stateService: StateService,
 ) : CallbackProcessor(stateService) {
     override fun process(
         user: TgUser,

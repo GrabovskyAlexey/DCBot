@@ -15,28 +15,46 @@ import kotlin.system.measureTimeMillis
 class MazeServiceImpl(
     private val mazeRepository: MazeRepository
 ) : MazeService {
-    override fun getMaze() {
-        TODO("Not yet implemented")
-    }
 
     override fun processStep(maze: Maze, direction: Direction) {
         measureTimeMillis {
             val currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
             if (currentLocation.level >= 500) return
-            val nextLocation = when (direction) {
-                LEFT -> walkLeft(currentLocation)
-                RIGHT -> walkRight(currentLocation)
-                CENTER -> Location(currentLocation.level + 1, currentLocation.offset, currentLocation.direction)
-            }
-            updateHistory(
-                maze.steps,
-                Step(
-                    direction = direction,
-                    startLocation = currentLocation,
-                    finishLocation = nextLocation
-                )
+            processStep(direction, currentLocation, maze)
+            mazeRepository.saveAndFlush(maze)
+        }.also { logger.info { "Maze process complete: ${it}ms" } }
+    }
+
+    private fun processStep(
+        direction: Direction,
+        currentLocation: Location,
+        maze: Maze
+    ): Location {
+        val nextLocation = when (direction) {
+            LEFT -> walkLeft(currentLocation)
+            RIGHT -> walkRight(currentLocation)
+            CENTER -> Location(currentLocation.level + 1, currentLocation.offset, currentLocation.direction)
+        }
+        updateHistory(
+            maze.steps,
+            Step(
+                direction = direction,
+                startLocation = currentLocation,
+                finishLocation = nextLocation
             )
-            maze.currentLocation = nextLocation
+        )
+        maze.currentLocation = nextLocation
+        return nextLocation
+    }
+
+    override fun processSameStep(maze: Maze, direction: Direction, steps: Int) {
+        measureTimeMillis {
+            var currentLocation = maze.currentLocation ?: Location(0, 0, CENTER)
+            if (currentLocation.level >= 500) return
+            for(i in 0 until steps) {
+                currentLocation = processStep(direction, currentLocation, maze)
+                if (currentLocation.level >= 500) break
+            }
             mazeRepository.saveAndFlush(maze)
         }.also { logger.info { "Maze process complete: ${it}ms" } }
     }
@@ -83,6 +101,11 @@ class MazeServiceImpl(
             }
         }
         return Location(nextLevel, offset, direction)
+    }
+
+    override fun revertSameSteps(maze: Maze) {
+        maze.sameSteps = !maze.sameSteps
+        mazeRepository.saveAndFlush(maze)
     }
 
     private fun updateHistory(history: MutableList<Step>, item: Step) {

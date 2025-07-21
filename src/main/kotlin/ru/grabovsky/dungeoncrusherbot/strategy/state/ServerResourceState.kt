@@ -21,6 +21,8 @@ class ServerResourceState(private val stateService: StateService) : State {
             "SEND_DRAADOR" -> SEND_DRAADOR
             "RECEIVE_DRAADOR" -> RECEIVE_DRAADOR
             "SELL_DRAADOR" -> SELL_DRAADOR
+            "ADD_NOTE" -> ADD_NOTE
+            "REMOVE_NOTE" -> REMOVE_NOTE
             else -> SERVER_RESOURCE
         }
     }

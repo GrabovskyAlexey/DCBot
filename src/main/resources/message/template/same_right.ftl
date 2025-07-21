@@ -1,0 +1,1 @@
+<#include 'step_count.ftl'> вправо

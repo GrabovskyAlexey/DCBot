@@ -6,7 +6,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.processor.Processor
 
 
 abstract class CallbackProcessor(
-    private val stateService: StateService
+    val stateService: StateService
 ): Processor {
     fun execute(user: User, callbackData: String): ExecuteStatus {
         val state =

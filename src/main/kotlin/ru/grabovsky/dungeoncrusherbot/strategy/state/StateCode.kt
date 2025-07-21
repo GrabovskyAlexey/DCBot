@@ -34,11 +34,16 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     RECEIVE_DRAADOR(SEND_MESSAGE, markType = DELETE),
     ADD_NOTE(SEND_MESSAGE, markType = DELETE),
     REMOVE_NOTE(SEND_MESSAGE, markType = DELETE),
+    SEND_REPORT(SEND_MESSAGE, markType = DELETE),
+    SAME_LEFT(SEND_MESSAGE, markType = DELETE),
+    SAME_RIGHT(SEND_MESSAGE, markType = DELETE),
+    SAME_CENTER(SEND_MESSAGE, markType = DELETE),
     WAITING(NOTHING),
     NOTIFICATION_SIEGE(NOTHING),
     NOTIFICATION_MINE(NOTHING),
     RELEASE_NOTES(NOTHING),
     NOTIFY(NOTHING),
+    ADMIN_MESSAGE(NOTHING),
 }
 
 enum class StateAction {

@@ -6,6 +6,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_SETTINGS
 import org.telegram.telegrambots.meta.api.objects.User as tgUser
 
 @Component
@@ -18,6 +19,9 @@ class SettingsProcessor(
         callbackData: String
     ): ExecuteStatus {
         val userFromDb = userService.getUser(user.id)!!
+        val state = stateService.getState(user)
+        state.prevState = UPDATE_SETTINGS
+        stateService.saveState(state)
         when (callbackData) {
             "NOTIFY_SIEGE" -> processNotify(userFromDb, NotificationType.SIEGE)
             "NOTIFY_MINE" -> processNotify(userFromDb, NotificationType.MINE)
