@@ -13,6 +13,8 @@ data class Maze(
     @OneToOne
     @JoinColumn(name = "user_id")
     val user: User,
+    @Column(name = "same_steps")
+    var sameSteps: Boolean = false,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "current_location")
     var currentLocation: Location? = null,

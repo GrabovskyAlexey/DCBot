@@ -9,4 +9,6 @@ interface UserService {
     fun saveUser(user: User)
     fun getUser(userId: Long): User?
     fun processNote(user: User, note: String, state: StateCode)
+    fun clearNotes(user: TgUser)
+    fun sendAdminMessage(user: TgUser, message: String)
 }

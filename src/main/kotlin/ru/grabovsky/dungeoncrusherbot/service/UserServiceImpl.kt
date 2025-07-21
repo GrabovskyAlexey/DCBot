@@ -2,21 +2,25 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.event.TelegramAdminMessageEvent
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
 class UserServiceImpl(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val eventPublisher: ApplicationEventPublisher
 ) : UserService {
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
@@ -64,6 +68,20 @@ class UserServiceImpl(
             ADD_NOTE -> addNote(user, note)
             REMOVE_NOTE -> removeNote(user, note)
             else -> {}
+        }
+    }
+
+    override fun clearNotes(user: TgUser) {
+        val userFromDb = userRepository.findUserByUserId(user.id) ?: return
+        userFromDb.notes.clear()
+        userRepository.saveAndFlush(userFromDb)
+    }
+
+    override fun sendAdminMessage(user: TgUser, message: String) {
+        val dto = AdminMessageDto(user.firstName, user.userName, user.id, message)
+
+        userRepository.findAllNotBlockedUser().filter { it.isAdmin }.forEach {
+            eventPublisher.publishEvent(TelegramAdminMessageEvent(it.userId, dto))
         }
     }
 

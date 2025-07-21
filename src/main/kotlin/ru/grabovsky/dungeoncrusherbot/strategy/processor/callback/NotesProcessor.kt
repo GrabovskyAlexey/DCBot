@@ -12,7 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.User as tgUser
 
 @Component
 class NotesProcessor(
-    private val stateService: StateService,
+    stateService: StateService,
+    private val userService: UserService,
 ) : CallbackProcessor(stateService) {
     override fun process(
         user: tgUser,
@@ -20,6 +21,10 @@ class NotesProcessor(
     ): ExecuteStatus {
         val state = stateService.getState(user)
         state.prevState = UPDATE_NOTES
+
+        when(callbackData) {
+            "CLEAR_NOTES" -> userService.clearNotes(user)
+        }
         stateService.saveState(state)
         return ExecuteStatus.FINAL
     }

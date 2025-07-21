@@ -101,13 +101,33 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                 )
             )
         } else {
-            result.add(
-                InlineMarkupDataDto(
-                    rowPos = 6,
-                    text = "\uD83D\uDEAB Отменить назначение основным",
-                    data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
+            result.addAll(
+                listOf(
+                    InlineMarkupDataDto(
+                        rowPos = 7,
+                        text = "\uD83D\uDEAB Отменить назначение основным",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
+                    ),
+                    InlineMarkupDataDto(
+                        rowPos = 6,
+                        text = "✍\uFE0F Добавить заметку",
+                        data = CallbackObject(
+                            StateCode.SERVER_RESOURCE, "ADD_NOTE"
+                        )
+                    )
                 )
             )
+            if (data.notes.isNotEmpty()) {
+                result.add(
+                    InlineMarkupDataDto(
+                        rowPos = 6,
+                        text = "❌ Удалить заметку",
+                        data = CallbackObject(
+                            StateCode.SERVER_RESOURCE, "REMOVE_NOTE"
+                        )
+                    )
+                )
+            }
         }
 
         if (data?.hasHistory == true) {

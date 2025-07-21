@@ -19,6 +19,7 @@ class VerificationErrorDataRepository(
             ADD_EXCHANGE -> VerificationErrorDto("Введите корректный ник")
             ADD_NOTE -> VerificationErrorDto("Заметка должна содержать только текст")
             REMOVE_NOTE -> VerificationErrorDto("Введите корректный номер заметки для удаления")
+            SAME_LEFT, SAME_CENTER, SAME_RIGHT -> VerificationErrorDto("Введите количество шагов от 1 до 10")
             else -> VerificationErrorDto("Неопознанная ошибка")
         }
     }

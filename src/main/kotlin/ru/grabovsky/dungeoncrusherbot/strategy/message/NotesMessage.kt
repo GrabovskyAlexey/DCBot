@@ -22,7 +22,7 @@ class NotesMessage(
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 1,
-                    text = "Добавить заметку",
+                    text = "✍\uFE0F Добавить заметку",
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES,"ADD_NOTE")
                 )
@@ -32,9 +32,19 @@ class NotesMessage(
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 2,
-                    text = "Удалить заметку",
+                    text = "❌ Удалить заметку",
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES,"REMOVE_NOTE")
+                )
+            )
+        }
+        if(data?.notes?.isNotEmpty() == true) {
+            result.add(
+                InlineMarkupDataDto(
+                    rowPos = 3,
+                    text = "\uD83D\uDDD1 Удалить все заметки",
+                    data = CallbackObject(
+                        StateCode.UPDATE_NOTES,"CLEAR_NOTES")
                 )
             )
         }

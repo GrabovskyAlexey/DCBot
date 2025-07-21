@@ -12,7 +12,7 @@ class NotesState(private val stateService: StateService) : State {
         return when(state.callbackData) {
             "ADD_NOTE" -> ADD_NOTE
             "REMOVE_NOTE" -> REMOVE_NOTE
-            else -> SERVER_RESOURCE
+            else -> UPDATE_NOTES
         }
     }
 }

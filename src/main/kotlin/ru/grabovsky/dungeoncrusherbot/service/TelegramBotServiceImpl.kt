@@ -30,6 +30,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.VerificationService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.MessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
@@ -243,6 +244,19 @@ class TelegramBotServiceImpl(
         updateMessage: UpdateMessage
     ) {
         val message = messageServiceGenerate.process(StateCode.RELEASE_NOTES, updateMessage)
+        val sendMessage = SendMessage.builder()
+            .chatId(chatId)
+            .text(message)
+            .build()
+        sendMessage.enableMarkdown(true)
+        telegramClient.execute(sendMessage)
+    }
+
+    override fun sendAdminMessage(
+        chatId: Long,
+        dto: AdminMessageDto
+    ) {
+        val message = messageServiceGenerate.process(StateCode.ADMIN_MESSAGE, dto)
         val sendMessage = SendMessage.builder()
             .chatId(chatId)
             .text(message)
