@@ -15,7 +15,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         user: User,
         data: ServerResourceDto?
     ): List<InlineMarkupDataDto> {
-        return mutableListOf(
+        val result: MutableList<InlineMarkupDataDto> = mutableListOf(
             InlineMarkupDataDto(
                 rowPos = 2,
                 text = "\uD83E\uDE86 Поймать",
@@ -47,75 +47,78 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                 text = "\uD83D\uDD19 Вернуться",
                 data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
             )
-        ).also {
-            if (data?.exchange != null && !data.main) {
-                it.add(
+        )
+
+        if (data?.exchange != null && !data.main) {
+            result.add(
+                InlineMarkupDataDto(
+                    rowPos = 1,
+                    text = "\uD83D\uDCB1 Удалить обменник",
+                    data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_EXCHANGE")
+                )
+            )
+        }
+
+        if (data?.cbEnabled == true) {
+            result.addAll(
+                listOf(
                     InlineMarkupDataDto(
                         rowPos = 5,
-                        text = "\uD83D\uDCB1 Удалить обменник",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_EXCHANGE")
-                    )
+                        text = "\uD83D\uDE08 Добавить",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_CB")
+                    ),
+                    InlineMarkupDataDto(
+                        rowPos = 5,
+                        text = "\uD83D\uDE08 Удалить",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_CB")
+                    ),
                 )
-            }
-            if (data?.cbEnabled == true) {
-                it.addAll(
-                    listOf(
-                        InlineMarkupDataDto(
-                            rowPos = 5,
-                            text = "\uD83D\uDE08 Добавить",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_CB")
-                        ),
-                        InlineMarkupDataDto(
-                            rowPos = 5,
-                            text = "\uD83D\uDE08 Удалить",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_CB")
-                        ),
-                    )
-                )
-            }
-            if (data?.main != true) {
-                it.addAll(
-                    listOf(
-                        InlineMarkupDataDto(
-                            rowPos = 1,
-                            text = if (data?.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_EXCHANGE")
-                        ),
-                        InlineMarkupDataDto(
-                            rowPos = 3,
-                            text = "\uD83E\uDE86 Получить",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "RECEIVE_DRAADOR")
-                        ),
-                        InlineMarkupDataDto(
-                            rowPos = 3,
-                            text = "\uD83E\uDE86 Передать",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "SEND_DRAADOR")
-                        ),
-                        InlineMarkupDataDto(
-                            rowPos = 6,
-                            text = "\uD83D\uDC51 Сделать основным",
-                            data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
-                        ),
-                    )
-                )
-            } else {
-                it.add(
+            )
+        }
+        if (data?.main != true) {
+            result.addAll(
+                listOf(
+                    InlineMarkupDataDto(
+                        rowPos = 1,
+                        text = if (data?.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_EXCHANGE")
+                    ),
+                    InlineMarkupDataDto(
+                        rowPos = 3,
+                        text = "\uD83E\uDE86 Получить",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "RECEIVE_DRAADOR")
+                    ),
+                    InlineMarkupDataDto(
+                        rowPos = 3,
+                        text = "\uD83E\uDE86 Передать",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "SEND_DRAADOR")
+                    ),
                     InlineMarkupDataDto(
                         rowPos = 6,
-                        text = "\uD83D\uDEAB Отменить назначение основным",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
-                    )
+                        text = "\uD83D\uDC51 Сделать основным",
+                        data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
+                    ),
                 )
-            }
-            if (data?.hasHistory == true) {
-                it.add(
-                    InlineMarkupDataDto(
-                        rowPos = 98,
-                        text = "\uD83D\uDDD2 Последние 20 операций",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "RESOURCE_HISTORY")
-                    )
+            )
+        } else {
+            result.add(
+                InlineMarkupDataDto(
+                    rowPos = 6,
+                    text = "\uD83D\uDEAB Отменить назначение основным",
+                    data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
                 )
-            }
+            )
         }
+
+        if (data?.hasHistory == true) {
+            result.add(
+                InlineMarkupDataDto(
+                    rowPos = 98,
+                    text = "\uD83D\uDDD2 Последние 20 операций",
+                    data = CallbackObject(StateCode.SERVER_RESOURCE, "RESOURCE_HISTORY")
+                )
+            )
+        }
+        return result
     }
 }

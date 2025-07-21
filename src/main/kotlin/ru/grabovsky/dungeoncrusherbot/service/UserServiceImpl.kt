@@ -68,6 +68,9 @@ class UserServiceImpl(
     }
 
     private fun addNote(user: User, note: String) {
+        if(user.notes.size >= 20) {
+            user.notes.removeFirst()
+        }
         user.notes.add(note)
         userRepository.saveAndFlush(user)
     }

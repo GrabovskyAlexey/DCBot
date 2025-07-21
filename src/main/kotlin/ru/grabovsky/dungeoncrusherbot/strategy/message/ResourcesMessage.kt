@@ -27,7 +27,7 @@ class ResourcesMessage(
         for (server in allServers) {
             val markUp = InlineMarkupDataDto(
                 rowPos = row,
-                text = "${if(server.id == mainServerId) "✅" else ""}${server.id}",
+                text = "${if(server.id == mainServerId) "\uD83D\uDC51" else ""}${server.id}",
                 data = CallbackObject(StateCode.RESOURCES, "RESOURCE ${server.id}")
             )
             count++

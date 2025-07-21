@@ -38,7 +38,7 @@ data class ServerResourceData(
     var notifyDisable: Boolean = false,
     var cbCount: Int = 0
 ) {
-    fun hasData() = exchange != null || draadorCount != 0 || voidCount != 0 || balance != 0 || cbCount != 0 || notifyDisable
+    fun hasData(cbEnabled: Boolean) = exchange != null || draadorCount != 0 || voidCount != 0 || balance != 0 || (cbEnabled && cbCount != 0) || notifyDisable
 }
 
 data class ResourcesHistory(

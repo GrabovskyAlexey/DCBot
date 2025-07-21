@@ -15,7 +15,7 @@ class ResourcesDataRepository(
         val resources = userFromDb?.resources
         val cbEnabled = userFromDb?.settings?.resourcesCb ?: false
         return resources?.let { res ->
-            res.data.servers.filterValues { it.hasData() }
+            res.data.servers.filter { it.value.hasData(cbEnabled) || it.key == res.data.mainServerId }
                 .map {
                     ServerResourceDto(
                         it.key,

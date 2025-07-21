@@ -2,7 +2,7 @@
     <#if data.servers?size == 1>
         Ты подписан на уведомления на ${data.servers[0]} сервере
     <#elseif data.servers?size gt 1>
-        Ты подписан на уведомления ${data.servers?join(", ")} на серверах
+        Ты подписан на уведомления на ${data.servers?join(", ")} серверах
     <#else>
         Ты не подписан ни на один сервер
     </#if>
