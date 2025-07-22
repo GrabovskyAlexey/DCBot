@@ -99,7 +99,9 @@ class SchedulerService(
     fun sendClanMineNotification() {
         val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users
-            .filter { user -> user.notificationSubscribe.any { it.type == NotificationType.MINE } }
+            .filter { user ->
+                user.notificationSubscribe.firstOrNull { it.type == NotificationType.MINE }?.enabled == true
+            }
 
         usersToNotify.forEach {
             val result = telegramBotService.sendNotification(it.userId, NotificationType.MINE)
