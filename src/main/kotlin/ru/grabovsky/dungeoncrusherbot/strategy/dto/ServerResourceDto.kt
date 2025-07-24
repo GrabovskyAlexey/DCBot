@@ -12,5 +12,6 @@ data class ServerResourceDto(
     val main: Boolean,
     val cbEnabled: Boolean,
     val cbCount: Int,
-    val notes: List<String> = emptyList()
+    val notes: List<String> = emptyList(),
+    val hasMain: Boolean
 ) : DataModel

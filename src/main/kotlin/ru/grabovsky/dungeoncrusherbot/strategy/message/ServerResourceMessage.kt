@@ -93,11 +93,6 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                         text = "\uD83E\uDE86 Передать",
                         data = CallbackObject(StateCode.SERVER_RESOURCE, "SEND_DRAADOR")
                     ),
-                    InlineMarkupDataDto(
-                        rowPos = 6,
-                        text = "\uD83D\uDC51 Сделать основным",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
-                    ),
                 )
             )
         } else {
@@ -129,7 +124,15 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
                 )
             }
         }
-
+        if (data?.hasMain == false) {
+            result.add(
+                InlineMarkupDataDto(
+                    rowPos = 6,
+                    text = "\uD83D\uDC51 Сделать основным",
+                    data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
+                )
+            )
+        }
         if (data?.hasHistory == true) {
             result.add(
                 InlineMarkupDataDto(

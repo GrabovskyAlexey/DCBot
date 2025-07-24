@@ -42,7 +42,8 @@ class ServerResourceDataRepository(
             main = isMain,
             cbEnabled = userFromDb.settings.resourcesCb,
             cbCount = serverData.cbCount,
-            notes = if (isMain) userFromDb.notes else emptyList()
+            notes = if (isMain) userFromDb.notes else emptyList(),
+            hasMain = resources.data.mainServerId != null
         )
     }
 }

@@ -26,7 +26,8 @@ class ResourcesDataRepository(
                         notifyDisable = it.value.notifyDisable,
                         main = it.key == res.data.mainServerId,
                         cbEnabled = cbEnabled,
-                        cbCount = it.value.cbCount
+                        cbCount = it.value.cbCount,
+                        hasMain = res.data.mainServerId != null
                     )
                 }
         }?.let { ResourceDto(it) } ?: ResourceDto()

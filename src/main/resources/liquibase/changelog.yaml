@@ -27,3 +27,5 @@ databaseChangeLog:
       file: liquibase/changelog/13.release_notes_1_1_3.sql
   - include:
       file: liquibase/changelog/14.release_notes_1_1_4.sql
+  - include:
+      file: liquibase/changelog/15.release_notes_1_1_5.sql
