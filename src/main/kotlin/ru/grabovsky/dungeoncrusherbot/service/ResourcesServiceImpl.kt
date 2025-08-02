@@ -1,9 +1,11 @@
 package ru.grabovsky.dungeoncrusherbot.service
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.meta.api.objects.User
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import ru.grabovsky.dungeoncrusherbot.entity.*
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
@@ -12,10 +14,11 @@ import java.time.LocalDate
 
 @Service
 class ResourcesServiceImpl(
-    private val userService: UserService
+    private val userService: UserService,
+    private val googleFormService: GoogleFormService
 ) : ResourcesService {
 
-    override fun processResources(user: User, value: String, state: StateCode) {
+    override fun processResources(user: TgUser, value: String, state: StateCode) {
         val userFromDb =
             userService.getUser(user.id) ?: throw EntityNotFoundException("User with id: ${user.id} not found")
         val resources = userFromDb.resources
@@ -31,6 +34,11 @@ class ResourcesServiceImpl(
             RECEIVE_DRAADOR -> receiveDraador(resources, value, lastServerId)
             ADD_EXCHANGE -> serverData.exchange = value
             else -> {}
+        }
+
+        if (isNeedSend(state, lastServerId, userFromDb)) {
+            logger.info {"Send info to Watermelon for user: ${userFromDb.userName ?: userFromDb.firstName}"}
+            googleFormService.sendDraadorCount(value, userFromDb.settings.discordUsername!!)
         }
 
         userService.saveUser(userFromDb)
@@ -194,5 +202,12 @@ class ResourcesServiceImpl(
             history.removeFirst()
         }
         history.addLast(item)
+    }
+
+    private fun isNeedSend(state: StateCode, serverId: Int, user: User) =
+        state == ADD_DRAADOR && serverId == 8 && user.settings.sendWatermelon && user.settings.discordUsername != null
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

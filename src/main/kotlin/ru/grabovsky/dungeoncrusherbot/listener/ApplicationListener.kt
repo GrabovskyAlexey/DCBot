@@ -14,6 +14,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.context.LogicContext
 import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.ExecuteStatus.FINAL
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.ExecuteStatus.NOTHING
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
 class ApplicationListener(
@@ -28,13 +29,15 @@ class ApplicationListener(
             is TelegramReceiveMessageEvent -> processMessageEvent(event)
             is TelegramStateEvent -> processStateEvent(event)
             is TelegramReceiveCallbackEvent -> processCallbackEvent(event)
+            is TelegramAdminMessageEvent -> processAdminMessageEvent(event)
         }
     }
 
-    @EventListener
-    fun onAdminMessageEvent(event: TelegramAdminMessageEvent) {
-        logger.info { "Process admin message with chatId:${event.chatId}, message: ${event.dto}" }
-        telegramBotService.sendAdminMessage(event.chatId, event.dto)
+
+    fun processAdminMessageEvent(event: TelegramAdminMessageEvent) {
+        logger.info { "Process admin message with chatId:${event.adminChatId}, message: ${event.dto}" }
+        telegramBotService.sendAdminMessage(event.adminChatId, event.dto)
+        processStateEvent(TelegramStateEvent(event.user, StateCode.SEND_REPORT_COMPLETE))
     }
 
     fun processMessageEvent(event: TelegramReceiveMessageEvent) {

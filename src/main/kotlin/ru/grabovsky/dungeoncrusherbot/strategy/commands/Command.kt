@@ -5,11 +5,11 @@ enum class Command(
     val text: String,
     val order: Int
 ) {
-    START("start", "Начать пользоваться ботом", 1),
-    SUBSCRIBE("subscribe", "Подписаться на осады", 2),
-    MAZE("maze", "Лабиринт", 3),
-    RESOURCES("resources", "Учет ресурсов", 4),
-    NOTES("notes", "Заметки", 5),
-    SETTINGS("settings", "Настройки", 6),
-    HELP("help", "Помощь", 99);
+    START("start", "\uD83D\uDFE2 Начать пользоваться ботом", 1),
+    SUBSCRIBE("subscribe", "\uD83C\uDFF0 Подписаться на осады", 2),
+    MAZE("maze", "\uD83C\uDF00 Лабиринт", 3),
+    RESOURCES("resources", "\uD83D\uDCCA Учет ресурсов", 4),
+    NOTES("notes", "\uD83D\uDDD2 Заметки", 5),
+    SETTINGS("settings", "⚙\uFE0F Настройки", 6),
+    HELP("help", "❓ Помощь", 99);
 }
