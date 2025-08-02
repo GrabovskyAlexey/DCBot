@@ -213,6 +213,8 @@ class TelegramBotServiceImpl(
                         notifyHistoryService.saveHistory(it)
                     }
                 }
+        }.onFailure {
+            error -> logger.warn { "Notification send error: $error" }
         }.isSuccess
     }
 

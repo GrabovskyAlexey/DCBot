@@ -87,7 +87,9 @@ data class User(
 }
 
 data class UserSettings(
-    var resourcesCb: Boolean = false
+    var resourcesCb: Boolean = false,
+    var sendWatermelon: Boolean = false,
+    var discordUsername: String? = null
 )
 
 enum class SettingTypes{

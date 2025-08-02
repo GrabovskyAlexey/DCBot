@@ -38,6 +38,7 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     SAME_LEFT(SEND_MESSAGE, markType = DELETE),
     SAME_RIGHT(SEND_MESSAGE, markType = DELETE),
     SAME_CENTER(SEND_MESSAGE, markType = DELETE),
+    SEND_REPORT_COMPLETE(SEND_MESSAGE),
     WAITING(NOTHING),
     NOTIFICATION_SIEGE(NOTHING),
     NOTIFICATION_MINE(NOTHING),

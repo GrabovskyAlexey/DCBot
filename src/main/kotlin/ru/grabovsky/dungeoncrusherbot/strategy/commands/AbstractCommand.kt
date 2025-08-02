@@ -25,7 +25,7 @@ abstract class AbstractCommand(
                 TelegramStateEvent(user, classStateCode())
             )
         }.onFailure { error ->
-            logger.info { "Error process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id} with error: $error" }
+            logger.info { "Error process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
         }
     }
 

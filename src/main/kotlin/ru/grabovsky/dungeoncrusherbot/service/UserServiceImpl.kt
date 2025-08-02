@@ -4,12 +4,14 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import ru.grabovsky.dungeoncrusherbot.entity.AdminMessage
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.event.TelegramAdminMessageEvent
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
+import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
@@ -20,6 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 @Service
 class UserServiceImpl(
     private val userRepository: UserRepository,
+    private val adminMessageRepository: AdminMessageRepository,
     private val eventPublisher: ApplicationEventPublisher
 ) : UserService {
     override fun createOrUpdateUser(user: TgUser): User {
@@ -27,7 +30,7 @@ class UserServiceImpl(
         val userFromTelegram = UserMapper.fromTelegramToEntity(user)
         when {
             userFromTelegram.userId != entity?.userId -> createNewUser(userFromTelegram)
-            userFromTelegram != entity -> updateUser(entity, user)
+            userFromTelegram != entity || entity.isBlocked -> updateUser(entity, user)
         }
         return userFromTelegram
     }
@@ -79,9 +82,10 @@ class UserServiceImpl(
 
     override fun sendAdminMessage(user: TgUser, message: String) {
         val dto = AdminMessageDto(user.firstName, user.userName, user.id, message)
-
+        val entity = AdminMessage(userId = user.id, message = message)
+        adminMessageRepository.saveAndFlush(entity)
         userRepository.findAllNotBlockedUser().filter { it.isAdmin }.forEach {
-            eventPublisher.publishEvent(TelegramAdminMessageEvent(it.userId, dto))
+            eventPublisher.publishEvent(TelegramAdminMessageEvent(user, SEND_REPORT, it.userId, dto))
         }
     }
 

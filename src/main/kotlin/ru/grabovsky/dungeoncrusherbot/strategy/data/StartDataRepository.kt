@@ -8,5 +8,5 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.StartDto
 class StartDataRepository: AbstractDataRepository<StartDto>() {
     override fun getData(
         user: User
-    ) = StartDto(user.userName)
+    ) = StartDto(username = user.userName?:user.firstName)
 }
