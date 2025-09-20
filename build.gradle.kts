@@ -9,6 +9,7 @@
 group = "ru.grabovsky"
 version = "0.0.1-SNAPSHOT"
 val telegramBotVersion = "9.0.0"
+val testcontainersVersion = "1.20.1"
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
@@ -43,6 +44,8 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
     testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.testcontainers:testcontainers:${testcontainersVersion}")
+    testImplementation("org.testcontainers:postgresql:${testcontainersVersion}")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 kotlin {

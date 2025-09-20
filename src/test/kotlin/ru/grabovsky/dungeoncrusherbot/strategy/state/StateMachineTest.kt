@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.state
+package ru.grabovsky.dungeoncrusherbot.strategy.state
 
 import io.kotest.core.listeners.AfterSpecListener
 import io.kotest.core.listeners.BeforeSpecListener
@@ -21,52 +21,37 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementVoidStat
 import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.ServerResourceState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.settings.SettingsState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.subscribe.SubscribeState
-import java.io.File
+import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.DriverManager
-import java.util.concurrent.TimeUnit
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
-private object ComposeDatabaseExtension : BeforeSpecListener, AfterSpecListener {
-    private val composeDir = File(".")
+private class KPostgreSQLContainer(imageName: String) :
+    PostgreSQLContainer<KPostgreSQLContainer>(imageName)
+
+private object PostgresContainerExtension : BeforeSpecListener, AfterSpecListener {
+    private val container = KPostgreSQLContainer("postgres:16-alpine").apply {
+        withDatabaseName("dc_bot")
+        withUsername("postgres")
+        withPassword("postgres")
+    }
     private var started = false
 
     override suspend fun beforeSpec(spec: Spec) {
         if (!started) {
-            runCompose("up", "-d", "postgres")
-            waitForDatabase()
+            container.start()
             started = true
         }
     }
 
     override suspend fun afterSpec(spec: Spec) {
         if (started) {
-            runCompose("down")
+            container.stop()
             started = false
         }
     }
 
-    private fun runCompose(vararg args: String) {
-        val process = ProcessBuilder(listOf("docker", "compose") + args)
-            .directory(composeDir)
-            .redirectErrorStream(true)
-            .start()
-        if (!process.waitFor(120, TimeUnit.SECONDS) || process.exitValue() != 0) {
-            val output = process.inputStream.bufferedReader().readText()
-            error("docker compose ${args.joinToString(" ")} failed: $output")
-        }
-    }
-
-    private fun waitForDatabase() {
-        repeat(30) {
-            runCatching { assertConnection() }
-                .onSuccess { return }
-            Thread.sleep(1000)
-        }
-        assertConnection()
-    }
-
     fun assertConnection() {
-        DriverManager.getConnection("jdbc:postgresql://localhost:5432/dc_bot", "postgres", "postgres").use { conn ->
+        DriverManager.getConnection(container.jdbcUrl, container.username, container.password).use { conn ->
             conn.createStatement().executeQuery("SELECT 1").use { rs ->
                 rs.next() shouldBe true
             }
@@ -75,7 +60,7 @@ private object ComposeDatabaseExtension : BeforeSpecListener, AfterSpecListener 
 }
 
 class StateMachineTest : ShouldSpec({
-    extension(ComposeDatabaseExtension)
+    extension(PostgresContainerExtension)
 
     val user = mockk<TgUser>(relaxed = true) {
         every { id } returns 101L
@@ -84,7 +69,7 @@ class StateMachineTest : ShouldSpec({
 
     context("database") {
         should("be reachable from tests") {
-            ComposeDatabaseExtension.assertConnection()
+            PostgresContainerExtension.assertConnection()
         }
     }
 
