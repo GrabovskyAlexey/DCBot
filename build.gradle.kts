@@ -69,9 +69,17 @@ jacoco {
 }
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+    classDirectories.setFrom(files(classDirectories.files.map {
+        fileTree(it) {
+            exclude("ru/grabovsky/dungeoncrusherbot/config/**")
+            exclude("ru/grabovsky/dungeoncrusherbot/dto/**")
+            exclude("ru/grabovsky/dungeoncrusherbot/entity/**")
+        }
+    }))
     reports {
         xml.required.set(true)
         html.required.set(true)
     }
 }
+
 
