@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
 import ru.grabovsky.dungeoncrusherbot.dto.ReplyMarkupDto
@@ -24,6 +25,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -41,7 +43,7 @@ import java.time.temporal.ChronoUnit
 
 @Service
 class TelegramBotServiceImpl(
-    private val messageServiceGenerate: MessageGenerateServiceImpl,
+    private val messageServiceGenerate: MessageGenerateService,
     private val telegramClient: TelegramClient,
     private val stateContext: StateContext,
     private val messageContext: MessageContext<DataModel>,
@@ -214,7 +216,9 @@ class TelegramBotServiceImpl(
                     }
                 }
         }.onFailure {
-            error -> logger.warn { "Notification send error: $error" }
+            error ->
+            logger.warn { "Notification send error: $error" }
+            return !(error is TelegramApiRequestException && error.errorCode == 403)
         }.isSuccess
     }
 

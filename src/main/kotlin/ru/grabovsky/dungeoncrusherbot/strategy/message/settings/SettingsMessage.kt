@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
@@ -16,35 +16,43 @@ class SettingsMessage(
 ) : AbstractSendMessage<SettingsDto>(messageGenerateService) {
     override fun inlineButtons(
         user: User,
-        data: SettingsDto?
+        data: SettingsDto?,
     ): List<InlineMarkupDataDto> {
-        return listOf(
+        val buttons = mutableListOf(
             InlineMarkupDataDto(
                 rowPos = 1,
                 text = getText(data, NotificationType.SIEGE),
-                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_SIEGE")
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_SIEGE"),
             ),
             InlineMarkupDataDto(
                 rowPos = 2,
                 text = getText(data, NotificationType.MINE),
-                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_MINE")
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_MINE"),
             ),
             InlineMarkupDataDto(
                 rowPos = 3,
                 text = if (data?.cbEnabled == true) "❌ Отключить учет КБ" else "✅ Включить учет КБ",
-                data = CallbackObject(StateCode.UPDATE_SETTINGS, "CB_ENABLE")
+                data = CallbackObject(StateCode.UPDATE_SETTINGS, "CB_ENABLE"),
             ),
-            InlineMarkupDataDto(
-                rowPos = 99,
-                text = "✍\uFE0F Отправить пожелание\\сообщение об ошибке",
-                data = CallbackObject(StateCode.UPDATE_SETTINGS, "SEND_REPORT")
-            )
         )
+
+        buttons += InlineMarkupDataDto(
+            rowPos = 4,
+            text = if (data?.quickResourceEnabled == true) "❌ Отключить быстрый учет" else "✅ Включить быстрый учет",
+            data = CallbackObject(StateCode.UPDATE_SETTINGS, "QUICK_RESOURCES"),
+        )
+
+        buttons += InlineMarkupDataDto(
+            rowPos = 99,
+            text = "✍\uFE0F Отправить пожелание\\сообщение об ошибке",
+            data = CallbackObject(StateCode.UPDATE_SETTINGS, "SEND_REPORT"),
+        )
+
+        return buttons
     }
 
-
     private fun getText(dto: SettingsDto?, type: NotificationType): String {
-        return when(type) {
+        return when (type) {
             NotificationType.SIEGE -> {
                 if (dto?.siegeEnabled == true) {
                     "\uD83D\uDCF4Включить в момент осады"

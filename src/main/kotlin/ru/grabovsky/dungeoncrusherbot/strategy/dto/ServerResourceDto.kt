@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.dto
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.dto
 
 data class ServerResourceDto(
     val id: Int,
@@ -11,7 +11,8 @@ data class ServerResourceDto(
     val notifyDisable: Boolean = false,
     val main: Boolean,
     val cbEnabled: Boolean,
+    val quickResourceEnabled: Boolean,
     val cbCount: Int,
     val notes: List<String> = emptyList(),
-    val hasMain: Boolean
+    val hasMain: Boolean,
 ) : DataModel

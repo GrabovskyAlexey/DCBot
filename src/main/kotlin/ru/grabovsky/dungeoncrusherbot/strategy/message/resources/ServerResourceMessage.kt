@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.message.resources
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.resources
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
@@ -8,141 +8,83 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
 
 @Component
 class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
     AbstractSendMessage<ServerResourceDto>(messageGenerateService) {
     override fun inlineButtons(
         user: User,
-        data: ServerResourceDto?
+        data: ServerResourceDto?,
     ): List<InlineMarkupDataDto> {
-        val result: MutableList<InlineMarkupDataDto> = mutableListOf(
-            InlineMarkupDataDto(
-                rowPos = 2,
-                text = "\uD83E\uDE86 Поймать",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_DRAADOR")
-            ),
-            InlineMarkupDataDto(
-                rowPos = 2,
-                text = "\uD83E\uDE86 Продать",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "SELL_DRAADOR")
-            ),
+        val dto = data ?: return emptyList()
+        val buttons = mutableListOf<InlineMarkupDataDto>()
 
-            InlineMarkupDataDto(
-                rowPos = 4,
-                text = "\uD83D\uDFE3 Добавить",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_VOID")
-            ),
-            InlineMarkupDataDto(
-                rowPos = 4,
-                text = "\uD83D\uDFE3 Удалить",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_VOID")
-            ),
-            InlineMarkupDataDto(
-                rowPos = 97,
-                text = if (data?.notifyDisable == true) "❌ Продолжить ловлю" else "✅ Закончил ловить",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "DISABLE_NOTIFY")
-            ),
-            InlineMarkupDataDto(
-                rowPos = 99,
-                text = "\uD83D\uDD19 Вернуться",
-                data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
+        fun add(row: Int, text: String, state: StateCode, payload: String = "") {
+            buttons += InlineMarkupDataDto(rowPos = row, text = text, data = CallbackObject(state, payload))
+        }
+
+        add(2, "\uD83E\uDE86 Поймать", SERVER_RESOURCE, "ADD_DRAADOR")
+        if (dto.quickResourceEnabled) add(2, "+1", INCREMENT_DRAADOR)
+        add(2, "\uD83E\uDE86 Продать", SERVER_RESOURCE, "SELL_DRAADOR")
+        if (dto.quickResourceEnabled) add(2, "-1", DECREMENT_DRAADOR)
+
+        if (!dto.main) {
+            add(3, "\uD83E\uDE86 Получить", SERVER_RESOURCE, "RECEIVE_DRAADOR")
+            if (dto.quickResourceEnabled) add(3, "+1", QUICK_RECEIVE_DRAADOR)
+            add(3, "\uD83E\uDE86 Передать", SERVER_RESOURCE, "SEND_DRAADOR")
+            if (dto.quickResourceEnabled) add(3, "-1", QUICK_SEND_DRAADOR)
+        }
+
+        add(4, "\uD83D\uDFE3 Добавить", SERVER_RESOURCE, "ADD_VOID")
+        if (dto.quickResourceEnabled) add(4, "+1", INCREMENT_VOID)
+        add(4, "\uD83D\uDFE3 Удалить", SERVER_RESOURCE, "REMOVE_VOID")
+        if (dto.quickResourceEnabled) add(4, "-1", DECREMENT_VOID)
+
+        if (dto.cbEnabled) {
+            add(5, "\uD83D\uDE08 Добавить", SERVER_RESOURCE, "ADD_CB")
+            if (dto.quickResourceEnabled) add(5, "+1", INCREMENT_CB)
+            add(5, "\uD83D\uDE08 Удалить", SERVER_RESOURCE, "REMOVE_CB")
+            if (dto.quickResourceEnabled) add(5, "-1", DECREMENT_CB)
+        }
+
+        if (dto.exchange != null && !dto.main) {
+            add(1, "\uD83D\uDCB1 Удалить обменник", SERVER_RESOURCE, "REMOVE_EXCHANGE")
+        }
+        if (!dto.main) {
+            add(
+                1,
+                if (dto.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник",
+                SERVER_RESOURCE,
+                "ADD_EXCHANGE"
             )
+        }
+
+        if (dto.main) {
+            add(6, "✍\uFE0F Добавить заметку", SERVER_RESOURCE, "ADD_NOTE")
+            if (dto.notes.isNotEmpty()) {
+                add(6, "❌ Удалить заметку", SERVER_RESOURCE, "REMOVE_NOTE")
+            }
+            add(7, "\uD83D\uDEAB Отменить назначение основным", SERVER_RESOURCE, "REMOVE_MAIN")
+        } else if (!dto.hasMain) {
+            add(6, "\uD83D\uDC51 Сделать основным", SERVER_RESOURCE, "SET_MAIN")
+        }
+
+        if (dto.hasHistory) {
+            add(98, "\uD83D\uDDD2 Последние 20 операций", SERVER_RESOURCE, "RESOURCE_HISTORY")
+        }
+
+        buttons += InlineMarkupDataDto(
+            rowPos = 97,
+            text = if (dto.notifyDisable) "\u274C Продолжить ловлю" else "\u2705 Закончил ловить",
+            data = CallbackObject(SERVER_RESOURCE, "DISABLE_NOTIFY"),
+        )
+        buttons += InlineMarkupDataDto(
+            rowPos = 99,
+            text = "\uD83D\uDD19 Вернуться",
+            data = CallbackObject(SERVER_RESOURCE, "BACK"),
         )
 
-        if (data?.exchange != null && !data.main) {
-            result.add(
-                InlineMarkupDataDto(
-                    rowPos = 1,
-                    text = "\uD83D\uDCB1 Удалить обменник",
-                    data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_EXCHANGE")
-                )
-            )
-        }
-
-        if (data?.cbEnabled == true) {
-            result.addAll(
-                listOf(
-                    InlineMarkupDataDto(
-                        rowPos = 5,
-                        text = "\uD83D\uDE08 Добавить",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_CB")
-                    ),
-                    InlineMarkupDataDto(
-                        rowPos = 5,
-                        text = "\uD83D\uDE08 Удалить",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_CB")
-                    ),
-                )
-            )
-        }
-        if (data?.main != true) {
-            result.addAll(
-                listOf(
-                    InlineMarkupDataDto(
-                        rowPos = 1,
-                        text = if (data?.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "ADD_EXCHANGE")
-                    ),
-                    InlineMarkupDataDto(
-                        rowPos = 3,
-                        text = "\uD83E\uDE86 Получить",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "RECEIVE_DRAADOR")
-                    ),
-                    InlineMarkupDataDto(
-                        rowPos = 3,
-                        text = "\uD83E\uDE86 Передать",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "SEND_DRAADOR")
-                    ),
-                )
-            )
-        } else {
-            result.addAll(
-                listOf(
-                    InlineMarkupDataDto(
-                        rowPos = 7,
-                        text = "\uD83D\uDEAB Отменить назначение основным",
-                        data = CallbackObject(StateCode.SERVER_RESOURCE, "REMOVE_MAIN")
-                    ),
-                    InlineMarkupDataDto(
-                        rowPos = 6,
-                        text = "✍\uFE0F Добавить заметку",
-                        data = CallbackObject(
-                            StateCode.SERVER_RESOURCE, "ADD_NOTE"
-                        )
-                    )
-                )
-            )
-            if (data.notes.isNotEmpty()) {
-                result.add(
-                    InlineMarkupDataDto(
-                        rowPos = 6,
-                        text = "❌ Удалить заметку",
-                        data = CallbackObject(
-                            StateCode.SERVER_RESOURCE, "REMOVE_NOTE"
-                        )
-                    )
-                )
-            }
-        }
-        if (data?.hasMain == false) {
-            result.add(
-                InlineMarkupDataDto(
-                    rowPos = 6,
-                    text = "\uD83D\uDC51 Сделать основным",
-                    data = CallbackObject(StateCode.SERVER_RESOURCE, "SET_MAIN")
-                )
-            )
-        }
-        if (data?.hasHistory == true) {
-            result.add(
-                InlineMarkupDataDto(
-                    rowPos = 98,
-                    text = "\uD83D\uDDD2 Последние 20 операций",
-                    data = CallbackObject(StateCode.SERVER_RESOURCE, "RESOURCE_HISTORY")
-                )
-            )
-        }
-        return result
+        return buttons
     }
 }

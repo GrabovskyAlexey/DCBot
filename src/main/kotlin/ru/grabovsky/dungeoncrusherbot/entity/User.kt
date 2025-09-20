@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.entity
+﻿package ru.grabovsky.dungeoncrusherbot.entity
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -89,9 +89,11 @@ data class User(
 data class UserSettings(
     var resourcesCb: Boolean = false,
     var sendWatermelon: Boolean = false,
+    var resourcesQuickChange: Boolean = false,
     var discordUsername: String? = null
 )
 
 enum class SettingTypes{
     CB
 }
+

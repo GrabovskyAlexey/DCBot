@@ -1,0 +1,216 @@
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.state
+
+import io.kotest.core.listeners.AfterSpecListener
+import io.kotest.core.listeners.BeforeSpecListener
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
+import ru.grabovsky.dungeoncrusherbot.entity.UserState
+import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
+import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
+import ru.grabovsky.dungeoncrusherbot.strategy.state.maze.MazeState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementCbState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementDraadorState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementVoidState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementCbState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementDraadorState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementVoidState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.ServerResourceState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.settings.SettingsState
+import ru.grabovsky.dungeoncrusherbot.strategy.state.subscribe.SubscribeState
+import java.io.File
+import java.sql.DriverManager
+import java.util.concurrent.TimeUnit
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
+
+private object ComposeDatabaseExtension : BeforeSpecListener, AfterSpecListener {
+    private val composeDir = File(".")
+    private var started = false
+
+    override suspend fun beforeSpec(spec: Spec) {
+        if (!started) {
+            runCompose("up", "-d", "postgres")
+            waitForDatabase()
+            started = true
+        }
+    }
+
+    override suspend fun afterSpec(spec: Spec) {
+        if (started) {
+            runCompose("down")
+            started = false
+        }
+    }
+
+    private fun runCompose(vararg args: String) {
+        val process = ProcessBuilder(listOf("docker", "compose") + args)
+            .directory(composeDir)
+            .redirectErrorStream(true)
+            .start()
+        if (!process.waitFor(120, TimeUnit.SECONDS) || process.exitValue() != 0) {
+            val output = process.inputStream.bufferedReader().readText()
+            error("docker compose ${args.joinToString(" ")} failed: $output")
+        }
+    }
+
+    private fun waitForDatabase() {
+        repeat(30) {
+            runCatching { assertConnection() }
+                .onSuccess { return }
+            Thread.sleep(1000)
+        }
+        assertConnection()
+    }
+
+    fun assertConnection() {
+        DriverManager.getConnection("jdbc:postgresql://localhost:5432/dc_bot", "postgres", "postgres").use { conn ->
+            conn.createStatement().executeQuery("SELECT 1").use { rs ->
+                rs.next() shouldBe true
+            }
+        }
+    }
+}
+
+class StateMachineTest : ShouldSpec({
+    extension(ComposeDatabaseExtension)
+
+    val user = mockk<TgUser>(relaxed = true) {
+        every { id } returns 101L
+        every { firstName } returns "Tester"
+    }
+
+    context("database") {
+        should("be reachable from tests") {
+            ComposeDatabaseExtension.assertConnection()
+        }
+    }
+
+    context("StateContext") {
+        val ctx = StateContext(listOf(StartState(), HelpState(), SendReportState()))
+
+        should("return next state for known state code") {
+            ctx.next(user, StateCode.START) shouldBe StateCode.WAITING
+        }
+
+        should("return null for unknown state code") {
+            ctx.next(user, StateCode.NOTIFY) shouldBe null
+        }
+    }
+
+    context("Start and SendReport states") {
+        should("lead to WAITING from StartState") {
+            StartState().getNextState(user) shouldBe StateCode.WAITING
+        }
+
+        should("lead to WAITING from SendReportState") {
+            SendReportState().getNextState(user) shouldBe StateCode.WAITING
+        }
+    }
+
+    context("VerifyState") {
+        val stateService = mockk<StateService>()
+        val verifyState = VerifyState(stateService)
+
+        should("go to success when verification result is true") {
+            val verification = VerificationRequest(message = "ok", stateCode = StateCode.ADD_NOTE).apply { result = true }
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = verification)
+            verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_SUCCESS
+        }
+
+        should("go to error when verification result is false") {
+            val verification = VerificationRequest(message = "bad", stateCode = StateCode.ADD_NOTE, result = false)
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = verification)
+            verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_ERROR
+        }
+
+        should("go to error when verification is missing") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = null)
+            verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_ERROR
+        }
+    }
+
+    context("MazeState") {
+        val stateService = mockk<StateService>()
+        val mazeState = MazeState(stateService)
+
+        should("return SAME_LEFT when callback requests it") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "SAME_LEFT")
+            mazeState.getNextState(user) shouldBe StateCode.SAME_LEFT
+        }
+
+        should("return CONFIRM_REFRESH_MAZE when callback is REFRESH_MAZE") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "REFRESH_MAZE")
+            mazeState.getNextState(user) shouldBe StateCode.CONFIRM_REFRESH_MAZE
+        }
+
+        should("default to UPDATE_MAZE") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "UNKNOWN")
+            mazeState.getNextState(user) shouldBe StateCode.UPDATE_MAZE
+        }
+    }
+
+    context("ServerResourceState") {
+        val stateService = mockk<StateService>()
+        val serverState = ServerResourceState(stateService)
+
+        should("map BACK to UPDATE_RESOURCES") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "BACK")
+            serverState.getNextState(user) shouldBe StateCode.UPDATE_RESOURCES
+        }
+
+        should("map REMOVE_EXCHANGE to its state") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "REMOVE_EXCHANGE")
+            serverState.getNextState(user) shouldBe StateCode.REMOVE_EXCHANGE
+        }
+
+        should("fallback to SERVER_RESOURCE when callback unknown") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "UNKNOWN")
+            serverState.getNextState(user) shouldBe StateCode.SERVER_RESOURCE
+        }
+    }
+
+    context("SettingsState") {
+        val stateService = mockk<StateService>()
+        val settingsState = SettingsState(stateService)
+
+        should("route SEND_REPORT callback") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SETTINGS, callbackData = "SEND_REPORT")
+            settingsState.getNextState(user) shouldBe StateCode.SEND_REPORT
+        }
+
+        should("default to UPDATE_SETTINGS on other callbacks") {
+            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SETTINGS, callbackData = "OTHER")
+            settingsState.getNextState(user) shouldBe StateCode.UPDATE_SETTINGS
+        }
+    }
+
+    context("SubscribeState") {
+        should("always go to UPDATE_SUBSCRIBE") {
+            SubscribeState().getNextState(user) shouldBe StateCode.UPDATE_SUBSCRIBE
+        }
+    }
+
+    context("Increment and decrement states") {
+        should("increment draador lead to update") {
+            IncrementDraadorState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+        should("decrement draador lead to update") {
+            DecrementDraadorState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+        should("increment void lead to update") {
+            IncrementVoidState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+        should("decrement void lead to update") {
+            DecrementVoidState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+        should("increment cb lead to update") {
+            IncrementCbState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+        should("decrement cb lead to update") {
+            DecrementCbState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
+        }
+    }
+})

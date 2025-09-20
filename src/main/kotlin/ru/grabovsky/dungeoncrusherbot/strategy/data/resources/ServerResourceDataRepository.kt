@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.data.resources
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.data.resources
 
 import org.springframework.stereotype.Repository
 import org.telegram.telegrambots.meta.api.objects.User
@@ -12,14 +12,14 @@ import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
 @Repository
 class ServerResourceDataRepository(
     private val userService: UserService,
-    private val stateService: StateService
+    private val stateService: StateService,
 ) : AbstractDataRepository<ServerResourceDto>() {
     override fun getData(user: User): ServerResourceDto {
         val userFromDb = userService.getUser(user.id)
         val resources = userFromDb?.resources
         val lastServerId = resources?.lastServerId
             ?: throw IllegalStateException("Not found last server id for resources user: ${user.userName ?: user.firstName}")
-        val serverData = resources.data.servers.computeIfAbsent(lastServerId) { key -> ServerResourceData() }
+        val serverData = resources.data.servers.computeIfAbsent(lastServerId) { ServerResourceData() }
         val state = stateService.getState(user)
 
         val history = resources.history[lastServerId]
@@ -31,20 +31,22 @@ class ServerResourceDataRepository(
         }
         userService.saveUser(userFromDb)
         val isMain = lastServerId == resources.data.mainServerId
+        val quickChangeEnabled = userFromDb.settings.resourcesQuickChange
         return ServerResourceDto(
-            lastServerId,
-            serverData.draadorCount,
-            serverData.voidCount,
-            serverData.balance,
-            serverData.exchange,
-            historyItems,
-            history != null,
+            id = lastServerId,
+            draadorCount = serverData.draadorCount,
+            voidCount = serverData.voidCount,
+            balance = serverData.balance,
+            exchange = serverData.exchange,
+            history = historyItems,
+            hasHistory = history != null,
             notifyDisable = serverData.notifyDisable,
             main = isMain,
             cbEnabled = userFromDb.settings.resourcesCb,
+            quickResourceEnabled = quickChangeEnabled,
             cbCount = serverData.cbCount,
             notes = if (isMain) userFromDb.notes else emptyList(),
-            hasMain = resources.data.mainServerId != null
+            hasMain = resources.data.mainServerId != null,
         )
     }
 }

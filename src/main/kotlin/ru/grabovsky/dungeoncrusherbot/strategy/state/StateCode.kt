@@ -1,9 +1,15 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.state
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.state
 
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 
-enum class StateCode(val action: StateAction, val pause: Boolean = true, val template: String? = null, val markType: MarkType = NONE, val linkedStateCode: StateCode? = null) {
+enum class StateCode(
+    val action: StateAction,
+    val pause: Boolean = true,
+    val template: String? = null,
+    val markType: MarkType = NONE,
+    val linkedStateCode: StateCode? = null,
+) {
     START(SEND_MESSAGE, false),
     SUBSCRIBE(SEND_MESSAGE, markType = UPDATE),
     UPDATE_SUBSCRIBE(UPDATE_MESSAGE, linkedStateCode = SUBSCRIBE),
@@ -19,7 +25,7 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     UPDATE_NOTES(UPDATE_MESSAGE, linkedStateCode = NOTES),
     VERIFY(VERIFICATION, false),
     VERIFICATION_ERROR(SEND_MESSAGE, false, markType = DELETE),
-    VERIFICATION_SUCCESS(DELETE_MESSAGES,false),
+    VERIFICATION_SUCCESS(DELETE_MESSAGES, false),
     SERVER_RESOURCE(UPDATE_MESSAGE, linkedStateCode = RESOURCES),
     UPDATE_SERVER_RESOURCE(UPDATE_MESSAGE, linkedStateCode = RESOURCES),
     ADD_EXCHANGE(SEND_MESSAGE, markType = DELETE),
@@ -32,6 +38,14 @@ enum class StateCode(val action: StateAction, val pause: Boolean = true, val tem
     SELL_DRAADOR(SEND_MESSAGE, markType = DELETE),
     SEND_DRAADOR(SEND_MESSAGE, markType = DELETE),
     RECEIVE_DRAADOR(SEND_MESSAGE, markType = DELETE),
+    INCREMENT_DRAADOR(NOTHING, pause = false),
+    DECREMENT_DRAADOR(NOTHING, pause = false),
+    INCREMENT_VOID(NOTHING, pause = false),
+    DECREMENT_VOID(NOTHING, pause = false),
+    INCREMENT_CB(NOTHING, pause = false),
+    DECREMENT_CB(NOTHING, pause = false),
+    QUICK_RECEIVE_DRAADOR(NOTHING, pause = false),
+    QUICK_SEND_DRAADOR(NOTHING, pause = false),
     ADD_NOTE(SEND_MESSAGE, markType = DELETE),
     REMOVE_NOTE(SEND_MESSAGE, markType = DELETE),
     SEND_REPORT(SEND_MESSAGE, markType = DELETE),
@@ -52,9 +66,11 @@ enum class StateAction {
     UPDATE_MESSAGE,
     DELETE_MESSAGES,
     VERIFICATION,
-    NOTHING
+    NOTHING,
 }
 
-enum class MarkType{
-    DELETE, UPDATE, NONE
+enum class MarkType {
+    DELETE,
+    UPDATE,
+    NONE,
 }
