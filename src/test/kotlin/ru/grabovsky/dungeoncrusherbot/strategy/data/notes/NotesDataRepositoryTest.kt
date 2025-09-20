@@ -12,7 +12,7 @@ class NotesDataRepositoryTest : ShouldSpec({
     val userService = mockk<UserService>()
     val repository = NotesDataRepository(userService)
 
-    should("возвращать список заметок пользователя") {
+    should("return user notes from repository") {
         val entityUser = User(
             userId = 610L,
             firstName = "Notes",

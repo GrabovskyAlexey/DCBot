@@ -23,7 +23,7 @@ class MazeDataRepositoryTest : ShouldSpec({
     val stateService = mockk<StateService>()
     val repository = MazeDataRepository(userService, stateService)
 
-    should("возвращать текущую позицию лабиринта без истории по умолчанию") {
+    should("return current maze location without history by default") {
         val entityUser = User(
             userId = 620L,
             firstName = "Maze",
@@ -46,7 +46,7 @@ class MazeDataRepositoryTest : ShouldSpec({
         dto.sameSteps shouldBe false
     }
 
-    should("возвращать историю ходов при запросе через callback") {
+    should("include history when callback requests it") {
         val entityUser = User(
             userId = 621L,
             firstName = "Maze",

@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class MazeStateTest : ShouldSpec({
     val user = mockk<TgUser>(relaxed = true) { every { id } returns 802L }
 
-    should("выбирать состояние на основе callback данных") {
+    should("select next state based on callback data") {
         val stateService = mockk<StateService>()
         val userState = UserState(userId = 802L, state = StateCode.MAZE)
         every { stateService.getState(user) } returns userState
@@ -34,7 +34,7 @@ class MazeStateTest : ShouldSpec({
         state.getNextState(user) shouldBe StateCode.UPDATE_MAZE
     }
 
-    should("возвращать VERIFY для состояний одинаковых шагов") {
+    should("return VERIFY for same-step states and UPDATE_MAZE after confirm") {
         SameLeftState().getNextState(user) shouldBe StateCode.VERIFY
         SameRightState().getNextState(user) shouldBe StateCode.VERIFY
         SameCenterState().getNextState(user) shouldBe StateCode.VERIFY

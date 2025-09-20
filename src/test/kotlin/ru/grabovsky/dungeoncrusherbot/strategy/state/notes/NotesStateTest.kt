@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class NotesStateTest : ShouldSpec({
     val user = mockk<TgUser>(relaxed = true) { every { id } returns 801L }
 
-    should("переходить в нужное состояние в зависимости от callback") {
+    should("route next state according to callback data") {
         val stateService = mockk<StateService>()
         val state = UserState(userId = 801L, state = StateCode.NOTES)
         every { stateService.getState(user) } returns state
@@ -29,7 +29,7 @@ class NotesStateTest : ShouldSpec({
         notesState.getNextState(user) shouldBe StateCode.UPDATE_NOTES
     }
 
-    should("возвращать VERIFY для AddNoteState и RemoveNoteState") {
+    should("return VERIFY for add and remove note states") {
         AddNoteState().getNextState(user) shouldBe StateCode.VERIFY
         RemoveNoteState().getNextState(user) shouldBe StateCode.VERIFY
     }

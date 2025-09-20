@@ -15,7 +15,7 @@ class SettingsDataRepositoryTest : ShouldSpec({
     val userService = mockk<UserService>()
     val repository = SettingsDataRepository(userService)
 
-    should("отражать включенные подписки и настройки ресурсов") {
+    should("reflect enable flags from user settings") {
         val entityUser = User(
             userId = 600L,
             firstName = "Settings",
@@ -27,9 +27,7 @@ class SettingsDataRepositoryTest : ShouldSpec({
             notificationSubscribe.add(NotificationSubscribe(user = this, type = NotificationType.MINE, enabled = false))
         }
         every { userService.getUser(600L) } returns entityUser
-        val tgUser = mockk<TgUser>(relaxed = true) {
-            every { id } returns 600L
-        }
+        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 600L }
 
         val dto = repository.getData(tgUser)
 

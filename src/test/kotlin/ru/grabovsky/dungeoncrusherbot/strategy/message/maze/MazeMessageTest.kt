@@ -17,7 +17,7 @@ class MazeMessageTest : ShouldSpec({
     val message = MazeMessage(messageService)
     val user = mockk<TgUser>(relaxed = true)
 
-    should("возвращать шаги для одиночных направлений при выключенном режиме sameSteps") {
+    should("offer single-step controls when sameSteps disabled") {
         val buttons = message.inlineButtons(user, MazeDto(sameSteps = false))
 
         buttons.shouldHaveSize(6)
@@ -32,7 +32,7 @@ class MazeMessageTest : ShouldSpec({
         buttons.first { it.data.data == "REFRESH_MAZE" }.rowPos shouldBe 4
     }
 
-    should("возвращать кнопки повторяющихся шагов при включенном режиме sameSteps") {
+    should("offer repeated-step controls when sameSteps enabled") {
         val buttons = message.inlineButtons(user, MazeDto(sameSteps = true))
 
         buttons.shouldHaveSize(6)

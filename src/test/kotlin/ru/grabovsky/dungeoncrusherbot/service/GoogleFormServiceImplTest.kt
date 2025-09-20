@@ -9,7 +9,7 @@ class GoogleFormServiceImplTest : ShouldSpec({
     val client = mockk<GoogleFormClient>(relaxed = true)
     val service = GoogleFormServiceImpl(client)
 
-    should("отправлять данные в Google Form") {
+    should("forward count and discord name to Google Form") {
         service.sendDraadorCount("15", "tester#1234")
 
         verify {

@@ -7,7 +7,7 @@ import io.mockk.mockk
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class UserMapperTest : ShouldSpec({
-    should("преобразовывать telegram user в entity User") {
+    should("map telegram user to entity User") {
         val tgUser = mockk<TgUser>()
         every { tgUser.id } returns 321L
         every { tgUser.firstName } returns "John"

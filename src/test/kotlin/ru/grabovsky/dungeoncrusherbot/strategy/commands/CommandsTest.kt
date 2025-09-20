@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
+import io.mockk.match
 import io.mockk.mockk
 import io.mockk.justRun
 import io.mockk.verify
@@ -22,7 +23,7 @@ class CommandsTest : ShouldSpec({
     val telegramClient = mockk<TelegramClient>(relaxed = true)
     val chat = mockk<Chat>(relaxed = true)
 
-    should("создавать пользователя и публиковать событие для StartCommand") {
+    should("create or update user and publish state for StartCommand") {
         val userService = mockk<UserService>()
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val command = StartCommand(userService, publisher)
@@ -39,11 +40,15 @@ class CommandsTest : ShouldSpec({
         }
     }
 
-    should("создавать ресурсы если их нет при вызове ResourcesCommand") {
+    should("create resources when none exist for ResourcesCommand") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
         val command = ResourcesCommand(publisher, userService)
-        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 200L; every { userName } returns "tester"; every { firstName } returns "Tester" }
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 200L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
         val entityUser = User(200L, "Tester", null, "tester")
         every { userService.getUser(200L) } returns entityUser
         justRun { userService.saveUser(entityUser) }
@@ -54,11 +59,15 @@ class CommandsTest : ShouldSpec({
         verify { userService.saveUser(match { it.resources is Resources }) }
     }
 
-    should("не пересоздавать ресурсы если они уже есть") {
+    should("skip creation if resources already present") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
         val command = ResourcesCommand(publisher, userService)
-        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 201L; every { userName } returns "tester"; every { firstName } returns "Tester" }
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 201L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
         val entityUser = User(201L, "Tester", null, "tester").apply {
             resources = Resources(user = this)
         }
@@ -69,11 +78,15 @@ class CommandsTest : ShouldSpec({
         verify(exactly = 0) { userService.saveUser(any()) }
     }
 
-    should("бросать исключение если пользователь не найден для ResourcesCommand") {
+    should("throw if user not found for ResourcesCommand") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
         val command = ResourcesCommand(publisher, userService)
-        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 202L; every { userName } returns "tester"; every { firstName } returns "Tester" }
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 202L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
         every { userService.getUser(202L) } returns null
 
         shouldThrow<EntityNotFoundException> {
@@ -81,4 +94,3 @@ class CommandsTest : ShouldSpec({
         }
     }
 })
-

@@ -16,7 +16,7 @@ class ResourcesDataRepositoryTest : ShouldSpec({
     val userService = mockk<UserService>()
     val repository = ResourcesDataRepository(userService)
 
-    should("возвращать сервера с данными и текущий главный сервер") {
+    should("include servers with data and highlight the main server") {
         val entityUser = User(
             userId = 400L,
             firstName = "Data",

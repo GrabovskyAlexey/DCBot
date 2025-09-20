@@ -2,12 +2,14 @@
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.VerificationErrorDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -23,15 +25,18 @@ class VerificationErrorDataRepositoryTest : ShouldSpec({
         every { stateService.getState(tgUser) } returns state
     }
 
-    should("возвращать сообщение для разных состояний") {
+    should("produce messages for various invalid inputs") {
         listOf(StateCode.ADD_DRAADOR, StateCode.ADD_EXCHANGE, StateCode.ADD_NOTE).forEach { code ->
             stub(code)
-            repository.getData(tgUser).message.isNotBlank().shouldBeTrue()
+            val dto = repository.getData(tgUser)
+            dto shouldBe VerificationErrorDto(dto.message)
+            dto.message.isNotBlank().shouldBeTrue()
         }
     }
 
-    should("возвращать сообщение по умолчанию если данных нет") {
+    should("return default message when verification result absent") {
         stub(null)
-        repository.getData(tgUser).message.isNotBlank().shouldBeTrue()
+        val dto = repository.getData(tgUser)
+        dto.message.isNotBlank().shouldBeTrue()
     }
 })

@@ -17,7 +17,7 @@ class NotesMessageTest : ShouldSpec({
     val message = NotesMessage(messageService)
     val user = mockk<TgUser>(relaxed = true)
 
-    should("предлагать добавить заметку когда их меньше 20") {
+    should("offer add button when note list below limit") {
         val dto = NotesDto(notes = emptyList())
 
         val buttons = message.inlineButtons(user, dto)
@@ -27,7 +27,7 @@ class NotesMessageTest : ShouldSpec({
         buttons.map { it.data.data }.shouldNotContain("CLEAR_NOTES")
     }
 
-    should("предлагать удалить и очистить когда заметок максимум и возврат к серверу") {
+    should("offer remove and clear options when list is full and coming from server view") {
         val dto = NotesDto(notes = (1..20).map { "note $it" }, fromServer = true)
 
         val buttons = message.inlineButtons(user, dto)

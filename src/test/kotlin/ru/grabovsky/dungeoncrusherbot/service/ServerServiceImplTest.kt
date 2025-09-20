@@ -13,21 +13,23 @@ class ServerServiceImplTest : ShouldSpec({
     val repository = mockk<ServerRepository>()
     val service = ServerServiceImpl(repository)
 
-    should("возвращать сервер по идентификатору") {
+    should("return server when it exists") {
         val server = Server(7, "Seven")
         every { repository.findServerById(7) } returns server
 
         service.getServerById(7) shouldBe server
     }
 
-    should("бросать исключение если сервер не найден") {
+    should("throw when server is missing") {
         every { repository.findServerById(99) } returns null
+
         shouldThrow<EntityNotFoundException> { service.getServerById(99) }
     }
 
-    should("возвращать все сервера") {
+    should("delegate to repository for all servers") {
         val servers = listOf(Server(1, "One"))
         every { repository.findAll() } returns servers
+
         service.getAllServers() shouldBe servers
     }
 })

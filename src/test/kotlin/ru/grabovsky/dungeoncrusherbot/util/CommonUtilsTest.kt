@@ -10,13 +10,13 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.ResourcesState
 
 class CommonUtilsTest : ShouldSpec({
-    should("определять StateCode для State классов") {
+    should("derive StateCode from a State implementation") {
         with(CommonUtils) {
             ResourcesState().currentStateCode("State") shouldBe StateCode.RESOURCES
         }
     }
 
-    should("определять StateCode для Message классов") {
+    should("derive StateCode from a Message implementation") {
         val message = ResourcesMessage(mockk<MessageGenerateService>(relaxed = true), mockk<ServerService>(relaxed = true))
         message.classStateCode() shouldBe StateCode.RESOURCES
     }

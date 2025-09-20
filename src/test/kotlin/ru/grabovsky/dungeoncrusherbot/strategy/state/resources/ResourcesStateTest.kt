@@ -1,6 +1,8 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.strategy.state.resources
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -11,21 +13,13 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesStateTest : ShouldSpec({
-    val telegramUser = mockk<TgUser>(relaxed = true) {
-        every { id } returns 800L
-    }
+    val telegramUser = mockk<TgUser>(relaxed = true) { every { id } returns 800L }
 
-    should("возвращать VERIFY для состояний требующих подтверждения") {
+    should("return VERIFY for resource operations that require confirmation") {
         val verifyStates = listOf(
-            AddCbState(),
-            AddDraadorState(),
-            AddExchangeState(),
-            AddVoidState(),
-            RemoveCbState(),
-            RemoveVoidState(),
-            ReceiveDraadorState(),
-            SellDraadorState(),
-            SendDraadorState()
+            AddCbState(), AddDraadorState(), AddExchangeState(), AddVoidState(),
+            RemoveCbState(), RemoveVoidState(), ReceiveDraadorState(),
+            SellDraadorState(), SendDraadorState()
         )
 
         verifyStates.forEach { state ->
@@ -33,17 +27,11 @@ class ResourcesStateTest : ShouldSpec({
         }
     }
 
-    should("возвращать UPDATE_SERVER_RESOURCE для состояний обновления ресурсов") {
+    should("return UPDATE_SERVER_RESOURCE for quick update states") {
         val updateStates = listOf(
-            RemoveExchangeState(),
-            IncrementCbState(),
-            IncrementDraadorState(),
-            IncrementVoidState(),
-            DecrementCbState(),
-            DecrementDraadorState(),
-            DecrementVoidState(),
-            QuickReceiveDraadorState(),
-            QuickSendDraadorState()
+            RemoveExchangeState(), IncrementCbState(), IncrementDraadorState(), IncrementVoidState(),
+            DecrementCbState(), DecrementDraadorState(), DecrementVoidState(),
+            QuickReceiveDraadorState(), QuickSendDraadorState()
         )
 
         updateStates.forEach { state ->
@@ -51,22 +39,22 @@ class ResourcesStateTest : ShouldSpec({
         }
     }
 
-    should("возвращать SERVER_RESOURCE для основного состояния ресурсов") {
+    should("return SERVER_RESOURCE for base resources state") {
         ResourcesState().getNextState(telegramUser) shouldBe StateCode.SERVER_RESOURCE
     }
 
-    should("определять следующее состояние ServerResourceState по callback") {
+    should("derive next state from ServerResourceState callback value") {
         val stateService = mockk<StateService>()
-        val state = UserState(userId = 800L, state = StateCode.SERVER_RESOURCE, callbackData = "REMOVE_EXCHANGE")
-        every { stateService.getState(telegramUser) } returns state
+        val userState = UserState(userId = 800L, state = StateCode.SERVER_RESOURCE, callbackData = "REMOVE_EXCHANGE")
+        every { stateService.getState(telegramUser) } returns userState
 
         val serverState = ServerResourceState(stateService)
         serverState.getNextState(telegramUser) shouldBe StateCode.REMOVE_EXCHANGE
 
-        state.callbackData = "BACK"
+        userState.callbackData = "BACK"
         serverState.getNextState(telegramUser) shouldBe StateCode.UPDATE_RESOURCES
 
-        state.callbackData = "UNKNOWN"
+        userState.callbackData = "UNKNOWN"
         serverState.getNextState(telegramUser) shouldBe StateCode.SERVER_RESOURCE
 
         verify(exactly = 3) { stateService.getState(telegramUser) }

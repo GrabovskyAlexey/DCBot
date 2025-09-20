@@ -25,11 +25,11 @@ class MessageGenerateServiceImplTest : ShouldSpec({
 
     val service = MessageGenerateServiceImpl(freeMarkerConfigurer)
 
-    should("рендерить шаблон без данных") {
+    should("render template without data") {
         service.process(StateCode.START, null) shouldBe "rendered"
     }
 
-    should("передавать данные в шаблон") {
+    should("render template with provided model data") {
         service.process(StateCode.VERIFICATION_ERROR, mapOf("key" to "value")) shouldBe "rendered"
     }
 })

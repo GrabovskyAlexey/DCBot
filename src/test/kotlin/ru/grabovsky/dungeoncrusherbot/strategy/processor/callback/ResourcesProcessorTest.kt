@@ -24,7 +24,7 @@ class ResourcesProcessorTest : ShouldSpec({
         clearMocks(stateService, userService)
     }
 
-    should("обновлять lastServerId пользователя и возвращать FINAL") {
+    should("store last selected server and return FINAL status") {
         val telegramUser = mockk<TgUser>(relaxed = true) {
             every { id } returns 101L
             every { firstName } returns "Tester"

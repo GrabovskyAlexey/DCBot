@@ -14,7 +14,7 @@ class ConfirmRefreshMazeMessageTest : ShouldSpec({
     val message = ConfirmRefreshMazeMessage(messageService)
     val user = mockk<TgUser>(relaxed = true)
 
-    should("предлагать подтверждение и отмену сброса лабиринта") {
+    should("offer confirm and cancel buttons for maze reset") {
         val buttons = message.inlineButtons(user, null)
 
         buttons.map { it.data }.shouldContainExactly(

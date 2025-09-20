@@ -13,7 +13,7 @@ class SubscribeDataRepositoryTest : ShouldSpec({
     val userService = mockk<UserService>()
     val repository = SubscribeDataRepository(userService)
 
-    should("возвращать отсортированные идентификаторы серверов пользователя") {
+    should("provide sorted server identifiers for a user") {
         val entityUser = User(710L, "Tester", null, "tester").apply {
             servers.addAll(setOf(Server(5, "A"), Server(1, "B"), Server(3, "C")))
         }

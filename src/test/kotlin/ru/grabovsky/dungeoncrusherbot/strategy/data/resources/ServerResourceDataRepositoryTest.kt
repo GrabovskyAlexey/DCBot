@@ -7,13 +7,13 @@ import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
+import ru.grabovsky.dungeoncrusherbot.entity.DirectionType
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.ResourcesHistory
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
 import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
-import ru.grabovsky.dungeoncrusherbot.entity.DirectionType
+import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.ResourceType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -26,7 +26,7 @@ class ServerResourceDataRepositoryTest : ShouldSpec({
     val stateService = mockk<StateService>()
     val repository = ServerResourceDataRepository(userService, stateService)
 
-    should("возвращать историю и заметки по текущему серверу и обновлять состояние") {
+    should("return history and notes for the last selected server") {
         val entityUser = User(
             userId = 500L,
             firstName = "Server",
@@ -51,9 +51,7 @@ class ServerResourceDataRepositoryTest : ShouldSpec({
             }
             notes.addAll(listOf("one", "two"))
         }
-        val tgUser = mockk<TgUser>(relaxed = true) {
-            every { id } returns 500L
-        }
+        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 500L }
         val state = UserState(userId = 500L, state = StateCode.SERVER_RESOURCE, callbackData = "RESOURCE_HISTORY")
         every { stateService.getState(tgUser) } returns state
         justRun { stateService.saveState(any()) }
