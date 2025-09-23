@@ -27,18 +27,22 @@ import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.entity.Siege
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
+import ru.grabovsky.dungeoncrusherbot.entity.User as BotUserEntity
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.VerificationService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.MessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.ReleaseNoteDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.time.Instant
 import java.time.LocalTime
+import java.util.Locale
 
 class TelegramBotServiceImplTest : ShouldSpec({
 
@@ -48,6 +52,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
     val messageContext = mockk<MessageContext<DataModel>>()
     val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
     val stateService = mockk<StateService>()
+    val userService = mockk<UserService>()
     val notifyHistoryService = mockk<NotifyHistoryService>()
     val verificationService = mockk<VerificationService>()
     val objectMapper = ObjectMapper()
@@ -59,6 +64,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
         messageContext,
         publisher,
         stateService,
+        userService,
         notifyHistoryService,
         verificationService,
         objectMapper
@@ -89,11 +95,19 @@ class TelegramBotServiceImplTest : ShouldSpec({
             messageContext,
             publisher,
             stateService,
+            userService,
             notifyHistoryService,
             verificationService,
             answers = true
         )
-        every { messageContext.getMessage(any(), any()) } returns defaultMessageModel
+        every { messageContext.getMessage(any(), any(), any()) } returns defaultMessageModel
+        every { userService.getUser(any()) } returns BotUserEntity(
+            userId = 111L,
+            firstName = "Tester",
+            lastName = null,
+            userName = "tester",
+            language = "ru"
+        )
         every { telegramClient.execute(any<BotApiMethod<*>>()) } answers {
             when (val method = firstArg<BotApiMethod<*>>()) {
                 is SendMessage -> telegramMessage(100)
@@ -104,7 +118,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
         }
         every { stateService.saveState(any()) } answers { firstArg() }
         every { stateContext.next(any(), any()) } returns null
-        every { messageServiceGenerate.process(any(), any()) } returns "generated"
+        every { messageServiceGenerate.process(any(), any(), any()) } returns "generated"
         justRun { publisher.publishEvent(any()) }
         justRun { notifyHistoryService.saveHistory(any()) }
         justRun { notifyHistoryService.markAsDeleted(any()) }
@@ -116,7 +130,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
         every { stateService.getState(tgUser) } returns state
 
         val message = telegramMessage(42)
-        every { telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage }) } returns message
+        every { telegramClient.execute(any<SendMessage>()) } returns message
 
         service.processState(tgUser, StateCode.ADD_NOTE)
 
@@ -133,11 +147,10 @@ class TelegramBotServiceImplTest : ShouldSpec({
         service.processState(tgUser, StateCode.START)
 
         verify { stateContext.next(tgUser, StateCode.START) }
-        verify {
-            publisher.publishEvent(match<TelegramStateEvent> {
-                it.user == tgUser && it.stateCode == StateCode.WAITING
-            })
-        }
+        val eventSlot = slot<TelegramStateEvent>()
+        verify { publisher.publishEvent(capture(eventSlot)) }
+        eventSlot.captured.user shouldBe tgUser
+        eventSlot.captured.stateCode shouldBe StateCode.WAITING
     }
 
     should("delegate verification action to verification service") {
@@ -154,7 +167,9 @@ class TelegramBotServiceImplTest : ShouldSpec({
 
         service.processState(tgUser, StateCode.UPDATE_RESOURCES)
 
-        verify { telegramClient.execute(match<BotApiMethod<*>> { it is EditMessageText && (it as EditMessageText).messageId == 13 }) }
+        val editSlot = slot<EditMessageText>()
+        verify { telegramClient.execute(capture(editSlot)) }
+        editSlot.captured.messageId shouldBe 13
         verify { stateService.saveState(state) }
     }
 
@@ -166,7 +181,9 @@ class TelegramBotServiceImplTest : ShouldSpec({
 
         service.processState(tgUser, StateCode.VERIFICATION_SUCCESS)
 
-        verify { telegramClient.execute(match<BotApiMethod<*>> { it is DeleteMessages && (it as DeleteMessages).messageIds == listOf(7, 8) }) }
+        val deleteSlot = slot<DeleteMessages>()
+        verify { telegramClient.execute(capture(deleteSlot)) }
+        deleteSlot.captured.messageIds shouldBe listOf(7, 8)
         state.deletedMessages shouldBe emptyList<Int>()
         verify { stateService.saveState(state) }
     }
@@ -174,7 +191,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
     should("persist notification history on successful send") {
         val server = Server(1, "server", mutableSetOf(Siege(1, LocalTime.NOON)))
         val message = telegramMessage(55, "notify")
-        every { telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage }) } returns message
+        every { telegramClient.execute(any<SendMessage>()) } returns message
 
         val historySlot = slot<NotifyHistory>()
         every { notifyHistoryService.saveHistory(capture(historySlot)) } answers { }
@@ -191,7 +208,7 @@ class TelegramBotServiceImplTest : ShouldSpec({
         val exception = mockk<TelegramApiRequestException>(relaxed = true) {
             every { errorCode } returns 403
         }
-        every { telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage }) } throws exception
+        every { telegramClient.execute(any<SendMessage>()) } throws exception
 
         val result = service.sendNotification(1000, NotificationType.SIEGE, listOf(Server(1, "s", mutableSetOf())), false)
 
@@ -209,11 +226,10 @@ class TelegramBotServiceImplTest : ShouldSpec({
 
         service.deleteOldNotify()
 
-        verify {
-            telegramClient.execute(match<BotApiMethod<*>> {
-                it is DeleteMessages && it.chatId == "777" && it.messageIds == listOf(1, 2)
-            })
-        }
+        val deleteHistorySlot = slot<DeleteMessages>()
+        verify { telegramClient.execute(capture(deleteHistorySlot)) }
+        deleteHistorySlot.captured.chatId shouldBe "777"
+        deleteHistorySlot.captured.messageIds shouldBe listOf(1, 2)
         verify {
             notifyHistoryService.markAsDeleted(match { records ->
                 records.map { it.messageId } == listOf(1, 2)
@@ -221,30 +237,95 @@ class TelegramBotServiceImplTest : ShouldSpec({
         }
     }
 
-    should("send release notes with generated message") {
-        val updateMessage = UpdateMessage(version = "1.0", text = "notes")
+    should("send release notes with generated message in russian by default") {
+        val updateMessage = UpdateMessage(version = "1.0", text = "ru", textEn = "en")
         val sent = telegramMessage(123)
-        every { telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage }) } returns sent
+        val user = BotUserEntity(456L, "Tester", null, "tester", language = "ru")
+        every { telegramClient.execute(any<SendMessage>()) } returns sent
 
-        service.sendReleaseNotes(456, updateMessage)
+        service.sendReleaseNotes(user, updateMessage)
 
-        verify { messageServiceGenerate.process(StateCode.RELEASE_NOTES, updateMessage) }
+        val dtoSlot = slot<ReleaseNoteDto>()
+        val localeSlot = slot<Locale>()
         verify {
-            telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage && (it as SendMessage).chatId == "456" })
+            messageServiceGenerate.process(
+                StateCode.RELEASE_NOTES,
+                capture(dtoSlot),
+                capture(localeSlot)
+            )
         }
+        dtoSlot.captured.version shouldBe "1.0"
+        dtoSlot.captured.text shouldBe "ru"
+        dtoSlot.captured.textEn shouldBe "en"
+        localeSlot.captured.language shouldBe "ru"
+        val sendSlot = slot<SendMessage>()
+        verify { telegramClient.execute(capture(sendSlot)) }
+        sendSlot.captured.chatId shouldBe "456"
+    }
+
+    should("send release notes in english for non russian language") {
+        val updateMessage = UpdateMessage(version = "1.0", text = "ru", textEn = "en")
+        val sent = telegramMessage(321)
+        val user = BotUserEntity(789L, "Tester", null, "tester", language = "en")
+        every { telegramClient.execute(any<SendMessage>()) } returns sent
+
+        service.sendReleaseNotes(user, updateMessage)
+
+        val dtoSlot = slot<ReleaseNoteDto>()
+        val localeSlot = slot<Locale>()
+        verify {
+            messageServiceGenerate.process(
+                StateCode.RELEASE_NOTES,
+                capture(dtoSlot),
+                capture(localeSlot)
+            )
+        }
+        dtoSlot.captured.version shouldBe "1.0"
+        dtoSlot.captured.text shouldBe "ru"
+        dtoSlot.captured.textEn shouldBe "en"
+        localeSlot.captured.language shouldBe "en"
+        val sendSlot = slot<SendMessage>()
+        verify { telegramClient.execute(capture(sendSlot)) }
+        sendSlot.captured.chatId shouldBe "789"
+    }
+
+    should("fallback to russian release notes when english text is missing") {
+        val updateMessage = UpdateMessage(version = "1.0", text = "ru")
+        val sent = telegramMessage(654)
+        val user = BotUserEntity(987L, "Tester", null, "tester", language = "en")
+        every { telegramClient.execute(any<SendMessage>()) } returns sent
+
+        service.sendReleaseNotes(user, updateMessage)
+
+        val dtoSlot = slot<ReleaseNoteDto>()
+        val localeSlot = slot<Locale>()
+        verify {
+            messageServiceGenerate.process(
+                StateCode.RELEASE_NOTES,
+                capture(dtoSlot),
+                capture(localeSlot)
+            )
+        }
+        dtoSlot.captured.version shouldBe "1.0"
+        dtoSlot.captured.text shouldBe "ru"
+        dtoSlot.captured.textEn shouldBe null
+        localeSlot.captured.language shouldBe "en"
+        val sendSlot = slot<SendMessage>()
+        verify { telegramClient.execute(capture(sendSlot)) }
+        sendSlot.captured.chatId shouldBe "987"
     }
 
     should("send admin message with generated template") {
         val dto = AdminMessageDto("a", "b", 1L, "body")
         val sent = telegramMessage(321)
-        every { telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage }) } returns sent
+        every { telegramClient.execute(any<SendMessage>()) } returns sent
 
         service.sendAdminMessage(654, dto)
 
-        verify { messageServiceGenerate.process(StateCode.ADMIN_MESSAGE, dto) }
-        verify {
-            telegramClient.execute(match<BotApiMethod<*>> { it is SendMessage && (it as SendMessage).chatId == "654" })
-        }
+        verify { messageServiceGenerate.process(StateCode.ADMIN_MESSAGE, dto, any()) }
+        val sendSlot = slot<SendMessage>()
+        verify { telegramClient.execute(capture(sendSlot)) }
+        sendSlot.captured.chatId shouldBe "654"
     }
 })
 

@@ -24,9 +24,11 @@ import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
+import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.VerificationService
@@ -35,6 +37,8 @@ import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.ReleaseNoteDto
+import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
@@ -49,6 +53,7 @@ class TelegramBotServiceImpl(
     private val messageContext: MessageContext<DataModel>,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val stateService: StateService,
+    private val userService: UserService,
     private val notifyHistoryService: NotifyHistoryService,
     private val verificationService: VerificationService,
     private val objectMapper: ObjectMapper
@@ -104,7 +109,8 @@ class TelegramBotServiceImpl(
 
     private fun getEditMessage(user: User, stateCode: StateCode, messageId: Int): EditMessageText {
         logger.info { "Get update message for state: $stateCode, user: ${user.userName ?: user.firstName}" }
-        val message = messageContext.getMessage(user, stateCode)
+        val locale = resolveLocale(user)
+        val message = messageContext.getMessage(user, stateCode, locale)
             ?: throw IllegalStateException("message is null")
 
         val markup = message.inlineButtons.getInlineKeyboardMarkup()
@@ -132,9 +138,12 @@ class TelegramBotServiceImpl(
         verificationService.verify(user, stateCode)
     }
 
+    private fun resolveLocale(user: User) = LocaleUtils.resolve(userService.getUser(user.id)?.language)
+
     private fun getSendMessage(user: User, stateCode: StateCode): SendMessage {
         logger.info { "Get send message for state: $stateCode, user: ${user.userName ?: user.firstName}" }
-        val message = messageContext.getMessage(user, stateCode)
+        val locale = resolveLocale(user)
+        val message = messageContext.getMessage(user, stateCode, locale)
             ?: throw IllegalStateException("message is null")
 
         val markup = message.inlineButtons.getInlineKeyboardMarkup()
@@ -246,12 +255,18 @@ class TelegramBotServiceImpl(
     }
 
     override fun sendReleaseNotes(
-        chatId: Long,
+        user: BotUser,
         updateMessage: UpdateMessage
     ) {
-        val message = messageServiceGenerate.process(StateCode.RELEASE_NOTES, updateMessage)
+        val locale = LocaleUtils.resolve(user.language)
+        val releaseNoteDto = ReleaseNoteDto(
+            version = updateMessage.version,
+            text = updateMessage.text,
+            textEn = updateMessage.textEn
+        )
+        val message = messageServiceGenerate.process(StateCode.RELEASE_NOTES, releaseNoteDto, locale)
         val sendMessage = SendMessage.builder()
-            .chatId(chatId)
+            .chatId(user.userId)
             .text(message)
             .build()
         sendMessage.enableMarkdown(true)

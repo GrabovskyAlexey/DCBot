@@ -9,14 +9,12 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
+import java.util.Locale
 
 @Component
 class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
     AbstractSendMessage<ServerResourceDto>(messageGenerateService) {
-    override fun inlineButtons(
-        user: User,
-        data: ServerResourceDto?,
-    ): List<InlineMarkupDataDto> {
+    override fun inlineButtons(user: User, data: ServerResourceDto?, locale: Locale): List<InlineMarkupDataDto> {
         val dto = data ?: return emptyList()
         val buttons = mutableListOf<InlineMarkupDataDto>()
 

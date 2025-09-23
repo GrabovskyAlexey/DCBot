@@ -29,7 +29,7 @@ class RunAfterStartup(
         for (message in updateMessages) {
             users.forEach {
                 runCatching {
-                    telegramBotService.sendReleaseNotes(it.userId, message)
+                    telegramBotService.sendReleaseNotes(it, message)
                 }.onFailure { error ->
                     if(error is TelegramApiRequestException && error.errorCode == 403) {
                         it.isBlocked = true

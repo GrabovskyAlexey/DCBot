@@ -5,9 +5,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.match
-import io.mockk.mockk
 import io.mockk.justRun
+import io.mockk.mockk
 import io.mockk.verify
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.context.ApplicationEventPublisher
@@ -29,15 +28,16 @@ class CommandsTest : ShouldSpec({
         val command = StartCommand(userService, publisher)
         val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 100L }
         every { userService.createOrUpdateUser(tgUser) } returns User(100L, "Tester", null, "tester")
+        every { publisher.publishEvent(any()) } answers {
+            val event = it.invocation.args[0] as TelegramStateEvent
+            event.user shouldBe tgUser
+            event.stateCode shouldBe command.classStateCode()
+        }
 
         command.execute(telegramClient, tgUser, chat, emptyArray())
 
         verify { userService.createOrUpdateUser(tgUser) }
-        verify {
-            publisher.publishEvent(match<TelegramStateEvent> {
-                it.user == tgUser && it.stateCode == command.classStateCode()
-            })
-        }
+        verify { publisher.publishEvent(any<TelegramStateEvent>()) }
     }
 
     should("create resources when none exist for ResourcesCommand") {
@@ -56,7 +56,7 @@ class CommandsTest : ShouldSpec({
         command.prepare(tgUser, chat, emptyArray())
 
         entityUser.resources shouldNotBe null
-        verify { userService.saveUser(match { it.resources is Resources }) }
+        verify { userService.saveUser(entityUser) }
     }
 
     should("skip creation if resources already present") {

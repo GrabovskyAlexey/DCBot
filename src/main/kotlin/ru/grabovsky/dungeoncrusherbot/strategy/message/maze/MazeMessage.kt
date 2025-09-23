@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.message.maze
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.maze
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
@@ -8,6 +8,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class MazeMessage(
@@ -15,19 +16,20 @@ class MazeMessage(
 ) : AbstractSendMessage<MazeDto>(messageGenerateService) {
     override fun inlineButtons(
         user: User,
-        data: MazeDto?
+        data: MazeDto?,
+        locale: Locale
     ): List<InlineMarkupDataDto> {
         val result: MutableList<InlineMarkupDataDto> = mutableListOf(
             InlineMarkupDataDto(
                 rowPos = 3,
-                text = "\uD83E\uDDB6 Последние 20 шагов",
+                text = "\uD83E\uDDB6 �?�?�?�>��?�?��� 20 �?���?�?�?",
                 data = CallbackObject(
                     StateCode.UPDATE_MAZE, "HISTORY"
                 )
             ),
             InlineMarkupDataDto(
                 rowPos = 4,
-                text = "\uD83D\uDDD1 Сбросить прогресс",
+                text = "\uD83D\uDDD1 ���+�?�?�?��'�? ���?�?�?�?��?�?",
                 data = CallbackObject(
                     StateCode.UPDATE_MAZE, "REFRESH_MAZE"
                 )
@@ -38,28 +40,28 @@ class MazeMessage(
                 listOf(
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "↖\uFE0F",
+                        text = "��-\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "SAME_LEFT"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "⬆\uFE0F",
+                        text = "���\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "SAME_CENTER"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "↗\uFE0F",
+                        text = "��-\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "SAME_RIGHT"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 2,
-                        text = "\uD83D\uDCF4 Один шаг",
+                        text = "\uD83D\uDCF4 �?�?��? �?���?",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "SAME_STEPS"
                         )
@@ -71,28 +73,28 @@ class MazeMessage(
                 listOf(
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "↖\uFE0F",
+                        text = "��-\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "LEFT"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "⬆\uFE0F",
+                        text = "���\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "CENTER"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 1,
-                        text = "↗\uFE0F",
+                        text = "��-\uFE0F",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "RIGHT"
                         )
                     ),
                     InlineMarkupDataDto(
                         rowPos = 2,
-                        text = "\uD83D\uDCF4 Несколько шагов",
+                        text = "\uD83D\uDCF4 �?��?��?�>�?��? �?���?�?�?",
                         data = CallbackObject(
                             StateCode.UPDATE_MAZE, "SAME_STEPS"
                         )

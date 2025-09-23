@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.mapper
+﻿package ru.grabovsky.dungeoncrusherbot.mapper
 
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -10,6 +10,6 @@ object UserMapper {
             firstName = user.firstName,
             lastName = user.lastName,
             userName = user.userName,
+            language = user.languageCode,
         )
-
 }

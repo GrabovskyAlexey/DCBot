@@ -8,6 +8,7 @@ import io.mockk.verify
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
@@ -36,6 +37,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.message.resources.UpdateServerRes
 import ru.grabovsky.dungeoncrusherbot.strategy.message.settings.UpdateSettingsMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.subscribe.SubscribeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.subscribe.UpdateSubscribeMessage
+import java.util.Locale
 
 private object EmptyData : DataModel
 
@@ -45,13 +47,14 @@ class MessageDelegationTest : ShouldSpec({
     val userService = mockk<UserService>(relaxed = true)
 
     fun <T : DataModel> assertDelegation(message: AbstractSendMessage<T>, data: T) {
-        message.message(data)
-        verify { messageService.process(message.classStateCode(), data) }
+        val user = mockk<User>(relaxed = true)
+        message.message(user, Locale.forLanguageTag("ru"), data)
+        verify { messageService.process(message.classStateCode(), data, any()) }
     }
 
     beforeTest {
         clearMocks(messageService)
-        every { messageService.process(any(), any()) } returns "generated"
+        every { messageService.process(any(), any(), any()) } returns "generated"
     }
 
     should("делегировать генерацию шаблонов для базовых ресурсных сообщений") {

@@ -1,20 +1,32 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
+package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.mockk
+import io.mockk.every
+import org.springframework.context.MessageSource
 import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
+import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
+import java.util.Locale
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class SettingsMessageTest : ShouldSpec({
     val messageService = mockk<MessageGenerateService>(relaxed = true)
-    val message = SettingsMessage(messageService)
+    val messageSource = mockk<MessageSource> {
+        every { getMessage(any(), any(), any(), any()) } answers { invocation ->
+            val args = invocation.invocation.args
+            val code = args[0] as String
+            val default = args[2] as String?
+            default ?: code
+        }
+    }
+    val message = SettingsMessage(messageService).apply { setTestMessageSource(messageSource) }
     val user = mockk<TgUser>(relaxed = true)
 
-    fun buttons(dto: SettingsDto) = message.inlineButtons(user, dto)
+    fun buttons(dto: SettingsDto) = message.inlineButtons(user, dto, Locale.forLanguageTag("ru"))
     fun text(data: String, buttons: List<InlineMarkupDataDto>) = buttons.first { it.data.data == data }.text
 
     should("менять текст только для затронутой настройки") {

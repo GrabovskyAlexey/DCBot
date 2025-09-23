@@ -12,6 +12,7 @@ import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ServerResourceMessageTest : ShouldSpec({
@@ -37,7 +38,7 @@ class ServerResourceMessageTest : ShouldSpec({
         )
         val user = mockk<TgUser>(relaxed = true)
 
-        val buttons = message.inlineButtons(user, dto)
+        val buttons = message.inlineButtons(user, dto, Locale.forLanguageTag("ru"))
 
         buttons.shouldNotBeEmpty()
         val callbacks = buttons.map(InlineMarkupDataDto::data)
@@ -84,7 +85,7 @@ class ServerResourceMessageTest : ShouldSpec({
         )
         val user = mockk<TgUser>(relaxed = true)
 
-        val buttons = message.inlineButtons(user, dto)
+        val buttons = message.inlineButtons(user, dto, Locale.forLanguageTag("ru"))
 
         val callbacks = buttons.map(InlineMarkupDataDto::data)
         callbacks.shouldContain(CallbackObject(StateCode.SERVER_RESOURCE, "ADD_NOTE"))

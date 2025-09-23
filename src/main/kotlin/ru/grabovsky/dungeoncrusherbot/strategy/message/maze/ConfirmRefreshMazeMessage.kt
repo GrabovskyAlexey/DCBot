@@ -8,15 +8,13 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class ConfirmRefreshMazeMessage(
     messageGenerateService: MessageGenerateService,
 ) : AbstractSendMessage<DataModel>(messageGenerateService) {
-    override fun inlineButtons(
-        user: User,
-        data: DataModel?
-    ): List<InlineMarkupDataDto> {
+    override fun inlineButtons(user: User, data: DataModel?, locale: Locale): List<InlineMarkupDataDto> {
         return listOf(
             InlineMarkupDataDto(
                 rowPos = 1,

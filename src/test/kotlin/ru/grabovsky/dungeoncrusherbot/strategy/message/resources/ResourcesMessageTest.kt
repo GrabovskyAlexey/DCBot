@@ -12,6 +12,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesMessageTest : ShouldSpec({
@@ -37,7 +38,7 @@ class ResourcesMessageTest : ShouldSpec({
         )
         val user = mockk<TgUser>(relaxed = true)
 
-        val buttons = message.inlineButtons(user, dto)
+        val buttons = message.inlineButtons(user, dto, Locale.forLanguageTag("ru"))
 
         buttons.shouldHaveSize(6)
         buttons.take(5).all { it.rowPos == 1 } shouldBe true

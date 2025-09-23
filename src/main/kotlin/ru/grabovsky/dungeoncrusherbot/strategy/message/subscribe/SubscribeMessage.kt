@@ -10,6 +10,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class SubscribeMessage(
@@ -18,10 +19,7 @@ class SubscribeMessage(
     private val serverService: ServerService
 ) :
     AbstractSendMessage<ServerDto>(messageGenerateService) {
-    override fun inlineButtons(
-        user: User,
-        data: ServerDto?
-    ): List<InlineMarkupDataDto> {
+    override fun inlineButtons(user: User, data: ServerDto?, locale: Locale): List<InlineMarkupDataDto> {
         val servers = userService.getUser(user.id)?.servers ?: emptySet()
         val allServers = serverService.getAllServers()
         val result: MutableList<InlineMarkupDataDto> = mutableListOf()

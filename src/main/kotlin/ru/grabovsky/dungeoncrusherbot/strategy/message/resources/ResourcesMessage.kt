@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.message.resources
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.resources
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
@@ -9,6 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class ResourcesMessage(
@@ -18,7 +19,8 @@ class ResourcesMessage(
     AbstractSendMessage<ResourceDto>(messageGenerateService) {
     override fun inlineButtons(
         user: User,
-        data: ResourceDto?
+        data: ResourceDto?,
+        locale: Locale
     ): List<InlineMarkupDataDto> {
         val allServers = serverService.getAllServers()
         val mainServerId = data?.servers?.firstOrNull { it.main }?.id

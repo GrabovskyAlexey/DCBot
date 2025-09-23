@@ -41,19 +41,19 @@ class RunAfterStartupTest : ShouldSpec({
 
         every { updateMessageRepository.findUpdateMessagesBySentNot() } returns listOf(update)
         every { userRepository.findAllNotBlockedUser() } returns listOf(userOk, userFail)
-        justRun { telegramBotService.sendReleaseNotes(userOk.userId, update) }
+        justRun { telegramBotService.sendReleaseNotes(userOk, update) }
         val exception = mockk<TelegramApiRequestException>(relaxed = true) {
             every { errorCode } returns 403
         }
-        every { telegramBotService.sendReleaseNotes(userFail.userId, update) } throws exception
+        every { telegramBotService.sendReleaseNotes(userFail, update) } throws exception
         every { userRepository.save(userFail) } returns userFail
         every { updateMessageRepository.saveAll(listOf(update)) } returns listOf(update)
 
         runner.runAfterStartup()
 
         userFail.isBlocked shouldBe true
-        verify { telegramBotService.sendReleaseNotes(userOk.userId, update) }
-        verify { telegramBotService.sendReleaseNotes(userFail.userId, update) }
+        verify { telegramBotService.sendReleaseNotes(userOk, update) }
+        verify { telegramBotService.sendReleaseNotes(userFail, update) }
         verify { userRepository.save(userFail) }
         update.sent shouldBe true
         verify { updateMessageRepository.saveAll(listOf(update)) }

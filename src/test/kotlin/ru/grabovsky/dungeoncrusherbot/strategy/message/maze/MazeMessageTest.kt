@@ -10,6 +10,7 @@ import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class MazeMessageTest : ShouldSpec({
@@ -18,7 +19,7 @@ class MazeMessageTest : ShouldSpec({
     val user = mockk<TgUser>(relaxed = true)
 
     should("offer single-step controls when sameSteps disabled") {
-        val buttons = message.inlineButtons(user, MazeDto(sameSteps = false))
+        val buttons = message.inlineButtons(user, MazeDto(sameSteps = false), Locale.forLanguageTag("ru"))
 
         buttons.shouldHaveSize(6)
         buttons.map { it.data }.shouldContainAll(
@@ -33,7 +34,7 @@ class MazeMessageTest : ShouldSpec({
     }
 
     should("offer repeated-step controls when sameSteps enabled") {
-        val buttons = message.inlineButtons(user, MazeDto(sameSteps = true))
+        val buttons = message.inlineButtons(user, MazeDto(sameSteps = true), Locale.forLanguageTag("ru"))
 
         buttons.shouldHaveSize(6)
         buttons.map { it.data }.shouldContainAll(

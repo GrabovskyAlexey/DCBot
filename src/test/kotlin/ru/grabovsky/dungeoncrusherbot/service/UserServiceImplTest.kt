@@ -1,0 +1,94 @@
+﻿package ru.grabovsky.dungeoncrusherbot.service
+
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import org.springframework.context.ApplicationEventPublisher
+import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
+import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.time.Instant
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
+
+class UserServiceImplTest : ShouldSpec({
+    val userRepository = mockk<UserRepository>()
+    val adminMessageRepository = mockk<AdminMessageRepository>(relaxed = true)
+    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    val service = UserServiceImpl(userRepository, adminMessageRepository, eventPublisher)
+
+    beforeTest {
+        clearMocks(userRepository)
+    }
+
+    should("create new user with language and last action time") {
+        val tgUser = mockk<TgUser>()
+        every { tgUser.id } returns 77L
+        every { tgUser.firstName } returns "Jane"
+        every { tgUser.lastName } returns "Doe"
+        every { tgUser.userName } returns "jane"
+        every { tgUser.languageCode } returns "en"
+
+        every { userRepository.findUserByUserId(77L) } returns null
+        val captured = slot<User>()
+        every { userRepository.saveAndFlush(capture(captured)) } answers { captured.captured }
+
+        val result = service.createOrUpdateUser(tgUser)
+
+        val saved = captured.captured
+        saved.language shouldBe "en"
+        saved.lastActionAt.shouldNotBeNull()
+        saved.lastActionAt!!.isAfter(Instant.now().minusSeconds(5)) shouldBe true
+        saved.isBlocked shouldBe false
+        result shouldBe saved
+        verify(exactly = 1) { userRepository.saveAndFlush(any()) }
+    }
+
+    should("update stored user with language and interaction time") {
+        val existingUser = User(
+            userId = 88L,
+            firstName = "Old",
+            lastName = "Name",
+            userName = "old",
+            language = "ru"
+        )
+        existingUser.lastActionAt = null
+        existingUser.isBlocked = true
+
+        val tgUser = mockk<TgUser>()
+        every { tgUser.id } returns 88L
+        every { tgUser.firstName } returns "New"
+        every { tgUser.lastName } returns "Name"
+        every { tgUser.userName } returns "new"
+        every { tgUser.languageCode } returns "en"
+
+        every { userRepository.findUserByUserId(88L) } returns existingUser
+        every { userRepository.saveAndFlush(existingUser) } returns existingUser
+
+        val result = service.createOrUpdateUser(tgUser)
+
+        existingUser.firstName shouldBe "New"
+        existingUser.lastName shouldBe "Name"
+        existingUser.userName shouldBe "new"
+        existingUser.language shouldBe "en"
+        existingUser.isBlocked shouldBe false
+        existingUser.lastActionAt.shouldNotBeNull()
+        result shouldBe existingUser
+        verify(exactly = 1) { userRepository.saveAndFlush(existingUser) }
+    }
+
+    should("keep notes logic untouched") {
+        val user = User(1L, "A", "B", "ab")
+        user.notes.addAll(listOf("1", "2"))
+        every { userRepository.saveAndFlush(user) } returns user
+
+        service.processNote(user, "3", StateCode.ADD_NOTE)
+        user.notes.last() shouldBe "3"
+        verify { userRepository.saveAndFlush(user) }
+    }
+})

@@ -8,21 +8,23 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class NotesMessage(
     messageGenerateService: MessageGenerateService,
 ) : AbstractSendMessage<NotesDto>(messageGenerateService) {
-    override fun inlineButtons(
-        user: User,
-        data: NotesDto?
-    ): List<InlineMarkupDataDto> {
+    override fun inlineButtons(user: User, data: NotesDto?, locale: Locale): List<InlineMarkupDataDto> {
         val result: MutableList<InlineMarkupDataDto> = mutableListOf()
         if((data?.notes?.size ?: 0) < 20) {
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 1,
-                    text = "✍\uFE0F Добавить заметку",
+                    text = i18n(
+                        code = "buttons.notes.add",
+                        locale = locale,
+                        default = "✍\uFE0F Добавить заметкуL"
+                    ),
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES, "ADD_NOTE"
                     )

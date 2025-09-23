@@ -14,17 +14,18 @@ import ru.grabovsky.dungeoncrusherbot.strategy.data.AbstractDataRepository
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 class MessageContextTest : ShouldSpec({
 
     val messageService = mockk<MessageGenerateService>()
-    every { messageService.process(any(), any()) } returns "generated"
+    every { messageService.process(any(), any(), any()) } returns "generated"
 
     class StartMessage(messageGenerateService: MessageGenerateService) : AbstractSendMessage<DataModel>(messageGenerateService) {
-        override fun inlineButtons(user: User, data: DataModel?) =
+        override fun inlineButtons(user: User, data: DataModel?, locale: Locale) =
             listOf(InlineMarkupDataDto(rowPos = 0, text = "inline", data = CallbackObject(StateCode.START, "payload")))
 
-        override fun replyButtons(user: User, data: DataModel?) =
+        override fun replyButtons(user: User, data: DataModel?, locale: Locale) =
             listOf(ReplyMarkupDto(requestLocation = false, text = "reply"))
     }
 
@@ -49,13 +50,13 @@ class MessageContextTest : ShouldSpec({
     val user = mockk<User>(relaxed = true)
 
     should("provide message model for permitted state") {
-        val model: MessageModelDto = context.getMessage(user, StateCode.START)!!
+        val model: MessageModelDto = context.getMessage(user, StateCode.START, Locale.forLanguageTag("ru"))!!
         model.message shouldBe "generated"
         model.inlineButtons.size shouldBe 1
         model.replyButtons.size shouldBe 1
     }
 
     should("return null when send message is not permitted") {
-        context.getMessage(user, StateCode.HELP) shouldBe null
+        context.getMessage(user, StateCode.HELP, Locale.forLanguageTag("ru")) shouldBe null
     }
 })

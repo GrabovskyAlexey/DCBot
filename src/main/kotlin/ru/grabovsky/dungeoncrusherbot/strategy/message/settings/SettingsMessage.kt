@@ -9,15 +9,13 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.AbstractSendMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.util.Locale
 
 @Component
 class SettingsMessage(
     messageGenerateService: MessageGenerateService,
 ) : AbstractSendMessage<SettingsDto>(messageGenerateService) {
-    override fun inlineButtons(
-        user: User,
-        data: SettingsDto?,
-    ): List<InlineMarkupDataDto> {
+    override fun inlineButtons(user: User, data: SettingsDto?, locale: Locale): List<InlineMarkupDataDto> {
         val buttons = mutableListOf(
             InlineMarkupDataDto(
                 rowPos = 1,

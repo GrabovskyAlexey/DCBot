@@ -13,6 +13,7 @@ class UserMapperTest : ShouldSpec({
         every { tgUser.firstName } returns "John"
         every { tgUser.lastName } returns "Doe"
         every { tgUser.userName } returns "jdoe"
+        every { tgUser.languageCode } returns "ru"
 
         val entity = UserMapper.fromTelegramToEntity(tgUser)
 
@@ -20,5 +21,6 @@ class UserMapperTest : ShouldSpec({
         entity.firstName shouldBe "John"
         entity.lastName shouldBe "Doe"
         entity.userName shouldBe "jdoe"
+        entity.language shouldBe "ru"
     }
 })
