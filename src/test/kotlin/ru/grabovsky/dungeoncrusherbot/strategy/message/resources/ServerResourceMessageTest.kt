@@ -6,18 +6,33 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
+import io.mockk.every
 import io.mockk.mockk
 import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.dto.InlineMarkupDataDto
+import org.springframework.context.MessageSource
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
+import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.util.Locale
+import java.text.MessageFormat
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ServerResourceMessageTest : ShouldSpec({
     val messageService = mockk<MessageGenerateService>(relaxed = true)
-    val message = ServerResourceMessage(messageService)
+    val messageSource = mockk<MessageSource> {
+        every { getMessage(any(), any(), any(), any()) } answers { invocation ->
+            val args = invocation.invocation.args
+            val rawArgs = args[1]
+            val messageArgs = if (rawArgs is Array<*>) Array<Any?>(rawArgs.size) { rawArgs[it] } else emptyArray<Any?>()
+            val default = args[2] as String?
+            val locale = args[3] as Locale
+            val patternMessage = default ?: args[0] as String
+            MessageFormat(patternMessage, locale).format(messageArgs)
+        }
+    }
+    val message = ServerResourceMessage(messageService).apply { setTestMessageSource(messageSource) }
 
     should("строить полный набор кнопок для неосновного сервера без главного") {
         val dto = ServerResourceDto(

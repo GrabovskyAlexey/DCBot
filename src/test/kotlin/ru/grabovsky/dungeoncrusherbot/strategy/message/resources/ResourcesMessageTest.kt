@@ -11,14 +11,28 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
+import org.springframework.context.MessageSource
+import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.util.Locale
+import java.text.MessageFormat
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesMessageTest : ShouldSpec({
     val messageService = mockk<MessageGenerateService>(relaxed = true)
     val serverService = mockk<ServerService>()
-    val message = ResourcesMessage(messageService, serverService)
+    val messageSource = mockk<MessageSource> {
+        every { getMessage(any(), any(), any(), any()) } answers { invocation ->
+            val args = invocation.invocation.args
+            val rawArgs = args[1]
+            val messageArgs = if (rawArgs is Array<*>) Array<Any?>(rawArgs.size) { rawArgs[it] } else emptyArray<Any?>()
+            val default = args[2] as String?
+            val locale = args[3] as Locale
+            val patternMessage = default ?: args[0] as String
+            MessageFormat(patternMessage, locale).format(messageArgs)
+        }
+    }
+    val message = ResourcesMessage(messageService, serverService).apply { setTestMessageSource(messageSource) }
 
     should("раскладывать серверы по рядам и помечать главный") {
         val servers = (1..6).map { id -> Server(id = id, name = "Server $id") }

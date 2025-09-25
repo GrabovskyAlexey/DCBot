@@ -16,24 +16,31 @@ import java.util.Locale
 class SubscribeMessage(
     messageGenerateService: MessageGenerateService,
     private val userService: UserService,
-    private val serverService: ServerService
-) :
-    AbstractSendMessage<ServerDto>(messageGenerateService) {
+    private val serverService: ServerService,
+) : AbstractSendMessage<ServerDto>(messageGenerateService) {
     override fun inlineButtons(user: User, data: ServerDto?, locale: Locale): List<InlineMarkupDataDto> {
         val servers = userService.getUser(user.id)?.servers ?: emptySet()
         val allServers = serverService.getAllServers()
-        val result: MutableList<InlineMarkupDataDto> = mutableListOf()
+        val result = mutableListOf<InlineMarkupDataDto>()
         var row = 1
         var count = 0
         for (server in allServers) {
             val isSubscribed = servers.any { it == server }
             val markUp = InlineMarkupDataDto(
                 rowPos = row,
-                text = if (isSubscribed) "✅ ${server.id}" else "❌ ${server.id}",
-                data = CallbackObject(StateCode.SUBSCRIBE, if (isSubscribed) "UNSUBSCRIBE ${server.id}" else "SUBSCRIBE ${server.id}")
+                text = i18n(
+                    code = if (isSubscribed) "buttons.subscribe.subscribed" else "buttons.subscribe.available",
+                    locale = locale,
+                    default = if (isSubscribed) "✅ {0}" else "❌ {0}",
+                    server.id
+                ),
+                data = CallbackObject(
+                    StateCode.SUBSCRIBE,
+                    if (isSubscribed) "UNSUBSCRIBE ${server.id}" else "SUBSCRIBE ${server.id}"
+                )
             )
             count++
-            if(count >= 5) {
+            if (count >= 5) {
                 row++
                 count = 0
             }

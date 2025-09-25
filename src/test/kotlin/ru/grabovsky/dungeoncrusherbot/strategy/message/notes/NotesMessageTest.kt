@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.message.notes
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.notes
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
@@ -14,6 +14,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
 import java.util.Locale
+import java.text.MessageFormat
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class NotesMessageTest : ShouldSpec({
@@ -21,9 +22,12 @@ class NotesMessageTest : ShouldSpec({
     val messageSource = mockk<MessageSource> {
         every { getMessage(any(), any(), any(), any()) } answers { invocation ->
             val args = invocation.invocation.args
-            val code = args[0] as String
+            val rawArgs = args[1]
+            val messageArgs = if (rawArgs is Array<*>) Array<Any?>(rawArgs.size) { rawArgs[it] } else emptyArray<Any?>()
             val default = args[2] as String?
-            default ?: code
+            val locale = args[3] as Locale
+            val patternMessage = default ?: args[0] as String
+            MessageFormat(patternMessage, locale).format(messageArgs)
         }
     }
     val message = NotesMessage(messageService).apply { setTestMessageSource(messageSource) }

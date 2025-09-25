@@ -28,9 +28,12 @@ class ResourcesMessage(
         var row = 1
         var count = 0
         for (server in allServers) {
+            val isMainServer = server.id == mainServerId
+            val code = if (isMainServer) "buttons.resources.server.main" else "buttons.resources.server.regular"
+            val default = if (isMainServer) "\uD83D\uDC51{0}" else "{0}"
             val markUp = InlineMarkupDataDto(
                 rowPos = row,
-                text = "${if(server.id == mainServerId) "\uD83D\uDC51" else ""}${server.id}",
+                text = i18n(code, locale, default, server.id),
                 data = CallbackObject(StateCode.RESOURCES, "RESOURCE ${server.id}")
             )
             count++

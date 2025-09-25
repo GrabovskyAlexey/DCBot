@@ -14,6 +14,7 @@ import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.util.Locale
+import java.text.MessageFormat
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class MazeMessageTest : ShouldSpec({
@@ -22,8 +23,12 @@ class MazeMessageTest : ShouldSpec({
     val messageSource = mockk<MessageSource> {
         every { getMessage(any(), any(), any(), any()) } answers { invocation ->
             val args = invocation.invocation.args
+            val rawArgs = args[1]
+            val messageArgs = if (rawArgs is Array<*>) Array<Any?>(rawArgs.size) { rawArgs[it] } else emptyArray<Any?>()
             val default = args[2] as String?
-            default ?: args[0] as String
+            val locale = args[3] as Locale
+            val patternMessage = default ?: args[0] as String
+            MessageFormat(patternMessage, locale).format(messageArgs)
         }
     }
     val message = MazeMessage(messageService).apply { setTestMessageSource(messageSource) }
