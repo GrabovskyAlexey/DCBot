@@ -1,1 +1,1 @@
-﻿<#include 'maze.ftl'>
+<#include 'maze.ftl'>

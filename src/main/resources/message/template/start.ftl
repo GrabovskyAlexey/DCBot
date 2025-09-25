@@ -1,10 +1,10 @@
-﻿<#assign lang = (locale?string?lower_case)!''>
+<#assign lang = (locale?string?lower_case)!''>
 <#assign isEn = lang?starts_with('en')>
 <#if (data.username)??>
 <#if isEn>
-    Welcome, *${data.username}*!
+Welcome, *${data.username}*!
 <#else>
-    Добро пожаловать, *${data.username}*!
+Добро пожаловать, *${data.username}*!
 </#if>
 <#else>
 </#if>

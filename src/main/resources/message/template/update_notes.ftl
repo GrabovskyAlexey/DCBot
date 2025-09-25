@@ -1,1 +1,1 @@
-﻿<#include 'notes.ftl'>
+<#include 'notes.ftl'>

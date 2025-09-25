@@ -1,4 +1,4 @@
-﻿<#assign lang = (locale?string?lower_case)!''>
+<#assign lang = (locale?string?lower_case)!''>
 <#assign isEn = lang?starts_with('en')>
 <#if isEn>
 This is a helper bot for Dungeon Crusher—it never eats or sleeps, but it's always ready to help!

@@ -50,6 +50,7 @@ class CommandsTest : ShouldSpec({
             every { firstName } returns "Tester"
         }
         val entityUser = User(200L, "Tester", null, "tester")
+        every { userService.createOrUpdateUser(tgUser) } returns entityUser
         every { userService.getUser(200L) } returns entityUser
         justRun { userService.saveUser(entityUser) }
 
@@ -71,6 +72,7 @@ class CommandsTest : ShouldSpec({
         val entityUser = User(201L, "Tester", null, "tester").apply {
             resources = Resources(user = this)
         }
+        every { userService.createOrUpdateUser(tgUser) } returns entityUser
         every { userService.getUser(201L) } returns entityUser
 
         command.prepare(tgUser, chat, emptyArray())
@@ -87,6 +89,7 @@ class CommandsTest : ShouldSpec({
             every { userName } returns "tester"
             every { firstName } returns "Tester"
         }
+        every { userService.createOrUpdateUser(tgUser) } returns User(202L, "Tester", null, "tester")
         every { userService.getUser(202L) } returns null
 
         shouldThrow<EntityNotFoundException> {

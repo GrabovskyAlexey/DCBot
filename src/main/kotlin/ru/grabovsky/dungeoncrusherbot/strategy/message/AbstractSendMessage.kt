@@ -23,9 +23,9 @@ abstract class AbstractSendMessage<T: DataModel?>(private val messageGenerateSer
         return messageGenerateService.process(classStateCode(), data, locale)
     }
 
-    open fun inlineButtons(user: User, data: T?, locale: Locale): List<InlineMarkupDataDto> = emptyList()
+    fun inlineButtons(user: User, data: T?, locale: Locale): List<InlineMarkupDataDto> = emptyList()
 
-    open fun replyButtons(user: User, data: T? = null, locale: Locale): List<ReplyMarkupDto> = emptyList()
+    fun replyButtons(user: User, data: T? = null, locale: Locale): List<ReplyMarkupDto> = emptyList()
 
     fun isPermitted(user: User): Boolean = true
 

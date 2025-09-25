@@ -1,1 +1,1 @@
-﻿<#include 'resources.ftl'>
+<#include 'resources.ftl'>

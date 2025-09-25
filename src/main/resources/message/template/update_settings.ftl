@@ -1,1 +1,1 @@
-﻿<#include 'settings.ftl'>
+<#include 'settings.ftl'>

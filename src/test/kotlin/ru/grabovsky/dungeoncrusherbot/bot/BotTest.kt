@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.config.BotConfig
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractCommand
 import ru.grabovsky.dungeoncrusherbot.strategy.commands.Command
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
@@ -22,9 +23,10 @@ class BotTest : ShouldSpec({
     val telegramClient = mockk<TelegramClient>(relaxed = true)
     val receiverService = mockk<ReceiverService>(relaxed = true)
     val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    val userService = mockk<UserService>(relaxed = true)
 
-    val firstCommand = object : AbstractCommand(Command.HELP, publisher) {}
-    val secondCommand = object : AbstractCommand(Command.START, publisher) {}
+    val firstCommand = object : AbstractCommand(Command.HELP, publisher, userService) {}
+    val secondCommand = object : AbstractCommand(Command.START, publisher, userService) {}
 
     should("set bot commands sorted by order and expose token") {
         val commandSlot = slot<SetMyCommands>()

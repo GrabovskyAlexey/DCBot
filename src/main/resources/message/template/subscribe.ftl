@@ -1,4 +1,4 @@
-﻿<#assign lang = (locale?string?lower_case)!''>
+<#assign lang = (locale?string?lower_case)!''>
 <#assign isEn = lang?starts_with('en')>
 <#if (data.servers)??>
 <#if data.servers?size == 1>
