@@ -35,7 +35,11 @@ class NotesMessage(
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 2,
-                    text = "❌ Удалить заметку",
+                    text = i18n(
+                        code = "buttons.notes.remove",
+                        locale = locale,
+                        default = "❌ Удалить заметку"
+                    ),
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES, "REMOVE_NOTE"
                     )
@@ -46,7 +50,11 @@ class NotesMessage(
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 3,
-                    text = "\uD83D\uDDD1 Удалить все заметки",
+                    text = i18n(
+                        code = "buttons.notes.clear",
+                        locale = locale,
+                        default = "\\uD83D\\uDDD1 Удалить все заметки"
+                    ),
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES, "CLEAR_NOTES"
                     )
@@ -57,7 +65,11 @@ class NotesMessage(
             result.add(
                 InlineMarkupDataDto(
                     rowPos = 99,
-                    text = "\uD83D\uDD19 Вернуться",
+                    text = i18n(
+                        code = "buttons.notes.back",
+                        locale = locale,
+                        default = "\\uD83D\\uDD19 Вернуться"
+                    ),
                     data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
                 )
             )

@@ -6,8 +6,11 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import io.mockk.every
 import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
+import org.springframework.context.MessageSource
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
+import ru.grabovsky.dungeoncrusherbot.setTestMessageSource
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.util.Locale
@@ -15,7 +18,15 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class MazeMessageTest : ShouldSpec({
     val messageService = mockk<MessageGenerateService>(relaxed = true)
-    val message = MazeMessage(messageService)
+
+    val messageSource = mockk<MessageSource> {
+        every { getMessage(any(), any(), any(), any()) } answers { invocation ->
+            val args = invocation.invocation.args
+            val default = args[2] as String?
+            default ?: args[0] as String
+        }
+    }
+    val message = MazeMessage(messageService).apply { setTestMessageSource(messageSource) }
     val user = mockk<TgUser>(relaxed = true)
 
     should("offer single-step controls when sameSteps disabled") {

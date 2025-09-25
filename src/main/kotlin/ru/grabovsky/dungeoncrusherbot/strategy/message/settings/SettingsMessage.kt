@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
+package ru.grabovsky.dungeoncrusherbot.strategy.message.settings
 
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.User
@@ -19,50 +19,78 @@ class SettingsMessage(
         val buttons = mutableListOf(
             InlineMarkupDataDto(
                 rowPos = 1,
-                text = getText(data, NotificationType.SIEGE),
+                text = getText(data, NotificationType.SIEGE, locale),
                 data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_SIEGE"),
             ),
             InlineMarkupDataDto(
                 rowPos = 2,
-                text = getText(data, NotificationType.MINE),
+                text = getText(data, NotificationType.MINE, locale),
                 data = CallbackObject(StateCode.UPDATE_SETTINGS, "NOTIFY_MINE"),
             ),
             InlineMarkupDataDto(
                 rowPos = 3,
-                text = if (data?.cbEnabled == true) "❌ Отключить учет КБ" else "✅ Включить учет КБ",
+                text = i18n(
+                    code = if (data?.cbEnabled == true) "buttons.settings.cb.disable" else "buttons.settings.cb.enable",
+                    locale = locale,
+                    default = if (data?.cbEnabled == true) "❌ Отключить учет КБ" else "✅ Включить учет КБ"
+                ),
                 data = CallbackObject(StateCode.UPDATE_SETTINGS, "CB_ENABLE"),
             ),
         )
 
         buttons += InlineMarkupDataDto(
             rowPos = 4,
-            text = if (data?.quickResourceEnabled == true) "❌ Отключить быстрый учет" else "✅ Включить быстрый учет",
+            text = i18n(
+                code = if (data?.quickResourceEnabled == true) "buttons.settings.quick.disable" else "buttons.settings.quick.enable",
+                locale = locale,
+                default = if (data?.quickResourceEnabled == true) "❌ Отключить быстрый учет" else "✅ Включить быстрый учет"
+            ),
             data = CallbackObject(StateCode.UPDATE_SETTINGS, "QUICK_RESOURCES"),
         )
 
         buttons += InlineMarkupDataDto(
             rowPos = 99,
-            text = "✍\uFE0F Отправить пожелание\\сообщение об ошибке",
+            text = i18n(
+                code = "buttons.settings.send_report",
+                locale = locale,
+                default = "✍\uFE0F Отправить пожелание\\сообщение об ошибке"
+            ),
             data = CallbackObject(StateCode.UPDATE_SETTINGS, "SEND_REPORT"),
         )
 
         return buttons
     }
 
-    private fun getText(dto: SettingsDto?, type: NotificationType): String {
+    private fun getText(dto: SettingsDto?, type: NotificationType, locale: Locale): String {
         return when (type) {
             NotificationType.SIEGE -> {
                 if (dto?.siegeEnabled == true) {
-                    "\uD83D\uDCF4Включить в момент осады"
+                    i18n(
+                        code = "buttons.settings.siege.enabled",
+                        locale = locale,
+                        default = "\uD83D\uDCF4Включить в момент осады"
+                    )
                 } else {
-                    "\uD83D\uDCF4Включить за 5 минут до осады"
+                    i18n(
+                        code = "buttons.settings.siege.disabled",
+                        locale = locale,
+                        default = "\uD83D\uDCF4Включить за 5 минут до осады"
+                    )
                 }
             }
             NotificationType.MINE -> {
                 if (dto?.mineEnabled == true) {
-                    "❌ Отключить КШ"
+                    i18n(
+                        code = "buttons.settings.mine.disable",
+                        locale = locale,
+                        default = "❌ Отключить КШ"
+                    )
                 } else {
-                    "✅ Включить КШ"
+                    i18n(
+                        code = "buttons.settings.mine.enable",
+                        locale = locale,
+                        default = "✅ Включить КШ"
+                    )
                 }
             }
         }

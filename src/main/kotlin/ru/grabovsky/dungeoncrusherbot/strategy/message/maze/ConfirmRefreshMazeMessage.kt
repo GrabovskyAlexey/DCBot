@@ -18,14 +18,22 @@ class ConfirmRefreshMazeMessage(
         return listOf(
             InlineMarkupDataDto(
                 rowPos = 1,
-                text = "✅ДА",
+                text = i18n(
+                    code = "buttons.maze.confirm_refresh.confirm",
+                    locale = locale,
+                    default = "✅ДА"
+                ),
                 data = CallbackObject(
                     StateCode.CONFIRM_REFRESH_MAZE, "CONFIRM"
                 ),
             ),
             InlineMarkupDataDto(
                 rowPos = 1,
-                text = "❌НЕТ",
+                text = i18n(
+                    code = "buttons.maze.confirm_refresh.cancel",
+                    locale = locale,
+                    default = "❌НЕТ"
+                ),
                 data = CallbackObject(
                     StateCode.CONFIRM_REFRESH_MAZE, "NOT_CONFIRM"
                 )
