@@ -1,4 +1,4 @@
-﻿<#assign lang = locale?string("language")?lower_case>
+﻿<#assign lang = locale?string?lower_case>
 <#assign hasVersion = (data.version)?? && data.version?has_content>
 <#if lang?starts_with("en")>
   <#assign updateTitle = "📢 UPDATE">

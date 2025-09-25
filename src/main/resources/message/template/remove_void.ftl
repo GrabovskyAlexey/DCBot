@@ -1,1 +1,1 @@
-<#include 'request_count.ftl'>
+﻿<#include 'request_count.ftl'>

@@ -7,14 +7,21 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 abstract class AbstractCommand(
     command: Command,
     private val eventPublisher: ApplicationEventPublisher,
+    val userService: UserService,
     val sortOrder: Int = command.order
 ): BotCommand(command.command, command.text), BotCommands {
     fun classStateCode() = this.currentStateCode("Command")
+
+    override fun prepare(user: TgUser, chat: Chat, arguments: Array<out String>) {
+        userService.createOrUpdateUser(user)
+    }
 
     override fun execute(telegramClient: TelegramClient, user: User, chat: Chat, arguments: Array<out String>) {
         logger.info { "Process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id}" }
