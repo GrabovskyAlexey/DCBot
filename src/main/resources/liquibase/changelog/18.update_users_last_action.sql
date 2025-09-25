@@ -18,6 +18,11 @@ ALTER TABLE dc_bot.update_messages
 
 --changeset dc-bot:update_release_notes_1_1_7
 UPDATE dc_bot.update_messages
-SET text = E'- Добавлены быстрые кнопки +1/-1 для всех ресурсов.\n- Уведомления по шахтам теперь показывают правильное время даже после переключения вкладок.\n- Релиз-ноты отправляются на языке Telegram-профиля: русский по умолчанию, английский для остальных.',
-    text_en = E'- Added quick +1/-1 buttons for every resource.\n- Mine notifications now display the correct time even after switching tabs.\n- Release notes now follow your Telegram language: Russian by default, English otherwise.'
+SET text = E'- Добавлены быстрые кнопки +1/-1 для всех ресурсов.
+- Уведомления по шахтам теперь показывают правильное время даже после переключения вкладок.
+- Релиз-ноты отправляются на языке Telegram-профиля: русский по умолчанию, английский для остальных.',
+    text_en = E'- Added quick +1/-1 buttons for every resource.
+- Mine notifications now display the correct time even after switching tabs.
+- Release notes now follow your Telegram language: Russian by default, English otherwise.',
+    sent = false
 WHERE version = 'v.1.1.7';
