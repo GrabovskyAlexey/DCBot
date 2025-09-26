@@ -167,7 +167,7 @@ class TelegramBotServiceImpl(
 
         this.groupBy { it.rowPos }.toSortedMap().forEach { entry: Map.Entry<Int, List<InlineMarkupDataDto>> ->
             inlineKeyboardButtonsInner = mutableListOf()
-            entry.value.forEach { markup: InlineMarkupDataDto ->
+            entry.value.sortedBy { it.colPos }.forEach { markup: InlineMarkupDataDto ->
                 val button = InlineKeyboardButton(markup.text)
                 button.callbackData = objectMapper.writeValueAsString(markup.data)
                 inlineKeyboardButtonsInner.add(button)

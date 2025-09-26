@@ -19,10 +19,9 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         val dto = data ?: return emptyList()
 
         return buildList {
-            addAll(draadorButtons(dto, locale))
-            addAll(voidButtons(dto, locale))
+            addAll(allServers(dto, locale))
+            addAll(notMainServers(dto, locale))
             addAll(cbButtons(dto, locale))
-            addAll(exchangeButtons(dto, locale))
             addAll(noteButtons(dto, locale))
             addAll(historyButtons(dto, locale))
             addAll(notifyButtons(dto, locale))
@@ -30,35 +29,33 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         }
     }
 
-    private fun draadorButtons(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> = buildList {
-        add(button(2, locale, "buttons.resources.draador.catch", "\uD83E\uDE86 Поймать", SERVER_RESOURCE, "ADD_DRAADOR"))
-        if (dto.quickResourceEnabled) {
-            add(button(2, locale, "buttons.resources.increment", "+1", INCREMENT_DRAADOR))
-        }
-        add(button(2, locale, "buttons.resources.draador.sell", "\uD83E\uDE86 Продать", SERVER_RESOURCE, "SELL_DRAADOR"))
-        if (dto.quickResourceEnabled) {
-            add(button(2, locale, "buttons.resources.decrement", "-1", DECREMENT_DRAADOR))
-        }
-        if (!dto.main) {
-            add(button(3, locale, "buttons.resources.draador.receive", "\uD83E\uDE86 Получить", SERVER_RESOURCE, "RECEIVE_DRAADOR"))
+    private fun allServers(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> {
+        return buildList {
+            add(button(2, 1, locale, "buttons.resources.draador.catch", "\uD83E\uDE86 Поймать", SERVER_RESOURCE, "ADD_DRAADOR"))
+            add(button(2, 3, locale, "buttons.resources.draador.sell", "\uD83E\uDE86 Продать", SERVER_RESOURCE, "SELL_DRAADOR"))
+            add(button(4, 1, locale, "buttons.resources.void.add", "\uD83D\uDFE3 Добавить", SERVER_RESOURCE, "ADD_VOID"))
+            add(button(4, 3, locale, "buttons.resources.void.remove", "\uD83D\uDFE3 Удалить", SERVER_RESOURCE, "REMOVE_VOID"))
+
             if (dto.quickResourceEnabled) {
-                add(button(3, locale, "buttons.resources.increment", "+1", QUICK_RECEIVE_DRAADOR))
-            }
-            add(button(3, locale, "buttons.resources.draador.send", "\uD83E\uDE86 Передать", SERVER_RESOURCE, "SEND_DRAADOR"))
-            if (dto.quickResourceEnabled) {
-                add(button(3, locale, "buttons.resources.decrement", "-1", QUICK_SEND_DRAADOR))
+                add(button(2, 2, locale, "buttons.resources.increment", "+1", INCREMENT_DRAADOR))
+                add(button(2, 4, locale, "buttons.resources.decrement", "-1", DECREMENT_DRAADOR))
+                add(button(4, 2, locale, "buttons.resources.increment", "+1", INCREMENT_VOID))
+                add(button(4, 4, locale, "buttons.resources.decrement", "-1", DECREMENT_VOID))
             }
         }
     }
 
-    private fun voidButtons(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> = buildList {
-        add(button(4, locale, "buttons.resources.void.add", "\uD83D\uDFE3 Добавить", SERVER_RESOURCE, "ADD_VOID"))
-        if (dto.quickResourceEnabled) {
-            add(button(4, locale, "buttons.resources.increment", "+1", INCREMENT_VOID))
-        }
-        add(button(4, locale, "buttons.resources.void.remove", "\uD83D\uDFE3 Удалить", SERVER_RESOURCE, "REMOVE_VOID"))
-        if (dto.quickResourceEnabled) {
-            add(button(4, locale, "buttons.resources.decrement", "-1", DECREMENT_VOID))
+    private fun notMainServers(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> {
+        if (dto.main) return emptyList()
+        return buildList {
+            add(button(3, 1, locale, "buttons.resources.draador.receive", "\uD83E\uDE86 Получить", SERVER_RESOURCE, "RECEIVE_DRAADOR"))
+            add(button(3, 3, locale, "buttons.resources.draador.send", "\uD83E\uDE86 Передать", SERVER_RESOURCE, "SEND_DRAADOR"))
+
+            if (dto.quickResourceEnabled) {
+                add(button(3, 2, locale, "buttons.resources.increment", "+1", QUICK_RECEIVE_DRAADOR))
+                add(button(3, 4, locale, "buttons.resources.decrement", "-1", QUICK_SEND_DRAADOR))
+            }
+            addAll(exchangeButtons(dto, locale))
         }
     }
 
@@ -66,13 +63,11 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         if (!dto.cbEnabled) return emptyList()
 
         return buildList {
-            add(button(5, locale, "buttons.resources.cb.add", "\uD83D\uDE08 Добавить", SERVER_RESOURCE, "ADD_CB"))
+            add(button(5, 1, locale, "buttons.resources.cb.add", "\uD83D\uDE08 Добавить", SERVER_RESOURCE, "ADD_CB"))
+            add(button(5, 3, locale, "buttons.resources.cb.remove", "\uD83D\uDE08 Удалить", SERVER_RESOURCE, "REMOVE_CB"))
             if (dto.quickResourceEnabled) {
-                add(button(5, locale, "buttons.resources.increment", "+1", INCREMENT_CB))
-            }
-            add(button(5, locale, "buttons.resources.cb.remove", "\uD83D\uDE08 Удалить", SERVER_RESOURCE, "REMOVE_CB"))
-            if (dto.quickResourceEnabled) {
-                add(button(5, locale, "buttons.resources.decrement", "-1", DECREMENT_CB))
+                add(button(5, 2, locale, "buttons.resources.increment", "+1", INCREMENT_CB))
+                add(button(5, 4, locale, "buttons.resources.decrement", "-1", DECREMENT_CB))
             }
         }
     }
@@ -82,7 +77,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
 
         return buildList {
             if (dto.exchange != null) {
-                add(button(1, locale, "buttons.resources.exchange.remove", "\uD83D\uDCB1 Удалить обменник", SERVER_RESOURCE, "REMOVE_EXCHANGE"))
+                add(button(1, 1, locale, "buttons.resources.exchange.remove", "\uD83D\uDCB1 Удалить обменник", SERVER_RESOURCE, "REMOVE_EXCHANGE"))
             }
             val exchangeCode = if (dto.exchange != null) {
                 "buttons.resources.exchange.change"
@@ -94,25 +89,25 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
             } else {
                 "💱 Указать обменник"
             }
-            add(button(1, locale, exchangeCode, exchangeDefault, SERVER_RESOURCE, "ADD_EXCHANGE"))
+            add(button(1, 2, locale, exchangeCode, exchangeDefault, SERVER_RESOURCE, "ADD_EXCHANGE"))
         }
     }
 
     private fun noteButtons(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> = buildList {
         if (dto.main) {
-            add(button(6, locale, "buttons.notes.add", "✍\uFE0F Добавить заметку", SERVER_RESOURCE, "ADD_NOTE"))
+            add(button(6, 1, locale, "buttons.notes.add", "✍\uFE0F Добавить заметку", SERVER_RESOURCE, "ADD_NOTE"))
             if (dto.notes.isNotEmpty()) {
-                add(button(6, locale, "buttons.notes.remove", "❌ Удалить заметку", SERVER_RESOURCE, "REMOVE_NOTE"))
+                add(button(6, 2, locale, "buttons.notes.remove", "❌ Удалить заметку", SERVER_RESOURCE, "REMOVE_NOTE"))
             }
-            add(button(7, locale, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", SERVER_RESOURCE, "REMOVE_MAIN"))
+            add(button(7, 1, locale, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", SERVER_RESOURCE, "REMOVE_MAIN"))
         } else if (!dto.hasMain) {
-            add(button(6, locale, "buttons.resources.set_main", "\uD83D\uDC51 Сделать основным", SERVER_RESOURCE, "SET_MAIN"))
+            add(button(6, 3, locale, "buttons.resources.set_main", "\uD83D\uDC51 Сделать основным", SERVER_RESOURCE, "SET_MAIN"))
         }
     }
 
     private fun historyButtons(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> {
         if (!dto.hasHistory) return emptyList()
-        return listOf(button(98, locale, "buttons.resources.history", "\uD83D\uDDD2 Последние 20 операций", SERVER_RESOURCE, "RESOURCE_HISTORY"))
+        return listOf(button(98, 1, locale, "buttons.resources.history", "\uD83D\uDDD2 Последние 20 операций", SERVER_RESOURCE, "RESOURCE_HISTORY"))
     }
 
     private fun notifyButtons(dto: ServerResourceDto, locale: Locale): List<InlineMarkupDataDto> {
@@ -126,14 +121,15 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         } else {
             "\u2705 Закончил ловить"
         }
-        return listOf(button(97, locale, code, default, SERVER_RESOURCE, "DISABLE_NOTIFY"))
+        return listOf(button(97, 1, locale, code, default, SERVER_RESOURCE, "DISABLE_NOTIFY"))
     }
 
     private fun backButton(locale: Locale): InlineMarkupDataDto =
-        button(99, locale, "buttons.notes.back", "\uD83D\uDD19 Вернуться", SERVER_RESOURCE, "BACK")
+        button(99, 1, locale, "buttons.notes.back", "\uD83D\uDD19 Вернуться", SERVER_RESOURCE, "BACK")
 
     private fun button(
         row: Int,
+        column: Int,
         locale: Locale,
         code: String,
         default: String,
@@ -142,6 +138,7 @@ class ServerResourceMessage(messageGenerateService: MessageGenerateService) :
         vararg args: Any?,
     ): InlineMarkupDataDto = InlineMarkupDataDto(
         rowPos = row,
+        colPos = column,
         text = i18n(code, locale, default, *args),
         data = CallbackObject(state, payload)
     )
