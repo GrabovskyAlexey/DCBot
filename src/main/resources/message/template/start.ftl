@@ -15,7 +15,7 @@ It can notify you about sieges. Subscribe to the servers you care about with /su
 
 The bot can remember your position in the maze—call /maze and mirror your path both in the game and in the bot.
 
-It tracks matryoshkas, voids, and DH per server via /resources.
+It tracks maps, voids, and DH per server via /resources.
 
 You can also configure mine notifications or shift siege alerts 5 minutes earlier with /settings.
 <#else>
