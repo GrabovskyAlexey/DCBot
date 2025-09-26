@@ -23,7 +23,7 @@ class NotesMessage(
                     text = i18n(
                         code = "buttons.notes.add",
                         locale = locale,
-                        default = "✍\uFE0F Добавить заметкуL"
+                        default = "✍\uFE0F Добавить заметку"
                     ),
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES, "ADD_NOTE"
@@ -53,7 +53,7 @@ class NotesMessage(
                     text = i18n(
                         code = "buttons.notes.clear",
                         locale = locale,
-                        default = "\\uD83D\\uDDD1 Удалить все заметки"
+                        default = "\uD83D\uDDD1 Удалить все заметки"
                     ),
                     data = CallbackObject(
                         StateCode.UPDATE_NOTES, "CLEAR_NOTES"
@@ -68,7 +68,7 @@ class NotesMessage(
                     text = i18n(
                         code = "buttons.notes.back",
                         locale = locale,
-                        default = "\\uD83D\\uDD19 Вернуться"
+                        default = "\uD83D\uDD19 Вернуться"
                     ),
                     data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
                 )
