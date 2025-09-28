@@ -16,6 +16,9 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDto
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.MazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.UpdateMazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.RemoveNoteMessage
@@ -115,4 +118,12 @@ class MessageDelegationTest : ShouldSpec({
         assertDelegation(UpdateNotesMessage(messageService), NotesDto(emptyList()))
         assertDelegation(UpdateSettingsMessage(messageService), SettingsDto(false, false, false, false))
     }
+
+    should("делегировать генерацию для сообщений обменников") {
+        val dto = ExchangeDto("tester")
+        assertDelegation(ExchangeMessage(messageService), dto)
+        assertDelegation(UpdateExchangeMessage(messageService), dto)
+    }
+
 })
+

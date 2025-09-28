@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.state
+package ru.grabovsky.dungeoncrusherbot.strategy.state
 
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
@@ -23,6 +23,8 @@ enum class StateCode(
     UPDATE_SETTINGS(UPDATE_MESSAGE, linkedStateCode = SETTINGS),
     NOTES(SEND_MESSAGE, markType = UPDATE),
     UPDATE_NOTES(UPDATE_MESSAGE, linkedStateCode = NOTES),
+    EXCHANGE(SEND_MESSAGE, markType = UPDATE, template = "exchange"),
+    UPDATE_EXCHANGE(UPDATE_MESSAGE, template = "exchange", linkedStateCode = EXCHANGE),
     VERIFY(VERIFICATION, false),
     VERIFICATION_ERROR(SEND_MESSAGE, false, markType = DELETE),
     VERIFICATION_SUCCESS(DELETE_MESSAGES, false),

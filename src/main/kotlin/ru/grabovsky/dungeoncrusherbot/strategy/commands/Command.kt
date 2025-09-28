@@ -10,6 +10,7 @@ enum class Command(
     MAZE("maze", "\uD83C\uDF00 Лабиринт", 3),
     RESOURCES("resources", "\uD83D\uDCCA Учет ресурсов", 4),
     NOTES("notes", "\uD83D\uDDD2 Заметки", 5),
-    SETTINGS("settings", "⚙\uFE0F Настройки", 6),
+    EXCHANGE("exchange", "\uD83D\uDCB1 Поиск обменников", 6),
+    SETTINGS("settings", "⚙\uFE0F Настройки", 7),
     HELP("help", "❓ Помощь", 99);
 }
