@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import ru.grabovsky.dungeoncrusherbot.repository.UpdateMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -28,11 +29,13 @@ class RunAfterStartup(
         for (message in updateMessages) {
             users.forEach {
                 runCatching {
-                    telegramBotService.sendReleaseNotes(it.userId, message)
+                    telegramBotService.sendReleaseNotes(it, message)
                 }.onFailure { error ->
+                    if(error is TelegramApiRequestException && error.errorCode == 403) {
+                        it.isBlocked = true
+                        userRepository.save(it)
+                    }
                     logger.warn { "Couldn't send update message version: ${message.version} for user: $it with error: ${error.message}" }
-                    it.isBlocked = true
-                    userRepository.save(it)
                 }
             }
             message.sent = true

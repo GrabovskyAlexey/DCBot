@@ -1,4 +1,4 @@
-databaseChangeLog:
+﻿databaseChangeLog:
   - include:
       file: liquibase/changelog/1.create_tables.sql
   - include:
@@ -31,3 +31,7 @@ databaseChangeLog:
       file: liquibase/changelog/15.release_notes_1_1_5.sql
   - include:
       file: liquibase/changelog/16.release_notes_1_1_6.sql
+  - include:
+      file: liquibase/changelog/17.release_notes_1_1_7.sql
+  - include:
+      file: liquibase/changelog/18.update_users_last_action.sql

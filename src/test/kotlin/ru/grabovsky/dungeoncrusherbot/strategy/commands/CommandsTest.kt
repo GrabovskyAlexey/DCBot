@@ -1,0 +1,99 @@
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.commands
+
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import io.mockk.justRun
+import io.mockk.mockk
+import io.mockk.verify
+import jakarta.persistence.EntityNotFoundException
+import org.springframework.context.ApplicationEventPublisher
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
+import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.grabovsky.dungeoncrusherbot.entity.Resources
+import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+
+class CommandsTest : ShouldSpec({
+    val telegramClient = mockk<TelegramClient>(relaxed = true)
+    val chat = mockk<Chat>(relaxed = true)
+
+    should("create or update user and publish state for StartCommand") {
+        val userService = mockk<UserService>()
+        val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+        val command = StartCommand(userService, publisher)
+        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 100L }
+        every { userService.createOrUpdateUser(tgUser) } returns User(100L, "Tester", null, "tester")
+        every { publisher.publishEvent(any()) } answers {
+            val event = it.invocation.args[0] as TelegramStateEvent
+            event.user shouldBe tgUser
+            event.stateCode shouldBe command.classStateCode()
+        }
+
+        command.execute(telegramClient, tgUser, chat, emptyArray())
+
+        verify { userService.createOrUpdateUser(tgUser) }
+        verify { publisher.publishEvent(any<TelegramStateEvent>()) }
+    }
+
+    should("create resources when none exist for ResourcesCommand") {
+        val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+        val userService = mockk<UserService>()
+        val command = ResourcesCommand(publisher, userService)
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 200L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
+        val entityUser = User(200L, "Tester", null, "tester")
+        every { userService.createOrUpdateUser(tgUser) } returns entityUser
+        every { userService.getUser(200L) } returns entityUser
+        justRun { userService.saveUser(entityUser) }
+
+        command.prepare(tgUser, chat, emptyArray())
+
+        entityUser.resources shouldNotBe null
+        verify { userService.saveUser(entityUser) }
+    }
+
+    should("skip creation if resources already present") {
+        val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+        val userService = mockk<UserService>()
+        val command = ResourcesCommand(publisher, userService)
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 201L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
+        val entityUser = User(201L, "Tester", null, "tester").apply {
+            resources = Resources(user = this)
+        }
+        every { userService.createOrUpdateUser(tgUser) } returns entityUser
+        every { userService.getUser(201L) } returns entityUser
+
+        command.prepare(tgUser, chat, emptyArray())
+
+        verify(exactly = 0) { userService.saveUser(any()) }
+    }
+
+    should("throw if user not found for ResourcesCommand") {
+        val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+        val userService = mockk<UserService>()
+        val command = ResourcesCommand(publisher, userService)
+        val tgUser = mockk<TgUser>(relaxed = true) {
+            every { id } returns 202L
+            every { userName } returns "tester"
+            every { firstName } returns "Tester"
+        }
+        every { userService.createOrUpdateUser(tgUser) } returns User(202L, "Tester", null, "tester")
+        every { userService.getUser(202L) } returns null
+
+        shouldThrow<EntityNotFoundException> {
+            command.prepare(tgUser, chat, emptyArray())
+        }
+    }
+})

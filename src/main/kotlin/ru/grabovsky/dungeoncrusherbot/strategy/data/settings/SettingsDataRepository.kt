@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.data.settings
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.data.settings
 
 import org.springframework.stereotype.Repository
 import org.telegram.telegrambots.meta.api.objects.User
@@ -14,9 +14,10 @@ class SettingsDataRepository(
     override fun getData(user: User): SettingsDto {
         val userFromDb = userService.getUser(user.id)
         return SettingsDto(
-            userFromDb?.notificationSubscribe?.firstOrNull { it.type == NotificationType.SIEGE}?.enabled == true,
-            userFromDb?.notificationSubscribe?.firstOrNull{ it.type == NotificationType.MINE}?.enabled == true,
-            userFromDb?.settings?.resourcesCb ?: false
+            userFromDb?.notificationSubscribe?.firstOrNull { it.type == NotificationType.SIEGE }?.enabled == true,
+            userFromDb?.notificationSubscribe?.firstOrNull { it.type == NotificationType.MINE }?.enabled == true,
+            userFromDb?.settings?.resourcesCb ?: false,
+            userFromDb?.settings?.resourcesQuickChange ?: false,
         )
     }
 }

@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.service
+﻿package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
@@ -17,6 +17,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
+import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
@@ -27,26 +28,32 @@ class UserServiceImpl(
 ) : UserService {
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
-        val userFromTelegram = UserMapper.fromTelegramToEntity(user)
-        when {
-            userFromTelegram.userId != entity?.userId -> createNewUser(userFromTelegram)
-            userFromTelegram != entity || entity.isBlocked -> updateUser(entity, user)
-        }
-        return userFromTelegram
+        return entity?.let { updateUser(it, user) }
+            ?: createNewUser(UserMapper.fromTelegramToEntity(user))
     }
 
-    private fun updateUser(entity: User, user: TgUser) {
-        logger.info { "Update user: $user, entity: $entity" }
+    private fun updateUser(entity: User, user: TgUser): User {
+        val hasProfileChanges = entity.firstName != user.firstName ||
+                entity.lastName != user.lastName ||
+                entity.userName != user.userName ||
+                entity.language != user.languageCode ||
+                entity.isBlocked
+        if (hasProfileChanges) {
+            logger.info { "Update user: $user, entity: $entity" }
+        }
         entity.isBlocked = false
         entity.firstName = user.firstName
         entity.lastName = user.lastName
         entity.userName = user.userName
-        userRepository.saveAndFlush(entity)
+        entity.language = user.languageCode
+        entity.lastActionAt = Instant.now()
+        return userRepository.saveAndFlush(entity)
     }
 
-    private fun createNewUser(userFromTelegram: User) {
+    private fun createNewUser(userFromTelegram: User): User {
         logger.info { "Save new user: $userFromTelegram" }
         userFromTelegram.apply {
+            this.lastActionAt = Instant.now()
             this.maze = Maze(user = this)
             this.notificationSubscribe.addAll(
                 listOf(
@@ -55,8 +62,9 @@ class UserServiceImpl(
                 )
             )
         }
-        userRepository.saveAndFlush(userFromTelegram)
-        logger.info { "Save user entity with id = ${userFromTelegram.userId}" }
+        val saved = userRepository.saveAndFlush(userFromTelegram)
+        logger.info { "Save user entity with id = ${saved.userId}" }
+        return saved
     }
 
     override fun saveUser(user: User) {

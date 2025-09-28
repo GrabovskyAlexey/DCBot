@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.entity
+﻿package ru.grabovsky.dungeoncrusherbot.entity
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -23,6 +23,12 @@ data class User(
     var lastName: String?,
     @Column(name = "username")
     var userName: String?,
+    @Column(name = "language")
+    var language: String? = null,
+    @Column(name = "last_action_at")
+    @JsonSerialize(using = InstantSerializer::class)
+    @JsonDeserialize(using = DefaultInstantDeserializer::class)
+    var lastActionAt: Instant? = null,
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
     var maze: Maze? = null,
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
@@ -39,13 +45,13 @@ data class User(
     var notes: MutableList<String> = mutableListOf(),
     @CreationTimestamp
     @Column(name = "created_at")
-    @JsonSerialize(using= InstantSerializer::class)
-    @JsonDeserialize(using= DefaultInstantDeserializer::class)
+    @JsonSerialize(using = InstantSerializer::class)
+    @JsonDeserialize(using = DefaultInstantDeserializer::class)
     val createdAt: Instant = Instant.now(),
     @UpdateTimestamp
     @Column(name = "updated_at")
-    @JsonSerialize(using= InstantSerializer::class)
-    @JsonDeserialize(using= DefaultInstantDeserializer::class)
+    @JsonSerialize(using = InstantSerializer::class)
+    @JsonDeserialize(using = DefaultInstantDeserializer::class)
     val updatedAt: Instant = Instant.now(),
     @ManyToMany(fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE])
     @JoinTable(
@@ -69,6 +75,7 @@ data class User(
         if (firstName != other.firstName) return false
         if (lastName != other.lastName) return false
         if (userName != other.userName) return false
+        if (language != other.language) return false
 
         return true
     }
@@ -78,20 +85,22 @@ data class User(
         result = 31 * result + (firstName?.hashCode() ?: 0)
         result = 31 * result + (lastName?.hashCode() ?: 0)
         result = 31 * result + (userName?.hashCode() ?: 0)
+        result = 31 * result + (language?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String {
-        return "User(userName=$userName, lastName=$lastName, firstName=$firstName, userId=$userId, createdAt=$createdAt, updatedAt=$updatedAt)"
+        return "User(userName=$userName, lastName=$lastName, firstName=$firstName, language=$language, lastActionAt=$lastActionAt, userId=$userId, createdAt=$createdAt, updatedAt=$updatedAt)"
     }
 }
 
 data class UserSettings(
     var resourcesCb: Boolean = false,
     var sendWatermelon: Boolean = false,
+    var resourcesQuickChange: Boolean = false,
     var discordUsername: String? = null
 )
 
-enum class SettingTypes{
+enum class SettingTypes {
     CB
 }

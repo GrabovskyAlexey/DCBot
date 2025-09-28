@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.entity
+﻿package ru.grabovsky.dungeoncrusherbot.entity
 
 import jakarta.persistence.*
 
@@ -13,7 +13,8 @@ data class UpdateMessage(
     val version: String,
     @Column(name = "text")
     val text: String,
+    @Column(name = "text_en")
+    val textEn: String? = null,
     @Column(name = "sent")
     var sent: Boolean = true
 )
-

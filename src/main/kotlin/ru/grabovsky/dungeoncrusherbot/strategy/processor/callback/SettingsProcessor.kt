@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.processor.callback
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.processor.callback
 
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
@@ -12,11 +12,11 @@ import org.telegram.telegrambots.meta.api.objects.User as tgUser
 @Component
 class SettingsProcessor(
     private val userService: UserService,
-    stateService: StateService
+    stateService: StateService,
 ) : CallbackProcessor(stateService) {
     override fun process(
         user: tgUser,
-        callbackData: String
+        callbackData: String,
     ): ExecuteStatus {
         val userFromDb = userService.getUser(user.id)!!
         val state = stateService.getState(user)
@@ -26,6 +26,7 @@ class SettingsProcessor(
             "NOTIFY_SIEGE" -> processNotify(userFromDb, NotificationType.SIEGE)
             "NOTIFY_MINE" -> processNotify(userFromDb, NotificationType.MINE)
             "CB_ENABLE" -> userFromDb.settings.resourcesCb = !userFromDb.settings.resourcesCb
+            "QUICK_RESOURCES" -> userFromDb.settings.resourcesQuickChange = !userFromDb.settings.resourcesQuickChange
         }
 
         userService.saveUser(userFromDb)
@@ -41,8 +42,8 @@ class SettingsProcessor(
                 NotificationSubscribe(
                     user = user,
                     type = type,
-                    enabled = true
-                )
+                    enabled = true,
+                ),
             )
         }
     }
