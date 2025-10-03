@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.message.exchange
+package ru.grabovsky.dungeoncrusherbot.strategy.message.exchange
 
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService

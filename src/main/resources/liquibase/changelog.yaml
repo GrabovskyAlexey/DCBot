@@ -35,3 +35,5 @@
       file: liquibase/changelog/17.release_notes_1_1_7.sql
   - include:
       file: liquibase/changelog/18.update_users_last_action.sql
+  - include:
+      file: liquibase/changelog/19.create_tables_exchange.sql
