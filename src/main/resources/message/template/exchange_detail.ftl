@@ -1,34 +1,45 @@
 <#assign lang = (locale?string?lower_case)!"">
-<#assign isEn = lang?starts_with('en')>
-<#assign name = (data?if_exists.username)!"">
-<#if name?has_content>
-  <#if isEn>
-Hello, *${name}*!
-  <#else>
-Привет, *${name}*!
-  </#if>
-<#else>
-  <#if isEn>
-Hello!
-  <#else>
-Привет!
-  </#if>
-</#if>
+<#assign isEn = lang?starts_with("en")>
 
 <#if isEn>
-*Server ${data.serverId}<#if data.serverName?has_content> (${data.serverName})</#if>*
-<#if data.exchange?has_content>
-Permanent exchanger: *${data.exchange}*
+*Server ${data.serverId}*
 <#else>
-Exchange is not set yet.
+*Сервер ${data.serverId}*
 </#if>
-Reach out in game or via your usual channel to arrange trades. Use the button below to return to the list.
-<#else>
-*Сервер ${data.serverId}<#if data.serverName?has_content> (${data.serverName})</#if>*
-<#if data.exchange?has_content>
-Постоянный обменник: *${data.exchange}*
-<#else>
-Обменник пока не указан.
+<#if data.requests?has_content>
+  <#if isEn>
+*Your active requests:*
+  <#else>
+*Твои активные заявки:*
+  </#if>
+  <#list data.requests as request>
+    <#assign targetId = request.targetServerId!isEn?string("any server","любой сервер")>
+    <#if isEn>
+    <#if request.type == "EXCHANGE_MAP">
+*${request.pos}.* Exchange 🪆 ➡️ *${targetId}*
+    <#elseif request.type == "EXCHANGE_VOID">
+*${request.pos}.* Exchange 🟣 ➡️ *${targetId}*
+    <#elseif request.type == "SELL_MAP">
+*${request.pos}.* Sell 🪆 *${request.sourcePrice}:${request.targetPrice} 🟣*
+    <#elseif request.type == "BUY_MAP">
+*${request.pos}.* Buy 🪆 *${request.sourcePrice}:${request.targetPrice} 🟣*
 </#if>
-Свяжись с ним в игре или привычным способом, чтобы договориться об обмене. Используй кнопку ниже, чтобы вернуться к списку.
+    <#else>
+        <#if request.type == "EXCHANGE_MAP">
+*${request.pos}.* Обменять 🪆 ➡️ *${targetId}*
+        <#elseif request.type == "EXCHANGE_VOID">
+*${request.pos}.* Обменять 🟣 ➡️ *${targetId}*
+        <#elseif request.type == "SELL_MAP">
+*${request.pos}.* Продать 🪆 *${request.sourcePrice}:${request.targetPrice} 🟣*
+        <#elseif request.type == "BUY_MAP">
+*${request.pos}.* Купить 🪆 *${request.targetPrice}:${request.sourcePrice} 🟣*
+        </#if>
+    </#if>
+  </#list>
+<#else>
+  <#if isEn>
+You have no active requests yet.
+  <#else>
+У тебя пока нет активных заявок.
+  </#if>
 </#if>

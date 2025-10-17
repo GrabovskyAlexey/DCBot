@@ -65,6 +65,13 @@ data class User(
     @JoinColumn(name = "user_id")
     val notificationSubscribe: MutableList<NotificationSubscribe> = mutableListOf()
 ) {
+
+    fun isActive() =
+        !isBlocked
+
+    fun isActiveAndHasUsername() =
+        isActive() && userName != null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

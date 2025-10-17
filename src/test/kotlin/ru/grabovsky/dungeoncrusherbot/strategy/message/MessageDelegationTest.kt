@@ -124,17 +124,16 @@ class MessageDelegationTest : ShouldSpec({
 
     should("делегировать генерацию для сообщений обменников") {
         val listDto = ExchangeDto(
-            username = "tester",
             servers = listOf(
-                ExchangeDto.Server(id = 1, name = "Alpha", hasExchange = true, exchange = "NickOne", main = false),
-                ExchangeDto.Server(id = 2, name = "Beta", hasExchange = false, exchange = null, main = true)
-            )
+                ExchangeDto.Server(id = 1, main = false),
+                ExchangeDto.Server(id = 2, main = true)
+            ),
+            hasUsername = true
         )
         val detailDto = ExchangeDetailDto(
             username = "tester",
             serverId = 1,
-            serverName = "Alpha",
-            exchange = "NickOne"
+            requests = emptyList(),
         )
         assertDelegation(ExchangeMessage(messageService), listDto)
         assertDelegation(UpdateExchangeMessage(messageService), listDto)

@@ -6,6 +6,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.State
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
-class UpdateExchangeState : State {
-    override fun getNextState(user: User): StateCode? = null
-}
+class UpdateExchangeState : ExchangeState()

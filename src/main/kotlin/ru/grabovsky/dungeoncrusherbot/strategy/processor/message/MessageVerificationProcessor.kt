@@ -4,6 +4,7 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 abstract class MessageVerificationProcessor(private val stateService: StateService) : MessageProcessor {
     override fun execute(user: User, message: Message) {
@@ -16,6 +17,10 @@ abstract class MessageVerificationProcessor(private val stateService: StateServi
             this.message = message.text
             this.stateCode = state.state
         } ?: VerificationRequest(message = message.text, stateCode = state.state)
+        val stateCode = this.classStateCode()
+        if (stateCode == StateCode.SET_SOURCE_PRICE || stateCode == StateCode.SET_TARGET_PRICE) {
+            state.prevState = stateCode
+        }
         stateService.saveState(state)
     }
 }

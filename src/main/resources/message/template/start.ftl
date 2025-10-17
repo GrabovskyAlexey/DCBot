@@ -17,6 +17,8 @@ The bot can remember your position in the maze—call /maze and mirror your path
 
 It tracks maps, voids, and DH per server via /resources.
 
+Looking for exchange partners? Use /exchange to search for traders or buyers.
+
 You can also configure mine notifications or shift siege alerts 5 minutes earlier with /settings.
 <#else>
 Это - бот-помощник для игры Dungeon Crusher.
@@ -26,6 +28,8 @@ You can also configure mine notifications or shift siege alerts 5 minutes earlie
 Бот может запоминать твою позицию в лабиринте - для этого вызови команду /maze и дублируй свой путь как в игре, так и в боте.
 
 Учёт матрёшек, пустот и КБ по серверам ведётся через команду /resources.
+
+Ищешь обменника или покупателя? Загляни в /exchange и попробуй найти подходящее предложение.
 
 Также можно настроить уведомления о КШ или перенести уведомление об осаде за 5 минут до её начала с помощью команды /settings.
 </#if>

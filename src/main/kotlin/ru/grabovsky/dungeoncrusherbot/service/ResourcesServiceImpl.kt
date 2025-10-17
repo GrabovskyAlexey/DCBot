@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
@@ -15,14 +16,18 @@ import java.time.LocalDate
 @Service
 class ResourcesServiceImpl(
     private val userService: UserService,
+    private val stateService: StateService,
     private val googleFormService: GoogleFormService
 ) : ResourcesService {
 
     override fun processResources(user: TgUser, value: String, state: StateCode) {
         val userFromDb =
             userService.getUser(user.id) ?: throw EntityNotFoundException("User with id: ${user.id} not found")
+        val userState = stateService.getState(user)
         val resources = userFromDb.resources
-        val lastServerId = resources?.lastServerId
+        requireNotNull(resources)
+        val lastServerId = userState.lastServerIdByState[RESOURCES]
+            ?: resources.lastServerId
             ?: throw IllegalStateException("Not found last server id for resources user: ${user.userName ?: user.firstName}")
         val serverData = resources.data.servers.computeIfAbsent(lastServerId) { key -> ServerResourceData() }
         val history = resources.history.computeIfAbsent(lastServerId) { key -> (mutableListOf()) }
@@ -31,6 +36,7 @@ class ResourcesServiceImpl(
             ADD_VOID, REMOVE_VOID -> processVoid(serverData, value, history, state)
             ADD_CB, REMOVE_CB -> processCb(serverData, value, history, state)
             ADD_DRAADOR, SELL_DRAADOR, SEND_DRAADOR -> processDraador(serverData, value, history, state)
+            SET_SOURCE_PRICE -> processSellDraadorWithVoid(serverData, value, history)
             RECEIVE_DRAADOR -> receiveDraador(resources, value, lastServerId)
             ADD_EXCHANGE -> serverData.exchange = value
             else -> {}
@@ -165,6 +171,48 @@ class ResourcesServiceImpl(
 
             else -> {}
         }
+    }
+
+    private fun processSellDraadorWithVoid(
+        serverData: ServerResourceData,
+        value: String,
+        history: MutableList<ResourcesHistory>
+    ) {
+        val parts = value.split(":", limit = 2)
+        if (parts.size != 2) {
+            return
+        }
+        val draadorAmount = parts[0].toIntOrNull()
+        val voidAmount = parts[1].toIntOrNull()
+        if (draadorAmount == null || voidAmount == null) {
+            return
+        }
+        if (draadorAmount <= 0 || voidAmount <= 0) {
+            return
+        }
+        serverData.draadorCount -= draadorAmount
+        if (serverData.draadorCount < 0) {
+            serverData.draadorCount = 0
+        }
+        updateHistory(
+            history,
+            ResourcesHistory(
+                LocalDate.now(),
+                ResourceType.DRAADOR,
+                DirectionType.TRADE,
+                draadorAmount
+            )
+        )
+        serverData.voidCount += voidAmount
+        updateHistory(
+            history,
+            ResourcesHistory(
+                LocalDate.now(),
+                ResourceType.VOID,
+                DirectionType.ADD,
+                voidAmount
+            )
+        )
     }
 
     private fun receiveDraador(resources: Resources, value: String, lastServerId: Int) {

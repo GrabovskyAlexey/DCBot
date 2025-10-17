@@ -11,7 +11,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.util.Locale
 
 @Component
-open class ExchangeMessage(
+class ExchangeMessage(
     messageGenerateService: MessageGenerateService
 ) : AbstractSendMessage<ExchangeDto>(messageGenerateService) {
 
@@ -28,7 +28,7 @@ open class ExchangeMessage(
                         rowPos = row,
                         colPos = column,
                         text = buildServerLabel(server),
-                        data = CallbackObject(StateCode.EXCHANGE, "SERVER ${server.id}")
+                        data = CallbackObject(StateCode.EXCHANGE, "EXCHANGE ${server.id}")
                     )
                 )
                 column++
@@ -41,8 +41,8 @@ open class ExchangeMessage(
     }
 
     private fun buildServerLabel(server: ExchangeDto.Server): String {
-        val prefix = if (server.hasExchange && !server.main) "✅" else ""
         val suffix = if (server.main) "👑" else ""
+        val prefix = if(server.hasRequests) "✅" else ""
         return "$prefix${server.id}$suffix"
     }
 }

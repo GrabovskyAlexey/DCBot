@@ -18,6 +18,11 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.ConfirmRefreshMazeProcessor
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.MazeProcessor
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.note.NotesProcessor
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.settings.SettingsProcessor
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.subscribe.SubscribeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_MAZE
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_NOTES

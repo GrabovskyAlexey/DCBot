@@ -15,6 +15,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.resources.IncrementCbProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 

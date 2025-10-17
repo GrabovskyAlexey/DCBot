@@ -7,6 +7,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.data.AbstractDataRepository
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.RESOURCES
 import ru.grabovsky.dungeoncrusherbot.util.CommonUtils.currentStateCode
 
 @Repository
@@ -16,14 +17,16 @@ class ServerResourceDataRepository(
 ) : AbstractDataRepository<ServerResourceDto>() {
     override fun getData(user: User): ServerResourceDto {
         val userFromDb = userService.getUser(user.id)
+        val userState = stateService.getState(user)
         val resources = userFromDb?.resources
-        val lastServerId = resources?.lastServerId
+        requireNotNull(resources)
+        val lastServerId = userState.lastServerIdByState[RESOURCES]
+            ?: resources.lastServerId
             ?: throw IllegalStateException("Not found last server id for resources user: ${user.userName ?: user.firstName}")
         val serverData = resources.data.servers.computeIfAbsent(lastServerId) { ServerResourceData() }
-        val state = stateService.getState(user)
 
         val history = resources.history[lastServerId]
-        val historyItems = if (state.callbackData == "RESOURCE_HISTORY") {
+        val historyItems = if (userState.callbackData == "RESOURCE_HISTORY") {
             stateService.updateState(user, currentStateCode("DataRepository"))
             history?.map { it.toString() }
         } else {

@@ -19,6 +19,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
 import ru.grabovsky.dungeoncrusherbot.entity.DirectionType
 import ru.grabovsky.dungeoncrusherbot.entity.ResourceType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -26,8 +27,9 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class ResourcesServiceImplTest : ShouldSpec({
 
     val userService = mockk<UserService>()
+    val stateService = mockk<StateService>()
     val googleFormService = mockk<GoogleFormService>(relaxed = true)
-    val service = ResourcesServiceImpl(userService, googleFormService)
+    val service = ResourcesServiceImpl(userService, stateService, googleFormService)
     val telegramUser = mockk<TgUser>(relaxed = true) {
         every { id } returns 77L
         every { userName } returns "tg"
@@ -137,6 +139,28 @@ class ResourcesServiceImplTest : ShouldSpec({
         service.processResources(telegramUser, "5", StateCode.SELL_DRAADOR)
 
         serverData.draadorCount shouldBe 0
+    }
+
+    should("sell draador with explicit void reward") {
+        serverData.draadorCount = 12
+        serverData.voidCount = 1
+
+        service.processResources(telegramUser, "5:3", StateCode.SET_SOURCE_PRICE)
+
+        serverData.draadorCount shouldBe 7
+        serverData.voidCount shouldBe 4
+        val history = resources.history[5]!!
+        history shouldHaveSize 2
+        history.first().apply {
+            resource shouldBe ResourceType.DRAADOR
+            type shouldBe DirectionType.TRADE
+            quantity shouldBe 5
+        }
+        history.last().apply {
+            resource shouldBe ResourceType.VOID
+            type shouldBe DirectionType.ADD
+            quantity shouldBe 3
+        }
     }
 
     should("populate exchange value") {

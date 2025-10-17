@@ -11,6 +11,8 @@ Remember your position in the maze. Just send /maze and mirror your path—even 
 
 Track voids, maps, and other useful stuff via /resources.
 
+Need traders? Ping /exchange to look for an exchange offer or a buyer among other players.
+
 It can also mute notifications for servers that are already cleared this week—use /resources to avoid extra pings.
 
 In /settings you can enable mine notifications, shift siege alerts 5 minutes earlier (enough time to make tea), and even activate DH tracking—just in case.
@@ -24,6 +26,8 @@ In /settings you can enable mine notifications, shift siege alerts 5 minutes ear
 Запоминать твою позицию в лабиринте. Просто напиши /maze и дублируй свой путь - да, даже если у тебя память как у золотой рыбки.
 
 Вести учёт пустот, матрёшек и другой полезной ерунды через /resources.
+
+Нужен обменник или покупатель? Используй /exchange, чтобы попробовать найти подходящее предложение среди игроков.
 
 А ещё умеет отключать уведомления по серверам, где на этой неделе всё уже наловлено и набито - воспользуйся /resources, чтобы не получать лишние пинги.
 
