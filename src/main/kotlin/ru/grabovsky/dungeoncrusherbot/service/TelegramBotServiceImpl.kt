@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import org.telegram.telegrambots.meta.api.methods.send.SendContact
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessages
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
@@ -105,7 +106,6 @@ class TelegramBotServiceImpl(
         state.deletedMessages.clear()
         stateService.saveState(state)
     }
-
 
     private fun getEditMessage(user: User, stateCode: StateCode, messageId: Int): EditMessageText {
         logger.info { "Get update message for state: $stateCode, user: ${user.userName ?: user.firstName}" }
@@ -226,13 +226,13 @@ class TelegramBotServiceImpl(
                 }
         }.onFailure {
             error ->
-            logger.warn { "Notification send error: $error" }
+            logger.warn { "Notification to chatId: $chatId with text: ${sendMessage.text} send with error: ${error.message} " }
             return !(error is TelegramApiRequestException && error.errorCode == 403)
         }.isSuccess
     }
 
     override fun deleteOldNotify() {
-        logger.info { "Start deleting old messages" }
+        logger.debug { "Start deleting old messages" }
         val deleteTimestamp = Instant.now().minus(2, ChronoUnit.HOURS)
         val messageForDelete = notifyHistoryService.getNotDeletedHistoryEvent()
             .filter { it.userId != null }

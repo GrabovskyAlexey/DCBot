@@ -21,3 +21,11 @@ server:
 logging:
   file:
     name: ./logs/bot.log
+
+scheduler:
+  cron:
+    siege: "55 59 * ? * *"
+    before-siege: "0 55 * ? * *"
+    delete-old-notify: "0 0 * ? * *"
+    clear-disable-notify: "0 0 0 ? * MON"
+    clan-mine: "0 59 23,11 ? * *"

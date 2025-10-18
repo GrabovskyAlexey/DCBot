@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.state
+package ru.grabovsky.dungeoncrusherbot.strategy.state
 
 import ru.grabovsky.dungeoncrusherbot.strategy.state.MarkType.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateAction.*
@@ -23,6 +23,10 @@ enum class StateCode(
     UPDATE_SETTINGS(UPDATE_MESSAGE, linkedStateCode = SETTINGS),
     NOTES(SEND_MESSAGE, markType = UPDATE),
     UPDATE_NOTES(UPDATE_MESSAGE, linkedStateCode = NOTES),
+    EXCHANGE(SEND_MESSAGE, markType = UPDATE),
+    UPDATE_EXCHANGE(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    EXCHANGE_DETAIL(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    UPDATE_EXCHANGE_DETAIL(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
     VERIFY(VERIFICATION, false),
     VERIFICATION_ERROR(SEND_MESSAGE, false, markType = DELETE),
     VERIFICATION_SUCCESS(DELETE_MESSAGES, false),
@@ -38,6 +42,13 @@ enum class StateCode(
     SELL_DRAADOR(SEND_MESSAGE, markType = DELETE),
     SEND_DRAADOR(SEND_MESSAGE, markType = DELETE),
     RECEIVE_DRAADOR(SEND_MESSAGE, markType = DELETE),
+    SET_SOURCE_PRICE(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    SET_TARGET_PRICE(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    SET_TARGET_SERVER(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    REMOVE_EXCHANGE_REQUEST(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    SEARCH_EXCHANGE(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    SEARCH_EXCHANGE_RESULT(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
+    SEND_EXCHANGE_CONTACT(UPDATE_MESSAGE, linkedStateCode = EXCHANGE),
     INCREMENT_DRAADOR(NOTHING, pause = false),
     DECREMENT_DRAADOR(NOTHING, pause = false),
     INCREMENT_VOID(NOTHING, pause = false),

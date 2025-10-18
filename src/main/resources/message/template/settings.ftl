@@ -14,7 +14,7 @@ Here you can enable or disable notifications
 <#if isEn>
 *Siege:* <#if data.siegeEnabled>5 minutes before<#else>at siege start</#if>
 *Mine:* <#if data.mineEnabled>✅<#else>❌</#if>
-*CB:* <#if data.cbEnabled>✅<#else>❌</#if>
+*DH:* <#if data.cbEnabled>✅<#else>❌</#if>
 *Quick tracking:* <#if data.quickResourceEnabled>✅<#else>❌</#if>
 <#else>
 *Осада:* <#if data.siegeEnabled>за 5 минут<#else>в момент осады</#if>

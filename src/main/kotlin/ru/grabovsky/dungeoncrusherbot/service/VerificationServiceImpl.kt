@@ -7,11 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.repository.VerificationRequestRepository
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.VerificationService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.*
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
 
@@ -21,7 +17,7 @@ class VerificationServiceImpl(
     private val verificationRequestRepository: VerificationRequestRepository,
     private val resourcesService: ResourcesService,
     private val userService: UserService,
-    private val mazeService: MazeService
+    private val mazeService: MazeService,
 ) : VerificationService {
 
     override fun verify(user: User, stateCode: StateCode) {
@@ -31,7 +27,7 @@ class VerificationServiceImpl(
             request.result = when (request.stateCode) {
                 ADD_EXCHANGE -> request.message.isNotEmpty()
                 ADD_VOID, REMOVE_VOID, ADD_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, SELL_DRAADOR, ADD_CB, REMOVE_CB -> request.message.toInt() > 0
-                SAME_LEFT, SAME_RIGHT, SAME_CENTER -> request.message.toInt() > 0 && request.message.toInt() <= 10
+                SAME_LEFT, SAME_RIGHT, SAME_CENTER -> request.message.toInt() in 1..10
                 ADD_NOTE -> request.message.isNotEmpty()
                 REMOVE_NOTE -> verifyRemoveNotes(user, request.message)
                 else -> false
@@ -59,10 +55,12 @@ class VerificationServiceImpl(
     }
 
     private fun processResource(user: User, value: String, state: StateCode, result: Boolean) {
-        if (result) {
-            resourcesService.processResources(user, value, state)
+        if (!result) {
+            return
         }
+        resourcesService.processResources(user, value, state)
     }
+
     private fun processNote(user: User, value: String, state: StateCode, result: Boolean) {
         val userFromDb = userService.getUser(user.id) ?: return
         if (result) {

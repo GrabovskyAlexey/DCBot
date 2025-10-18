@@ -16,7 +16,7 @@ class ResourcesCommand(
 ): AbstractCommand(Command.RESOURCES, eventPublisher, userService) {
     override fun prepare(user: TgUser, chat: Chat, arguments: Array<out String>) {
         super.prepare(user, chat, arguments)
-        logger.info { "Check resources for user: ${user.userName ?: user.firstName}" }
+        logger.debug { "Check resources for user: ${user.userName ?: user.firstName}" }
         val userFromDb = userService.getUser(user.id) ?: throw EntityNotFoundException("User with id: ${user.id} not found")
         if (userFromDb.resources == null) {
             userFromDb.resources = Resources(user = userFromDb)
@@ -24,7 +24,7 @@ class ResourcesCommand(
             logger.info { "Create resources for user: ${user.userName ?: user.firstName}" }
             return
         }
-        logger.info { "Resources for user: ${user.userName ?: user.firstName} already exists" }
+        logger.debug { "Resources for user: ${user.userName ?: user.firstName} already exists" }
     }
 
     companion object {

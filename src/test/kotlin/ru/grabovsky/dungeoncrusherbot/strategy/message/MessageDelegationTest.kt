@@ -5,17 +5,23 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDetailDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeDetailMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeDetailMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.MazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.UpdateMazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.RemoveNoteMessage
@@ -115,4 +121,24 @@ class MessageDelegationTest : ShouldSpec({
         assertDelegation(UpdateNotesMessage(messageService), NotesDto(emptyList()))
         assertDelegation(UpdateSettingsMessage(messageService), SettingsDto(false, false, false, false))
     }
+
+    should("делегировать генерацию для сообщений обменников") {
+        val listDto = ExchangeDto(
+            servers = listOf(
+                ExchangeDto.Server(id = 1, main = false),
+                ExchangeDto.Server(id = 2, main = true)
+            ),
+            hasUsername = true
+        )
+        val detailDto = ExchangeDetailDto(
+            username = "tester",
+            serverId = 1,
+            requests = emptyList(),
+        )
+        assertDelegation(ExchangeMessage(messageService), listDto)
+        assertDelegation(UpdateExchangeMessage(messageService), listDto)
+        assertDelegation(ExchangeDetailMessage(messageService), detailDto)
+        assertDelegation(UpdateExchangeDetailMessage(messageService), detailDto)
+    }
 })
+

@@ -12,13 +12,14 @@ import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.resources.ResourcesProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesProcessorTest : ShouldSpec({
     val stateService = mockk<StateService>()
     val userService = mockk<UserService>()
-    val processor = ResourcesProcessor(userService, stateService)
+    val processor = ResourcesProcessor(stateService)
 
     beforeTest {
         clearMocks(stateService, userService)
