@@ -18,7 +18,7 @@ class SchedulerService(
     private val notifyHistoryService: NotifyHistoryService
 ) {
 
-    @Scheduled(cron = "0 0 * ? * *")
+    @Scheduled(cron = "\${scheduler.cron.siege}")
     fun scheduleSiege() {
         val dateTime = LocalDateTime.now(ZoneId.ofOffset("UTC", ZoneOffset.of("+03:00:00")))
         if (dateTime.isNotSiegeTime()) {
@@ -27,7 +27,7 @@ class SchedulerService(
         sendSiegeNotification(dateTime.toLocalTime(), false)
     }
 
-    @Scheduled(cron = "0 55 * ? * * ")
+    @Scheduled(cron = "\${scheduler.cron.before-siege}")
     fun scheduleBeforeSiege() {
         val dateTime = LocalDateTime.now(ZoneId.ofOffset("UTC", ZoneOffset.of("+03:00:00"))).plusMinutes(5)
         if (dateTime.isNotSiegeTime()) {
@@ -37,7 +37,7 @@ class SchedulerService(
     }
 
     private fun sendSiegeNotification(time: LocalTime, isBefore: Boolean) {
-        logger.info { "Schedule siege time: $time" }
+        logger.debug { "Schedule siege time: $time" }
         val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users
             .filter { user ->
@@ -77,13 +77,13 @@ class SchedulerService(
         (this.dayOfWeek == DayOfWeek.SUNDAY && this.hour > 21) ||
                 (this.dayOfWeek == DayOfWeek.MONDAY && this.hour < 3)
 
-    @Scheduled(cron = "0 0 * ? * *")
+    @Scheduled(cron = "\${scheduler.cron.delete-old-notify}")
     fun deleteOldNotify() {
         telegramBotService.deleteOldNotify()
         notifyHistoryService.deleteOldEvents()
     }
 
-    @Scheduled(cron = "0 0 0 ? * MON")
+    @Scheduled(cron = "\${scheduler.cron.clear-disable-notify}")
     fun clearDisableNotify() {
         logger.info { "Start enable all server siege notification" }
         val users = userRepository.findAll()
@@ -95,7 +95,7 @@ class SchedulerService(
         userRepository.saveAllAndFlush(users)
     }
 
-    @Scheduled(cron = "0 59 23,11 ? * *")
+    @Scheduled(cron = "\${scheduler.cron.clan-mine}")
     fun sendClanMineNotification() {
         val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users

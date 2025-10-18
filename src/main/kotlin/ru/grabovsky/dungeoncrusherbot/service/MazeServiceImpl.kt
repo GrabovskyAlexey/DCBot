@@ -22,7 +22,7 @@ class MazeServiceImpl(
             if (currentLocation.level >= 500) return
             processStep(direction, currentLocation, maze)
             mazeRepository.saveAndFlush(maze)
-        }.also { logger.info { "Maze process complete: ${it}ms" } }
+        }.also { logger.debug { "Maze process complete: ${it}ms" } }
     }
 
     private fun processStep(
@@ -56,7 +56,7 @@ class MazeServiceImpl(
                 if (currentLocation.level >= 500) break
             }
             mazeRepository.saveAndFlush(maze)
-        }.also { logger.info { "Maze process complete: ${it}ms" } }
+        }.also { logger.debug { "Maze process complete: ${it}ms" } }
     }
 
     override fun refreshMaze(maze: Maze) {

@@ -226,13 +226,13 @@ class TelegramBotServiceImpl(
                 }
         }.onFailure {
             error ->
-            logger.warn { "Notification send error: $error" }
+            logger.warn { "Notification to chatId: $chatId with text: ${sendMessage.text} send with error: ${error.message} " }
             return !(error is TelegramApiRequestException && error.errorCode == 403)
         }.isSuccess
     }
 
     override fun deleteOldNotify() {
-        logger.info { "Start deleting old messages" }
+        logger.debug { "Start deleting old messages" }
         val deleteTimestamp = Instant.now().minus(2, ChronoUnit.HOURS)
         val messageForDelete = notifyHistoryService.getNotDeletedHistoryEvent()
             .filter { it.userId != null }
