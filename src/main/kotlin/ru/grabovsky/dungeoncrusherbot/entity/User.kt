@@ -107,7 +107,3 @@ data class UserSettings(
     var resourcesQuickChange: Boolean = false,
     var discordUsername: String? = null
 )
-
-enum class SettingTypes {
-    CB
-}

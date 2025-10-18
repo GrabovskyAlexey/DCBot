@@ -140,10 +140,9 @@ class ExchangeRequestServiceImpl(
 
         val mapRequest = self.filter { it.type == EXCHANGE_MAP }
         val voidRequest = self.filter { it.type == EXCHANGE_VOID }
-        val l1 = all.filter { it.type == EXCHANGE_MAP }.filter {mapRequest.any { req -> req.targetServerId == it.sourceServerId } }
-        val l2 = all.filter { it.type == EXCHANGE_VOID }.filter {voidRequest.any { req -> req.targetServerId == it.sourceServerId } }
+        val exchangeMapRequest = all.filter { it.type == EXCHANGE_MAP }.filter {mapRequest.any { req -> req.targetServerId == it.sourceServerId } }
+        val exchangeVoidRequest = all.filter { it.type == EXCHANGE_VOID }.filter {voidRequest.any { req -> req.targetServerId == it.sourceServerId } }
 
-        return buyRequests + sellRequests + l1 + l2
-
+        return buyRequests + sellRequests + exchangeMapRequest + exchangeVoidRequest
     }
 }

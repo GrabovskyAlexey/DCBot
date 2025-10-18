@@ -18,7 +18,6 @@ class VerificationServiceImpl(
     private val resourcesService: ResourcesService,
     private val userService: UserService,
     private val mazeService: MazeService,
-//    private val exchangeRequestService: ExchangeRequestService
 ) : VerificationService {
 
     override fun verify(user: User, stateCode: StateCode) {
@@ -27,7 +26,7 @@ class VerificationServiceImpl(
         val verificationResult = runCatching {
             request.result = when (request.stateCode) {
                 ADD_EXCHANGE -> request.message.isNotEmpty()
-                ADD_VOID, REMOVE_VOID, ADD_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, SELL_DRAADOR, SET_SOURCE_PRICE, SET_TARGET_PRICE, ADD_CB, REMOVE_CB -> request.message.toInt() > 0
+                ADD_VOID, REMOVE_VOID, ADD_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, SELL_DRAADOR, ADD_CB, REMOVE_CB -> request.message.toInt() > 0
                 SAME_LEFT, SAME_RIGHT, SAME_CENTER -> request.message.toInt() in 1..10
                 ADD_NOTE -> request.message.isNotEmpty()
                 REMOVE_NOTE -> verifyRemoveNotes(user, request.message)
@@ -43,7 +42,6 @@ class VerificationServiceImpl(
             resourceStates.contains(request.stateCode) -> processResource(user, request.message, request.stateCode, verificationResult)
             noteStates.contains(request.stateCode) -> processNote(user, request.message, request.stateCode, verificationResult)
             mazeStates.contains(request.stateCode) -> processMaze(user, request.message, request.stateCode)
-//            exchangeState.contains(request.stateCode) -> exchangeRequestService.processPrice(user, request.message, request.stateCode)
         }
     }
 
@@ -86,7 +84,6 @@ class VerificationServiceImpl(
         val logger = KotlinLogging.logger {}
         val resourceStates =
             setOf(ADD_VOID, REMOVE_VOID, ADD_DRAADOR, SEND_DRAADOR, RECEIVE_DRAADOR, SELL_DRAADOR, ADD_EXCHANGE, ADD_CB, REMOVE_CB)
-        val exchangeState = setOf(SET_SOURCE_PRICE, SET_TARGET_PRICE)
         val noteStates = setOf(ADD_NOTE, REMOVE_NOTE)
         val mazeStates = setOf(SAME_LEFT, SAME_CENTER, SAME_RIGHT)
     }

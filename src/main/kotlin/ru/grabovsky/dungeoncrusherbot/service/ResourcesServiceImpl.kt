@@ -36,7 +36,6 @@ class ResourcesServiceImpl(
             ADD_VOID, REMOVE_VOID -> processVoid(serverData, value, history, state)
             ADD_CB, REMOVE_CB -> processCb(serverData, value, history, state)
             ADD_DRAADOR, SELL_DRAADOR, SEND_DRAADOR -> processDraador(serverData, value, history, state)
-            SET_SOURCE_PRICE -> processSellDraadorWithVoid(serverData, value, history)
             RECEIVE_DRAADOR -> receiveDraador(resources, value, lastServerId)
             ADD_EXCHANGE -> serverData.exchange = value
             else -> {}
@@ -171,48 +170,6 @@ class ResourcesServiceImpl(
 
             else -> {}
         }
-    }
-
-    private fun processSellDraadorWithVoid(
-        serverData: ServerResourceData,
-        value: String,
-        history: MutableList<ResourcesHistory>
-    ) {
-        val parts = value.split(":", limit = 2)
-        if (parts.size != 2) {
-            return
-        }
-        val draadorAmount = parts[0].toIntOrNull()
-        val voidAmount = parts[1].toIntOrNull()
-        if (draadorAmount == null || voidAmount == null) {
-            return
-        }
-        if (draadorAmount <= 0 || voidAmount <= 0) {
-            return
-        }
-        serverData.draadorCount -= draadorAmount
-        if (serverData.draadorCount < 0) {
-            serverData.draadorCount = 0
-        }
-        updateHistory(
-            history,
-            ResourcesHistory(
-                LocalDate.now(),
-                ResourceType.DRAADOR,
-                DirectionType.TRADE,
-                draadorAmount
-            )
-        )
-        serverData.voidCount += voidAmount
-        updateHistory(
-            history,
-            ResourcesHistory(
-                LocalDate.now(),
-                ResourceType.VOID,
-                DirectionType.ADD,
-                voidAmount
-            )
-        )
     }
 
     private fun receiveDraador(resources: Resources, value: String, lastServerId: Int) {
