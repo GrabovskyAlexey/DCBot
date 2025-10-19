@@ -15,7 +15,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ResourceDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
@@ -41,8 +40,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.message.resources.ServerResourceM
 import ru.grabovsky.dungeoncrusherbot.strategy.message.resources.UpdateResourcesMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.resources.UpdateServerResourceMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.settings.UpdateSettingsMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.subscribe.SubscribeMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.subscribe.UpdateSubscribeMessage
 import java.util.Locale
 
 private object EmptyData : DataModel
@@ -111,12 +108,6 @@ class MessageDelegationTest : ShouldSpec({
         assertDelegation(UpdateMazeMessage(messageService), dto)
     }
 
-    should("делегировать генерацию для сообщений подписки") {
-        val dto = ServerDto(listOf(1, 2))
-        assertDelegation(SubscribeMessage(messageService, userService, serverService), dto)
-        assertDelegation(UpdateSubscribeMessage(messageService, userService, serverService), dto)
-    }
-
     should("делегировать генерацию для обновлений заметок и настроек") {
         assertDelegation(UpdateNotesMessage(messageService), NotesDto(emptyList()))
         assertDelegation(UpdateSettingsMessage(messageService), SettingsDto(false, false, false, false))
@@ -125,10 +116,10 @@ class MessageDelegationTest : ShouldSpec({
     should("делегировать генерацию для сообщений обменников") {
         val listDto = ExchangeDto(
             servers = listOf(
-                ExchangeDto.Server(id = 1, main = false),
-                ExchangeDto.Server(id = 2, main = true)
+                ExchangeDto.Server(id = 1, main = false, hasRequests = false),
+                ExchangeDto.Server(id = 2, main = true, hasRequests = true)
             ),
-            hasUsername = true
+            username = "tester"
         )
         val detailDto = ExchangeDetailDto(
             username = "tester",

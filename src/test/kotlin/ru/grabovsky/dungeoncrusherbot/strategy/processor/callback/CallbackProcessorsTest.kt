@@ -1,8 +1,6 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.strategy.processor.callback
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.mockk.justRun
 import io.mockk.every
@@ -15,14 +13,12 @@ import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.ConfirmRefreshMazeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.MazeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.note.NotesProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.settings.SettingsProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.subscribe.SubscribeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_MAZE
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_NOTES
@@ -78,29 +74,6 @@ class CallbackProcessorsTest : ShouldSpec({
 
         userState.prevState shouldBe UPDATE_SETTINGS
         verify(exactly = 4) { userService.saveUser(entityUser) }
-    }
-
-    should("подписывать и отписывать пользователя от сервера") {
-        val stateService = mockk<StateService>()
-        val userService = mockk<UserService>()
-        val serverService = mockk<ServerService>()
-        val userState = UserState(userId = 950L, state = StateCode.SUBSCRIBE)
-        every { stateService.getState(tgUser) } returns userState
-        every { stateService.saveState(userState) } returns userState
-
-        val server = ru.grabovsky.dungeoncrusherbot.entity.Server(5, "Five")
-        every { serverService.getServerById(5) } returns server
-        val entityUser = User(950L, "Tester", null, "tester")
-        every { userService.getUser(950L) } returns entityUser
-        justRun { userService.saveUser(entityUser) }
-
-        val processor = SubscribeProcessor(userService, serverService, stateService)
-        processor.execute(tgUser, "SUBSCRIBE 5")
-        entityUser.servers shouldContain server
-
-        processor.execute(tgUser, "UNSUBSCRIBE 5")
-        entityUser.servers shouldNotContain server
-        verify(exactly = 2) { userService.saveUser(entityUser) }
     }
 
     should("обрабатывать движение по лабиринту через MazeProcessor") {

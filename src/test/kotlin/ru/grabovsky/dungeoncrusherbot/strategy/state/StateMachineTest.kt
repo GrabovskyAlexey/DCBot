@@ -20,7 +20,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementDraadorS
 import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementVoidState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.ServerResourceState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.settings.SettingsState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.subscribe.SubscribeState
 import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.DriverManager
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -169,12 +168,6 @@ class StateMachineTest : ShouldSpec({
         should("default to UPDATE_SETTINGS on other callbacks") {
             every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SETTINGS, callbackData = "OTHER")
             settingsState.getNextState(user) shouldBe StateCode.UPDATE_SETTINGS
-        }
-    }
-
-    context("SubscribeState") {
-        should("always go to UPDATE_SUBSCRIBE") {
-            SubscribeState().getNextState(user) shouldBe StateCode.UPDATE_SUBSCRIBE
         }
     }
 

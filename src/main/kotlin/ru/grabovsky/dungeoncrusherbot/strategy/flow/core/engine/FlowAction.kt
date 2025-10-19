@@ -1,0 +1,27 @@
+package ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine
+
+sealed interface FlowAction {
+    val bindingKey: String?
+}
+
+data class SendMessageAction(
+    override val bindingKey: String?,
+    val message: FlowMessage,
+) : FlowAction
+
+data class EditMessageAction(
+    override val bindingKey: String,
+    val message: FlowMessage,
+) : FlowAction
+
+data class DeleteMessageAction(
+    override val bindingKey: String,
+) : FlowAction
+
+data class AnswerCallbackAction(
+    val callbackQueryId: String,
+    val text: String? = null,
+    val showAlert: Boolean = false,
+) : FlowAction {
+    override val bindingKey: String? = null
+}

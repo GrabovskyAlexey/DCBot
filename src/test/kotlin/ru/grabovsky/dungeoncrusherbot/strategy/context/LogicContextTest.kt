@@ -34,7 +34,7 @@ class LogicContextTest : ShouldSpec({
 
     val context = LogicContext(
         messageProcessors = mapOf(StateCode.START to messageProcessor),
-        callbackProcessors = mapOf(StateCode.SUBSCRIBE to callbackProcessor)
+        callbackProcessors = mapOf(StateCode.RESOURCES to callbackProcessor)
     )
 
     beforeTest {
@@ -53,7 +53,7 @@ class LogicContextTest : ShouldSpec({
     }
 
     should("invoke callback processor when available") {
-        val status = context.execute(telegramUser, "payload", StateCode.SUBSCRIBE)
+        val status = context.execute(telegramUser, "payload", StateCode.RESOURCES)
         callbackProcessor.executed shouldBe true
         status shouldBe ExecuteStatus.FINAL
     }

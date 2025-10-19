@@ -251,7 +251,7 @@ class TelegramBotServiceImpl(
                 logger.info { "Error delete message for userId: ${deleteMessage.chatId} messageIds: ${deleteMessage.messageIds} with message ${error.message}" }
             }
         }
-        logger.info { "Finish deleting old messages" }
+        logger.debug { "Finish deleting old messages" }
     }
 
     override fun sendReleaseNotes(

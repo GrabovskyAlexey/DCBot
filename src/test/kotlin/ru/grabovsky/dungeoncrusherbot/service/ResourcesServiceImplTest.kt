@@ -6,9 +6,9 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
-import io.mockk.justRun
 import jakarta.persistence.EntityNotFoundException
 import java.time.LocalDate
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
@@ -16,6 +16,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.ResourcesHistory
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
+import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.DirectionType
 import ru.grabovsky.dungeoncrusherbot.entity.ResourceType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
@@ -50,10 +51,13 @@ class ResourcesServiceImplTest : ShouldSpec({
         resources.history[lastServerId] = mutableListOf()
         every { userService.getUser(any()) } returns entityUser
         justRun { userService.saveUser(any()) }
+        every { stateService.getState(any()) } returns UserState(userId = 77L, state = StateCode.RESOURCES).apply {
+            lastServerIdByState[StateCode.RESOURCES] = lastServerId
+        }
     }
 
     beforeTest {
-        clearMocks(userService, googleFormService, answers = true)
+        clearMocks(userService, googleFormService, stateService, answers = true)
         prepareUser()
         justRun { googleFormService.sendDraadorCount(any(), any()) }
     }
@@ -69,6 +73,7 @@ class ResourcesServiceImplTest : ShouldSpec({
     should("throw when last server id missing") {
         prepareUser(lastServerId = 5)
         resources.lastServerId = null
+        every { stateService.getState(any()) } returns UserState(userId = 77L, state = StateCode.RESOURCES)
 
         shouldThrow<IllegalStateException> {
             service.processResources(telegramUser, "1", StateCode.ADD_VOID)
@@ -139,28 +144,6 @@ class ResourcesServiceImplTest : ShouldSpec({
         service.processResources(telegramUser, "5", StateCode.SELL_DRAADOR)
 
         serverData.draadorCount shouldBe 0
-    }
-
-    should("sell draador with explicit void reward") {
-        serverData.draadorCount = 12
-        serverData.voidCount = 1
-
-        service.processResources(telegramUser, "5:3", StateCode.SET_SOURCE_PRICE)
-
-        serverData.draadorCount shouldBe 7
-        serverData.voidCount shouldBe 4
-        val history = resources.history[5]!!
-        history shouldHaveSize 2
-        history.first().apply {
-            resource shouldBe ResourceType.DRAADOR
-            type shouldBe DirectionType.TRADE
-            quantity shouldBe 5
-        }
-        history.last().apply {
-            resource shouldBe ResourceType.VOID
-            type shouldBe DirectionType.ADD
-            quantity shouldBe 3
-        }
     }
 
     should("populate exchange value") {

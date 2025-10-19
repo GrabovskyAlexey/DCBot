@@ -11,8 +11,6 @@ enum class StateCode(
     val linkedStateCode: StateCode? = null,
 ) {
     START(SEND_MESSAGE, false),
-    SUBSCRIBE(SEND_MESSAGE, markType = UPDATE),
-    UPDATE_SUBSCRIBE(UPDATE_MESSAGE, linkedStateCode = SUBSCRIBE),
     MAZE(SEND_MESSAGE, markType = UPDATE),
     UPDATE_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
     CONFIRM_REFRESH_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
