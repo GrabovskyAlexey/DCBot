@@ -12,13 +12,6 @@ import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.state.maze.MazeState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementCbState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementDraadorState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.DecrementVoidState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementCbState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementDraadorState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.IncrementVoidState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.resources.ServerResourceState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.settings.SettingsState
 import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.DriverManager
@@ -136,26 +129,6 @@ class StateMachineTest : ShouldSpec({
         }
     }
 
-    context("ServerResourceState") {
-        val stateService = mockk<StateService>()
-        val serverState = ServerResourceState(stateService)
-
-        should("map BACK to UPDATE_RESOURCES") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "BACK")
-            serverState.getNextState(user) shouldBe StateCode.UPDATE_RESOURCES
-        }
-
-        should("map REMOVE_EXCHANGE to its state") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "REMOVE_EXCHANGE")
-            serverState.getNextState(user) shouldBe StateCode.REMOVE_EXCHANGE
-        }
-
-        should("fallback to SERVER_RESOURCE when callback unknown") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SERVER_RESOURCE, callbackData = "UNKNOWN")
-            serverState.getNextState(user) shouldBe StateCode.SERVER_RESOURCE
-        }
-    }
-
     context("SettingsState") {
         val stateService = mockk<StateService>()
         val settingsState = SettingsState(stateService)
@@ -171,24 +144,4 @@ class StateMachineTest : ShouldSpec({
         }
     }
 
-    context("Increment and decrement states") {
-        should("increment draador lead to update") {
-            IncrementDraadorState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-        should("decrement draador lead to update") {
-            DecrementDraadorState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-        should("increment void lead to update") {
-            IncrementVoidState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-        should("decrement void lead to update") {
-            DecrementVoidState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-        should("increment cb lead to update") {
-            IncrementCbState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-        should("decrement cb lead to update") {
-            DecrementCbState().getNextState(user) shouldBe StateCode.UPDATE_SERVER_RESOURCE
-        }
-    }
 })

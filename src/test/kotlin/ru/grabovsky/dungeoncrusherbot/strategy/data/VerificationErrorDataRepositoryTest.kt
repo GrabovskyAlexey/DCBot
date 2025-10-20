@@ -26,7 +26,14 @@ class VerificationErrorDataRepositoryTest : ShouldSpec({
     }
 
     should("produce messages for various invalid inputs") {
-        listOf(StateCode.ADD_DRAADOR, StateCode.ADD_EXCHANGE, StateCode.ADD_NOTE).forEach { code ->
+        listOf(
+            StateCode.ADD_EXCHANGE,
+            StateCode.ADD_NOTE,
+            StateCode.REMOVE_NOTE,
+            StateCode.SAME_LEFT,
+            StateCode.SAME_CENTER,
+            StateCode.SAME_RIGHT,
+        ).forEach { code ->
             stub(code)
             val dto = repository.getData(tgUser)
             dto shouldBe VerificationErrorDto(dto.message)

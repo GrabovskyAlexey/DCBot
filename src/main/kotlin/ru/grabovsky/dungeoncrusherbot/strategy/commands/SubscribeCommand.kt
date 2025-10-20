@@ -23,7 +23,8 @@ class SubscribeCommand(
         chat: Chat,
         arguments: Array<out String>
     ) {
-        logger.info { "Process command ${classStateCode()} for user ${user.userName ?: user.firstName} with id ${user.id}" }
+        val commandLabel = FlowKeys.SUBSCRIBE.value
+        logger.info { "Process flow $commandLabel for user ${user.userName ?: user.firstName} with id ${user.id}" }
         runCatching {
             prepare(user, chat, arguments)
             val locale = LocaleUtils.resolve(userService.getUser(user.id)?.language ?: user.languageCode)
@@ -31,7 +32,7 @@ class SubscribeCommand(
                 logger.error { "Flow ${FlowKeys.SUBSCRIBE} not found, command processing aborted" }
             }
         }.onFailure { error ->
-            logger.info { "Error process command ${classStateCode()} for user ${user.userName ?: user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
+            logger.info { "Error process flow $commandLabel for user ${user.userName ?: user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
         }
     }
 }

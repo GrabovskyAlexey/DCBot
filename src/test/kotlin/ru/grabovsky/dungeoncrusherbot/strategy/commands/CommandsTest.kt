@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 
 class CommandsTest : ShouldSpec({
@@ -43,7 +44,8 @@ class CommandsTest : ShouldSpec({
     should("create resources when none exist for ResourcesCommand") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
-        val command = ResourcesCommand(publisher, userService)
+        val flowEngine = mockk<FlowEngine>(relaxed = true)
+        val command = ResourcesCommand(userService, flowEngine, publisher)
         val tgUser = mockk<TgUser>(relaxed = true) {
             every { id } returns 200L
             every { userName } returns "tester"
@@ -63,7 +65,8 @@ class CommandsTest : ShouldSpec({
     should("skip creation if resources already present") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
-        val command = ResourcesCommand(publisher, userService)
+        val flowEngine = mockk<FlowEngine>(relaxed = true)
+        val command = ResourcesCommand(userService, flowEngine, publisher)
         val tgUser = mockk<TgUser>(relaxed = true) {
             every { id } returns 201L
             every { userName } returns "tester"
@@ -83,7 +86,8 @@ class CommandsTest : ShouldSpec({
     should("throw if user not found for ResourcesCommand") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()
-        val command = ResourcesCommand(publisher, userService)
+        val flowEngine = mockk<FlowEngine>(relaxed = true)
+        val command = ResourcesCommand(userService, flowEngine, publisher)
         val tgUser = mockk<TgUser>(relaxed = true) {
             every { id } returns 202L
             every { userName } returns "tester"

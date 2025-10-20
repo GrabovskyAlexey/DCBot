@@ -12,15 +12,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.maze.SameLeftPr
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.maze.SameRightProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.note.AddNoteProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.note.RemoveNoteProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.AddCbProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.AddDraadorProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.AddExchangeProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.AddVoidProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.ReceiveDraadorProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.RemoveCbProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.RemoveVoidProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.SellDraadorProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.resources.SendDraadorProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -35,15 +26,6 @@ class MessageVerificationProcessorTest : ShouldSpec({
     )
 
     val cases = listOf(
-        Case(StateCode.ADD_CB) { AddCbProcessor(it) },
-        Case(StateCode.ADD_DRAADOR) { AddDraadorProcessor(it) },
-        Case(StateCode.ADD_EXCHANGE) { AddExchangeProcessor(it) },
-        Case(StateCode.ADD_VOID) { AddVoidProcessor(it) },
-        Case(StateCode.REMOVE_CB) { RemoveCbProcessor(it) },
-        Case(StateCode.REMOVE_VOID) { RemoveVoidProcessor(it) },
-        Case(StateCode.RECEIVE_DRAADOR) { ReceiveDraadorProcessor(it) },
-        Case(StateCode.SELL_DRAADOR) { SellDraadorProcessor(it) },
-        Case(StateCode.SEND_DRAADOR) { SendDraadorProcessor(it) },
         Case(StateCode.ADD_NOTE) { AddNoteProcessor(it) },
         Case(StateCode.REMOVE_NOTE) { RemoveNoteProcessor(it) },
         Case(StateCode.SAME_LEFT) { SameLeftProcessor(it) },

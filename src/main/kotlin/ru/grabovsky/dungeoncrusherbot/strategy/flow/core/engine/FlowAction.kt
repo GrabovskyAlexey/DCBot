@@ -18,6 +18,12 @@ data class DeleteMessageAction(
     override val bindingKey: String,
 ) : FlowAction
 
+data class DeleteMessageIdAction(
+    val messageId: Int,
+) : FlowAction {
+    override val bindingKey: String? = null
+}
+
 data class AnswerCallbackAction(
     val callbackQueryId: String,
     val text: String? = null,

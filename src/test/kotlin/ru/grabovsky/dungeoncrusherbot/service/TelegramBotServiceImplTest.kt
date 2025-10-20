@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.ShouldSpec
@@ -157,20 +157,6 @@ class TelegramBotServiceImplTest : ShouldSpec({
         service.processState(tgUser, StateCode.VERIFY)
 
         verify { verificationService.verify(tgUser, StateCode.VERIFY) }
-    }
-
-    should("edit message using linked message id and persist state") {
-        val state = UserStateFactory.state(StateCode.UPDATE_RESOURCES).apply {
-            updateMessageByState[StateCode.RESOURCES] = 13
-        }
-        every { stateService.getState(tgUser) } returns state
-
-        service.processState(tgUser, StateCode.UPDATE_RESOURCES)
-
-        val editSlot = slot<EditMessageText>()
-        verify { telegramClient.execute(capture(editSlot)) }
-        editSlot.captured.messageId shouldBe 13
-        verify { stateService.saveState(state) }
     }
 
     should("delete collected messages and clear state") {

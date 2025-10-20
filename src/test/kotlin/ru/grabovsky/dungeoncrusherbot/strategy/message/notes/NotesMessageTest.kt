@@ -4,7 +4,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotContain
-import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.every
 import org.springframework.context.MessageSource
@@ -51,9 +50,8 @@ class NotesMessageTest : ShouldSpec({
         buttons.map { it.data.data }.shouldNotContain("ADD_NOTE")
         buttons.map { it.data }.shouldContainExactly(
             CallbackObject(StateCode.UPDATE_NOTES, "REMOVE_NOTE"),
-            CallbackObject(StateCode.UPDATE_NOTES, "CLEAR_NOTES"),
-            CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
+            CallbackObject(StateCode.UPDATE_NOTES, "CLEAR_NOTES")
         )
-        buttons.first { it.data.data == "BACK" }.rowPos shouldBe 99
+        buttons.map { it.data.data }.shouldNotContain("BACK")
     }
 })

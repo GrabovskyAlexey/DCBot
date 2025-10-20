@@ -1,1 +1,0 @@
-<#include 'server_resource.ftl'>

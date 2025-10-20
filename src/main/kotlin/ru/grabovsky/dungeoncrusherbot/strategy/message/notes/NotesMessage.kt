@@ -61,20 +61,6 @@ class NotesMessage(
                 )
             )
         }
-        if(data?.fromServer == true) {
-            result.add(
-                InlineMarkupDataDto(
-                    rowPos = 99,
-                    text = i18n(
-                        code = "buttons.notes.back",
-                        locale = locale,
-                        default = "\uD83D\uDD19 Вернуться"
-                    ),
-                    data = CallbackObject(StateCode.SERVER_RESOURCE, "BACK")
-                )
-            )
-        }
-
         return result
     }
 }

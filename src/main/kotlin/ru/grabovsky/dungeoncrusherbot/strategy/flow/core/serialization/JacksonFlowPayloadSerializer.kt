@@ -1,6 +1,7 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.core.serialization
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowPayloadSerializer
 
@@ -12,7 +13,11 @@ class JacksonFlowPayloadSerializer(
         if (payload.isNullOrBlank()) {
             return defaultValue(type)
         }
-        return objectMapper.readValue(payload, type)
+        return try {
+            objectMapper.readValue(payload, type)
+        } catch (error: InvalidTypeIdException) {
+            defaultValue(type)
+        }
     }
 
     override fun <T : Any> serialize(payload: T?): String? {

@@ -12,8 +12,9 @@ import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveCallbackEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveMessageEvent
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -40,6 +41,9 @@ class ReceiverServiceImpl(
     private fun processMessage(message: Message) {
         val user = message.from
         userService.createOrUpdateUser(user)
+        if (handleFlowMessage(user, message)) {
+            return
+        }
         val state = getState(user)
         if (state.state.markType == MarkType.DELETE) {
             state.deletedMessages.add(message.messageId)
@@ -76,6 +80,9 @@ class ReceiverServiceImpl(
 
     private fun getState(user: User) =
         stateService.getState(user)
+
+    private fun handleFlowMessage(user: User, message: Message): Boolean =
+        flowEngine.onMessage(FlowKeys.RESOURCES, user, resolveLocale(user), message)
 
     private fun handleFlowCallback(user: User, callbackQuery: CallbackQuery): Boolean {
         val payload = parseFlowPayload(callbackQuery.data) ?: return false

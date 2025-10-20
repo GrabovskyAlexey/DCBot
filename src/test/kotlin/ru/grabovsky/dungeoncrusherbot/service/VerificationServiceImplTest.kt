@@ -1,22 +1,21 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
+import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
-import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.repository.VerificationRequestRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
@@ -26,10 +25,9 @@ class VerificationServiceImplTest : ShouldSpec({
 
     val stateService = mockk<StateService>()
     val verificationRepository = mockk<VerificationRequestRepository>()
-    val resourcesService = mockk<ResourcesService>()
     val userService = mockk<UserService>()
     val mazeService = mockk<MazeService>()
-    val service = VerificationServiceImpl(stateService, verificationRepository, resourcesService, userService, mazeService)
+    val service = VerificationServiceImpl(stateService, verificationRepository, userService, mazeService)
 
     val telegramUser = mockk<TgUser>(relaxed = true) {
         every { id } returns 501L
@@ -48,9 +46,8 @@ class VerificationServiceImplTest : ShouldSpec({
     }
 
     beforeTest {
-        clearMocks(stateService, verificationRepository, resourcesService, userService, mazeService, answers = true)
+        clearMocks(stateService, verificationRepository, userService, mazeService, answers = true)
         dbUser = User(userId = 501L, firstName = "Tester", lastName = null, userName = "tester")
-        justRun { resourcesService.processResources(any(), any(), any()) }
         every { userService.getUser(any()) } returns dbUser
         justRun { userService.processNote(any(), any(), any()) }
         justRun { mazeService.processSameStep(any(), any(), any()) }
@@ -63,45 +60,26 @@ class VerificationServiceImplTest : ShouldSpec({
         service.verify(telegramUser, StateCode.VERIFY)
 
         verify(exactly = 0) { verificationRepository.save(any()) }
-        verify(exactly = 0) { resourcesService.processResources(any(), any(), any()) }
+        verify(exactly = 0) { userService.processNote(any(), any(), any()) }
+        verify(exactly = 0) { mazeService.processSameStep(any(), any(), any()) }
     }
 
-    should("approve exchange when message is not empty") {
-        prepareRequest("exchange", StateCode.ADD_EXCHANGE)
+    should("process add note when text is present") {
+        prepareRequest("note text", StateCode.ADD_NOTE)
 
-        service.verify(telegramUser, StateCode.ADD_EXCHANGE)
+        service.verify(telegramUser, StateCode.ADD_NOTE)
 
         request.result.shouldBeTrue()
-        verify { resourcesService.processResources(telegramUser, "exchange", StateCode.ADD_EXCHANGE) }
-        verify { verificationRepository.save(request) }
+        verify { userService.processNote(dbUser, "note text", StateCode.ADD_NOTE) }
     }
 
-    should("reject exchange when message is blank") {
-        prepareRequest("", StateCode.ADD_EXCHANGE)
+    should("reject add note when text is blank") {
+        prepareRequest("", StateCode.ADD_NOTE)
 
-        service.verify(telegramUser, StateCode.ADD_EXCHANGE)
+        service.verify(telegramUser, StateCode.ADD_NOTE)
 
         request.result.shouldBeFalse()
-        verify(exactly = 0) { resourcesService.processResources(any(), any(), any()) }
-        verify { verificationRepository.save(request) }
-    }
-
-    should("process resource states when numeric value is valid") {
-        prepareRequest("5", StateCode.ADD_DRAADOR)
-
-        service.verify(telegramUser, StateCode.ADD_DRAADOR)
-
-        request.result.shouldBeTrue()
-        verify { resourcesService.processResources(telegramUser, "5", StateCode.ADD_DRAADOR) }
-    }
-
-    should("not process resource states when numeric value is invalid") {
-        prepareRequest("not-a-number", StateCode.SEND_DRAADOR)
-
-        service.verify(telegramUser, StateCode.SEND_DRAADOR)
-
-        request.result.shouldBeFalse()
-        verify(exactly = 0) { resourcesService.processResources(any(), any(), any()) }
+        verify(exactly = 0) { userService.processNote(any(), any(), any()) }
     }
 
     should("process remove note when index is valid") {
@@ -114,7 +92,7 @@ class VerificationServiceImplTest : ShouldSpec({
         verify { userService.processNote(dbUser, "1", StateCode.REMOVE_NOTE) }
     }
 
-    should("skip remove note when index is invalid") {
+    should("reject remove note when index is invalid") {
         dbUser.notes.add("only")
         prepareRequest("5", StateCode.REMOVE_NOTE)
 
@@ -147,4 +125,3 @@ class VerificationServiceImplTest : ShouldSpec({
         verify(exactly = 0) { mazeService.processSameStep(any(), any(), any()) }
     }
 })
-

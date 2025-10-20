@@ -24,6 +24,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowBindingsMuta
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.DeleteMessageIdAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.templating.FlowTemplateRenderer
 import java.util.Locale
 
@@ -75,6 +76,13 @@ class TelegramFlowActionExecutor(
                     )
                     removed += action.bindingKey
                 }
+
+                is DeleteMessageIdAction -> telegramClient.execute(
+                    DeleteMessages.builder()
+                        .chatId(user.id)
+                        .messageIds(listOf(action.messageId))
+                        .build()
+                )
 
                 is AnswerCallbackAction -> telegramClient.execute(
                     AnswerCallbackQuery.builder()
