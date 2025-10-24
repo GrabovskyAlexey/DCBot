@@ -17,14 +17,14 @@ class StartFlow() : FlowHandler<Unit> {
 
     override fun start(context: FlowStartContext): FlowResult<Unit> {
         return FlowResult(
-            stepKey = StartStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 SendMessageAction(
                     bindingKey = MAIN_MESSAGE_BINDING,
                     message = FlowMessage(
                         flowKey = key,
-                        stepKey = StartStep.MAIN.key,
+                        stepKey = StepKey.MAIN.key,
                         model = StartViewModel(context.user.userName ?: context.user.firstName),
                     )
                 )
@@ -44,7 +44,3 @@ class StartFlow() : FlowHandler<Unit> {
 data class StartViewModel(
     val username: String
 )
-
-enum class StartStep(override val key: String) : FlowStep {
-    MAIN("main")
-}

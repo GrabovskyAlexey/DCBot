@@ -12,6 +12,7 @@ import org.springframework.context.MessageSource
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -29,8 +30,8 @@ class ResourcesFlowTest : ShouldSpec({
     val resourcesService = mockk<ResourcesService>(relaxed = true)
     val viewService = mockk<ResourcesViewService>()
     val promptBuilder = mockk<ResourcesPromptBuilder>()
-    val messageSource = mockk<MessageSource>()
-    val flow = ResourcesFlow(userService, resourcesService, viewService, promptBuilder, messageSource)
+    val i18nService = mockk<I18nService>()
+    val flow = ResourcesFlow(userService, resourcesService, viewService, promptBuilder, i18nService)
 
     val telegramUser = mockk<TgUser>(relaxed = true) {
         every { id } returns 101L
@@ -80,12 +81,12 @@ class ResourcesFlowTest : ShouldSpec({
     )
 
     beforeTest {
-        clearMocks(userService, resourcesService, viewService, promptBuilder, messageSource)
+        clearMocks(userService, resourcesService, viewService, promptBuilder, i18nService)
         justRun { viewService.ensureResources(any()) }
         every { viewService.buildOverview(any(), any()) } returns overview
         every { viewService.buildServer(any(), any(), any(), any()) } returns serverDetail
         every { promptBuilder.amountPrompt(any(), any(), invalid = any()) } returns ResourcesPromptModel("enter amount")
-        every { messageSource.getMessage(any(), any(), any(), any()) } returns "Cancel"
+        every { i18nService.i18n(any(), any(), any(), any()) } returns "Cancel"
     }
 
     should("create main overview message on start") {

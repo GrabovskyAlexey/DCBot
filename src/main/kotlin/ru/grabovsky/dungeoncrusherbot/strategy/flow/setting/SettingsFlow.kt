@@ -25,7 +25,7 @@ class SettingsFlow(
     override fun start(context: FlowStartContext): FlowResult<SettingFlowState> {
         val user = userService.getUser(context.user.id)
         return FlowResult(
-            stepKey = SettingsStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = SettingFlowState(),
             actions = listOf(
                 SendMessageAction(
@@ -49,12 +49,12 @@ class SettingsFlow(
             bindingKey = MAIN_MESSAGE_BINDING,
             message = FlowMessage(
                 flowKey = key,
-                stepKey = SettingsStep.SEND_REPORT.key,
+                stepKey = StepKey.SEND_REPORT.key,
                 model = SendReportModel(i18nService.i18n("flow.settings.send_report_complete", context.locale))
             )
         )
         return FlowResult(
-            stepKey = SettingsStep.SEND_REPORT.key,
+            stepKey = StepKey.SEND_REPORT.key,
             payload = state,
             actions = actions,
         )
@@ -80,7 +80,7 @@ class SettingsFlow(
         }
         userService.saveUser(user)
         return FlowResult(
-            stepKey = SettingsStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = SettingFlowState(),
             actions = listOf(
                 EditMessageAction(
@@ -98,14 +98,14 @@ class SettingsFlow(
         state.promptBindings.add(binding)
         state.pendingAction = SettingPendingAction(true)
         return FlowResult(
-            stepKey = SettingsStep.SEND_REPORT.key,
+            stepKey = StepKey.SEND_REPORT.key,
             payload = state,
             actions = listOf(
                 SendMessageAction(
                     bindingKey =  binding,
                     message = FlowMessage(
                         flowKey = key,
-                        stepKey = SettingsStep.SEND_REPORT.key,
+                        stepKey = StepKey.SEND_REPORT.key,
                         model = SendReportModel(
                             i18nService.i18n("flow.settings.send_report", locale)
                         ),
@@ -126,7 +126,7 @@ class SettingsFlow(
         val cleanUp = FlowUtils.cleanupPromptActions(state.promptBindings)
         cleanUp += AnswerCallbackAction(callbackQuery.id)
         return FlowResult(
-            stepKey = SettingsStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = SettingFlowState(),
             actions = cleanUp
         )
@@ -157,7 +157,7 @@ class SettingsFlow(
         )
         return FlowMessage(
             flowKey = key,
-            stepKey = SettingsStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             model = model,
             inlineButtons = buildButtons(model, locale)
         )
@@ -226,11 +226,6 @@ class SettingsFlow(
     companion object {
         private const val MAIN_MESSAGE_BINDING = "settings_main"
     }
-}
-
-enum class SettingsStep(override val key: String) : FlowStep {
-    MAIN("main"),
-    SEND_REPORT("send_report"),
 }
 
 enum class SettingsType {

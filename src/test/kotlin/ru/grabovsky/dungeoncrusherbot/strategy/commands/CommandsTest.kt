@@ -26,7 +26,8 @@ class CommandsTest : ShouldSpec({
     should("create or update user and publish state for StartCommand") {
         val userService = mockk<UserService>()
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
-        val command = StartCommand(userService, publisher)
+        val engine = mockk<FlowEngine>(relaxed = true)
+        val command = StartCommand(userService, publisher, engine)
         val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 100L }
         every { userService.createOrUpdateUser(tgUser) } returns User(100L, "Tester", null, "tester")
         every { publisher.publishEvent(any()) } answers {

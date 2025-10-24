@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -19,8 +20,8 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImplTest : ShouldSpec({
     val userRepository = mockk<UserRepository>()
     val adminMessageRepository = mockk<AdminMessageRepository>(relaxed = true)
-    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    val service = UserServiceImpl(userRepository, adminMessageRepository, eventPublisher)
+    val actionExecutor = mockk<FlowActionExecutor>(relaxed = true)
+    val service = UserServiceImpl(userRepository, adminMessageRepository, actionExecutor)
 
     beforeTest {
         clearMocks(userRepository)

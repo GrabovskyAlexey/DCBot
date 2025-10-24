@@ -23,6 +23,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.StepKey
 import java.util.Locale
 
 @Component
@@ -37,7 +38,7 @@ class SubscribeFlow(
     override fun start(context: FlowStartContext): FlowResult<Unit> {
         val subscriptions = loadSubscriptions(context.user.id)
         return FlowResult(
-            stepKey = SubscribeStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 SendMessageAction(
@@ -71,14 +72,14 @@ class SubscribeFlow(
             )
 
         when (command) {
-            SubscribeCommand.SUBSCRIBE -> user.servers.add(server)
-            SubscribeCommand.UNSUBSCRIBE -> user.servers.removeIf { it == server }
+            "SUBSCRIBE" -> user.servers.add(server)
+            "UNSUBSCRIBE" -> user.servers.removeIf { it == server }
         }
         userService.saveUser(user)
 
         val subscriptions = user.servers.map(Server::id).sorted()
         return FlowResult(
-            stepKey = SubscribeStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 EditMessageAction(
@@ -107,7 +108,7 @@ class SubscribeFlow(
         val allServers = serverService.getAllServers().sortedBy { it.id }
         return FlowMessage(
             flowKey = key,
-            stepKey = SubscribeStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             model = SubscribeViewModel(subscriptions),
             inlineButtons = buildButtons(locale, allServers, subscriptions)
         )
@@ -129,7 +130,7 @@ class SubscribeFlow(
                         text = buttonLabel(locale, isSubscribed, server.id),
                         payload = FlowCallbackPayload(
                             flow = key.value,
-                            data = "${if (isSubscribed) SubscribeCommand.UNSUBSCRIBE.value else SubscribeCommand.SUBSCRIBE.value}:${server.id}"
+                            data = "${if (isSubscribed) "UNSUBSCRIBE" else "SUBSCRIBE"}:${server.id}"
                         ),
                         row = row,
                         col = col,
@@ -154,12 +155,12 @@ class SubscribeFlow(
             ?: serverId.toString()
     }
 
-    private fun parseCallbackData(data: String): Pair<SubscribeCommand, Int>? {
+    private fun parseCallbackData(data: String): Pair<String, Int>? {
         val parts = data.split(":")
         if (parts.size != 2) {
             return null
         }
-        val command = SubscribeCommand.fromRaw(parts[0]) ?: return null
+        val command = parts[0]
         val id = parts[1].toIntOrNull() ?: return null
         return command to id
     }
@@ -172,17 +173,3 @@ class SubscribeFlow(
 data class SubscribeViewModel(
     val servers: List<Int>
 )
-
-enum class SubscribeStep(override val key: String) : FlowStep {
-    MAIN("main")
-}
-
-private enum class SubscribeCommand(val value: String) {
-    SUBSCRIBE("SUBSCRIBE"),
-    UNSUBSCRIBE("UNSUBSCRIBE");
-
-    companion object {
-        fun fromRaw(raw: String): SubscribeCommand? =
-            entries.firstOrNull { it.value.equals(raw, ignoreCase = true) }
-    }
-}

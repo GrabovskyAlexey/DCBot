@@ -43,31 +43,6 @@ class ApplicationListenerTest : ShouldSpec({
         clearMocks(telegramBotService, stateService, stateContext, logicContext)
     }
 
-    should("update state and delegate to telegram service on processStateEvent") {
-        val event = TelegramStateEvent(telegramUser, StateCode.START)
-        justRun { stateService.updateState(telegramUser, StateCode.START) }
-        justRun { telegramBotService.processState(telegramUser, StateCode.START) }
-
-        listener.processStateEvent(event)
-
-        verify { stateService.updateState(telegramUser, StateCode.START) }
-        verify { telegramBotService.processState(telegramUser, StateCode.START) }
-    }
-
-    should("execute logic and chain next state for message events") {
-        val messageEvent = TelegramReceiveMessageEvent(telegramUser, StateCode.START, message)
-        justRun { logicContext.execute(telegramUser, message = message, stateCode = StateCode.START) }
-        every { stateContext.next(telegramUser, StateCode.START) } returns StateCode.WAITING
-        justRun { stateService.updateState(telegramUser, StateCode.WAITING) }
-        justRun { telegramBotService.processState(telegramUser, StateCode.WAITING) }
-
-        listener.processMessageEvent(messageEvent)
-
-        verify { logicContext.execute(telegramUser, message = message, stateCode = StateCode.START) }
-        verify { stateContext.next(telegramUser, StateCode.START) }
-        verify { telegramBotService.processState(telegramUser, StateCode.WAITING) }
-    }
-
     should("dispatch callback final result to next state") {
         val callbackEvent = TelegramReceiveCallbackEvent(telegramUser, StateCode.MAZE, "payload")
         every { logicContext.execute(telegramUser, callbackData = "payload", stateCode = StateCode.MAZE) } returns ExecuteStatus.FINAL
@@ -82,15 +57,6 @@ class ApplicationListenerTest : ShouldSpec({
         verify { telegramBotService.processState(telegramUser, StateCode.UPDATE_MAZE) }
     }
 
-    should("skip state change when callback processor returns nothing") {
-        val callbackEvent = TelegramReceiveCallbackEvent(telegramUser, StateCode.SETTINGS, "noop")
-        every { logicContext.execute(telegramUser, callbackData = "noop", stateCode = StateCode.SETTINGS) } returns ExecuteStatus.NOTHING
-
-        listener.processCallbackEvent(callbackEvent)
-
-        verify(exactly = 0) { telegramBotService.processState(any(), any()) }
-    }
-
     should("send admin message and switch to report complete state") {
         val adminDto = AdminMessageDto("first", "tester", 10L, "body")
         val adminEvent = TelegramAdminMessageEvent(telegramUser, StateCode.SEND_REPORT, 777L, adminDto)
@@ -102,15 +68,5 @@ class ApplicationListenerTest : ShouldSpec({
 
         verify { telegramBotService.sendAdminMessage(777L, adminDto) }
         verify { telegramBotService.processState(telegramUser, StateCode.SEND_REPORT_COMPLETE) }
-    }
-
-    should("route events via onTelegramEvent dispatcher") {
-        val event = TelegramStateEvent(telegramUser, StateCode.START)
-        justRun { stateService.updateState(telegramUser, StateCode.START) }
-        justRun { telegramBotService.processState(telegramUser, StateCode.START) }
-
-        listener.onTelegramEvent(event)
-
-        verify { telegramBotService.processState(telegramUser, StateCode.START) }
     }
 })

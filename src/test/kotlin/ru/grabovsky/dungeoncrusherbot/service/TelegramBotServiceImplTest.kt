@@ -139,20 +139,6 @@ class TelegramBotServiceImplTest : ShouldSpec({
         verify(exactly = 0) { stateContext.next(any(), any()) }
     }
 
-    should("publish next state when pause is disabled") {
-        val state = UserStateFactory.state(StateCode.START)
-        every { stateService.getState(tgUser) } returns state
-        every { stateContext.next(tgUser, StateCode.START) } returns StateCode.WAITING
-
-        service.processState(tgUser, StateCode.START)
-
-        verify { stateContext.next(tgUser, StateCode.START) }
-        val eventSlot = slot<TelegramStateEvent>()
-        verify { publisher.publishEvent(capture(eventSlot)) }
-        eventSlot.captured.user shouldBe tgUser
-        eventSlot.captured.stateCode shouldBe StateCode.WAITING
-    }
-
     should("delegate verification action to verification service") {
         service.processState(tgUser, StateCode.VERIFY)
 

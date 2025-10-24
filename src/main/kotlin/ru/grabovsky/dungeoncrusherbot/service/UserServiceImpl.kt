@@ -25,7 +25,6 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val adminMessageRepository: AdminMessageRepository,
-    private val eventPublisher: ApplicationEventPublisher,
     private val telegramFlowActionExecutor: FlowActionExecutor
 ) : UserService {
     override fun createOrUpdateUser(user: TgUser): User {

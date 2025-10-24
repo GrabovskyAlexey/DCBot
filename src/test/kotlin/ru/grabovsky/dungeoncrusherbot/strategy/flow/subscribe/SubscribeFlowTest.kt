@@ -5,29 +5,16 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.springframework.context.MessageSource
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.entity.Server
-import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateHolder
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.subscribe.SubscribeFlow
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.subscribe.SubscribeStep
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.subscribe.SubscribeViewModel
-import java.util.Locale
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import java.util.*
+import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 
 class SubscribeFlowTest : ShouldSpec({
 
@@ -67,14 +54,14 @@ class SubscribeFlowTest : ShouldSpec({
 
         val result = flow.start(FlowStartContext(telegramUser, locale))
 
-        result.stepKey shouldBe SubscribeStep.MAIN.key
+        result.stepKey shouldBe StepKey.MAIN.key
         result.payload shouldBe Unit
         result.actions shouldHaveSize 1
 
         val action = result.actions.single() as SendMessageAction
         action.bindingKey shouldBe "subscribe_main"
         action.message.flowKey shouldBe FlowKeys.SUBSCRIBE
-        action.message.stepKey shouldBe SubscribeStep.MAIN.key
+        action.message.stepKey shouldBe StepKey.MAIN.key
         val viewModel = action.message.model as SubscribeViewModel
         viewModel.servers shouldBe listOf(1)
         action.message.inlineButtons.shouldNotBeEmpty()
@@ -104,7 +91,7 @@ class SubscribeFlowTest : ShouldSpec({
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
-                stepKey = SubscribeStep.MAIN.key,
+                stepKey = StepKey.MAIN.key,
                 payload = Unit,
                 messageBindings = mapOf("subscribe_main" to 100)
             )

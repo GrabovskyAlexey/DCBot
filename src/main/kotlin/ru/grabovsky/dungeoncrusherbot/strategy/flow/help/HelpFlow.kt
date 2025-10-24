@@ -12,14 +12,14 @@ class HelpFlow() : FlowHandler<Unit> {
 
     override fun start(context: FlowStartContext): FlowResult<Unit> {
         return FlowResult(
-            stepKey = HelpStep.MAIN.key,
+            stepKey = StepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 SendMessageAction(
                     bindingKey = MAIN_MESSAGE_BINDING,
                     message = FlowMessage(
                         flowKey = key,
-                        stepKey = HelpStep.MAIN.key,
+                        stepKey = StepKey.MAIN.key,
                     )
                 )
             )
@@ -33,8 +33,4 @@ class HelpFlow() : FlowHandler<Unit> {
     companion object {
         private const val MAIN_MESSAGE_BINDING = "help_main"
     }
-}
-
-enum class HelpStep(override val key: String) : FlowStep {
-    MAIN("main")
 }

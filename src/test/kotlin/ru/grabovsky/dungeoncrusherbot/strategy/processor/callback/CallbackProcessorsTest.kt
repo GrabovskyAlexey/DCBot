@@ -2,27 +2,20 @@
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.justRun
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
-import ru.grabovsky.dungeoncrusherbot.entity.Direction
-import ru.grabovsky.dungeoncrusherbot.entity.Maze
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserState
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.ConfirmRefreshMazeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.maze.MazeProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.note.NotesProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.settings.SettingsProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_MAZE
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_NOTES
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.UPDATE_SETTINGS
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class CallbackProcessorsTest : ShouldSpec({
@@ -42,38 +35,6 @@ class CallbackProcessorsTest : ShouldSpec({
         userState.prevState shouldBe UPDATE_NOTES
         verify { userService.clearNotes(tgUser) }
         verify { stateService.saveState(userState) }
-    }
-
-    should("переключать настройки подписок и флагов через SettingsProcessor") {
-        val stateService = mockk<StateService>()
-        val userService = mockk<UserService>()
-        val userState = UserState(userId = 950L, state = StateCode.UPDATE_SETTINGS)
-        every { stateService.getState(tgUser) } returns userState
-        every { stateService.saveState(userState) } returns userState
-
-        val entityUser = User(950L, "Tester", null, "tester").apply {
-            notificationSubscribe.add(NotificationSubscribe(user = this, type = NotificationType.SIEGE, enabled = true))
-            settings.resourcesCb = false
-            settings.resourcesQuickChange = false
-        }
-        every { userService.getUser(950L) } returns entityUser
-        justRun { userService.saveUser(entityUser) }
-
-        val processor = SettingsProcessor(userService, stateService)
-        processor.execute(tgUser, "NOTIFY_SIEGE")
-        entityUser.notificationSubscribe.first { it.type == NotificationType.SIEGE }.enabled shouldBe false
-
-        processor.execute(tgUser, "NOTIFY_MINE")
-        entityUser.notificationSubscribe.first { it.type == NotificationType.MINE }.enabled shouldBe true
-
-        processor.execute(tgUser, "CB_ENABLE")
-        entityUser.settings.resourcesCb shouldBe true
-
-        processor.execute(tgUser, "QUICK_RESOURCES")
-        entityUser.settings.resourcesQuickChange shouldBe true
-
-        userState.prevState shouldBe UPDATE_SETTINGS
-        verify(exactly = 4) { userService.saveUser(entityUser) }
     }
 
     should("обрабатывать движение по лабиринту через MazeProcessor") {

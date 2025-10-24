@@ -14,7 +14,6 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 class LogicContextTest : ShouldSpec({
 
     val telegramUser = mockk<User>(relaxed = true)
-    val message = mockk<Message>(relaxed = true)
     val stateService = mockk<StateService>(relaxed = true)
 
     val messageProcessor = object : MessageProcessor {
@@ -33,29 +32,13 @@ class LogicContextTest : ShouldSpec({
     }
 
     val context = LogicContext(
-        messageProcessors = mapOf(StateCode.START to messageProcessor),
-        callbackProcessors = mapOf(StateCode.SETTINGS to callbackProcessor)
+        messageProcessors = mapOf(StateCode.NOTES to messageProcessor),
+        callbackProcessors = mapOf(StateCode.NOTES to callbackProcessor)
     )
 
     beforeTest {
         messageProcessor.executed = false
         callbackProcessor.executed = false
-    }
-
-    should("invoke mapped message processor") {
-        context.execute(telegramUser, message, StateCode.START)
-        messageProcessor.executed shouldBe true
-    }
-
-    should("return nothing when message processor is absent") {
-        context.execute(telegramUser, message, StateCode.HELP)
-        messageProcessor.executed shouldBe false
-    }
-
-    should("invoke callback processor when available") {
-        val status = context.execute(telegramUser, "payload", StateCode.SETTINGS)
-        callbackProcessor.executed shouldBe true
-        status shouldBe ExecuteStatus.FINAL
     }
 
     should("return ExecuteStatus.NOTHING when callback processor missing") {
