@@ -4,19 +4,20 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
-import ru.grabovsky.dungeoncrusherbot.entity.AdminMessage
-import ru.grabovsky.dungeoncrusherbot.entity.Maze
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.event.TelegramAdminMessageEvent
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.*
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.ADD_NOTE
+import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.REMOVE_NOTE
+import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -24,7 +25,8 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val adminMessageRepository: AdminMessageRepository,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val telegramFlowActionExecutor: FlowActionExecutor
 ) : UserService {
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
@@ -75,7 +77,7 @@ class UserServiceImpl(
     override fun getUser(userId: Long) = userRepository.findUserByUserId(userId)
 
     override fun processNote(user: User, note: String, state: StateCode) {
-        when(state) {
+        when (state) {
             ADD_NOTE -> addNote(user, note)
             REMOVE_NOTE -> removeNote(user, note)
             else -> {}
@@ -92,13 +94,34 @@ class UserServiceImpl(
         val dto = AdminMessageDto(user.firstName, user.userName, user.id, message)
         val entity = AdminMessage(userId = user.id, message = message)
         adminMessageRepository.saveAndFlush(entity)
+
+
         userRepository.findAllNotBlockedUser().filter { it.isAdmin }.forEach {
-            eventPublisher.publishEvent(TelegramAdminMessageEvent(user, SEND_REPORT, it.userId, dto))
+            val admin = TgUser.builder()
+                .id(it.userId)
+                .firstName(it.firstName!!)
+                .lastName(it.lastName)
+                .isBot(false)
+                .build()
+            telegramFlowActionExecutor.execute(
+                user = admin, locale = LocaleUtils.resolve(it.language), actions = listOf(
+                    SendMessageAction(
+                        bindingKey = "admin_message",
+                        message = FlowMessage(
+                            flowKey = FlowKeys.ADMIN_MESSAGE,
+                            stepKey = "main",
+                            model = dto,
+                        )
+                    )
+                ),
+                currentBindings = emptyMap()
+            )
+//            eventPublisher.publishEvent(TelegramAdminMessageEvent(user, SEND_REPORT, it.userId, dto))
         }
     }
 
     private fun addNote(user: User, note: String) {
-        if(user.notes.size >= 20) {
+        if (user.notes.size >= 20) {
             user.notes.removeFirst()
         }
         user.notes.add(note)

@@ -1,16 +1,15 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.*
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation.*
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.resources.ResourcesPendingAction.*
+import ru.grabovsky.dungeoncrusherbot.util.FlowUtils
 import java.util.Locale
 import java.util.UUID
 
@@ -20,7 +19,7 @@ class ResourcesFlow(
     private val resourcesService: ResourcesService,
     private val viewService: ResourcesViewService,
     private val promptBuilder: ResourcesPromptBuilder,
-    private val messageSource: MessageSource,
+    private val i18nService: I18nService,
 ) : FlowHandler<ResourcesFlowState> {
 
     override val key: FlowKey = FlowKeys.RESOURCES
@@ -91,7 +90,7 @@ class ResourcesFlow(
                     flowKey = key,
                     stepKey = ResourcesStep.SERVER.key,
                     model = ResourcesServerModel(detail),
-                    inlineButtons = serverButtons(detail)
+                    inlineButtons = detail.buttons.inlineButtons("ACTION")
                 )
             ),
             AnswerCallbackAction(callbackQuery.id)
@@ -105,6 +104,7 @@ class ResourcesFlow(
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? {
         val serverId = state.selectedServerId ?: return null
+        state.showHistory = false
         return when (actionName) {
             "BACK" -> showMain(context, callbackQuery)
             "TOGGLE_NOTIFY" -> applyOperation(context, state, callbackQuery) {
@@ -119,7 +119,7 @@ class ResourcesFlow(
             "REMOVE_EXCHANGE" -> applyOperation(context, state, callbackQuery) {
                 resourcesService.applyOperation(context.user, serverId, ClearExchange)
             }
-            "SHOW_HISTORY" -> toggleHistory(context, state, callbackQuery)
+            "SHOW_HISTORY" -> showHistory(context, state, callbackQuery)
             "PROMPT_ADD_DRAADOR" -> enterAmountPrompt(context, state, serverId, AmountActionType.ADD_DRAADOR, callbackQuery)
             "PROMPT_SELL_DRAADOR" -> enterAmountPrompt(context, state, serverId, AmountActionType.SELL_DRAADOR, callbackQuery)
             "PROMPT_SEND_DRAADOR" -> enterAmountPrompt(context, state, serverId, AmountActionType.SEND_DRAADOR, callbackQuery)
@@ -260,7 +260,6 @@ class ResourcesFlow(
                         flowKey = key,
                         stepKey = ResourcesStep.PROMPT_TEXT.key,
                         model = prompt,
-                        parseMode = FlowParseMode.MARKDOWN,
                         inlineButtons = promptButtons(context.locale)
                     )
                 ),
@@ -274,7 +273,7 @@ class ResourcesFlow(
         serverId: Int,
         userMessageId: Int?
     ): FlowResult<ResourcesFlowState> {
-        val cleanupActions = cleanupPromptActions(context.state.payload.promptBindings)
+        val cleanupActions = FlowUtils.cleanupPromptActions(context.state.payload.promptBindings)
         userMessageId?.let { cleanupActions += DeleteMessageIdAction(it) }
         val state = context.state.payload
         clearState(state)
@@ -285,8 +284,7 @@ class ResourcesFlow(
                 flowKey = key,
                 stepKey = ResourcesStep.SERVER.key,
                 model = ResourcesServerModel(detail),
-                parseMode = FlowParseMode.MARKDOWN,
-                inlineButtons = serverButtons(detail)
+                inlineButtons = detail.buttons.inlineButtons("ACTION")
             )
         )
         return buildFlowResult(ResourcesStep.SERVER, state, cleanupActions)
@@ -296,7 +294,7 @@ class ResourcesFlow(
         state: ResourcesFlowState,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
-        val cleanupActions = cleanupPromptActions(state.promptBindings)
+        val cleanupActions = FlowUtils.cleanupPromptActions(state.promptBindings)
         clearState(state)
         cleanupActions += AnswerCallbackAction(callbackQuery.id)
         return FlowResult(
@@ -311,13 +309,13 @@ class ResourcesFlow(
         state.promptBindings.clear()
     }
 
-    private fun toggleHistory(
+    private fun showHistory(
         context: FlowCallbackContext<ResourcesFlowState>,
         state: ResourcesFlowState,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? {
         val serverId = state.selectedServerId ?: return null
-        state.showHistory = !state.showHistory
+        state.showHistory = true
         return result(context, serverId, state, callbackQuery)
     }
 
@@ -343,8 +341,7 @@ class ResourcesFlow(
                         flowKey = key,
                         stepKey = ResourcesStep.SERVER.key,
                         model = ResourcesServerModel(detail),
-                        parseMode = FlowParseMode.MARKDOWN,
-                        inlineButtons = serverButtons(detail)
+                        inlineButtons = detail.buttons.inlineButtons("ACTION")
                     )
                 ),
                 AnswerCallbackAction(callbackQuery.id)
@@ -370,12 +367,7 @@ class ResourcesFlow(
                 actions = listOf(
                     AnswerCallbackAction(
                         callbackQueryId = callbackQuery.id,
-                        text = messageSource.getMessage(
-                            "flow.resources.error.quick_disabled",
-                            null,
-                            "Quick change is disabled in settings.",
-                            context.locale
-                        ),
+                        text = i18nService.i18n("flow.resources.error.quick_disabled", context.locale, "Включи быстрый учёт ресурсов в настройках, чтобы пользоваться этой кнопкой."),
                         showAlert = true
                     )
                 )
@@ -386,12 +378,7 @@ class ResourcesFlow(
             return buildFlowResult(ResourcesStep.SERVER, state, listOf(
                 AnswerCallbackAction(
                     callbackQueryId = callbackQuery.id,
-                    text = messageSource.getMessage(
-                        "flow.resources.error.cb_disabled",
-                        null,
-                        "Tracking of CB is disabled in settings.",
-                        context.locale
-                    ),
+                    text = i18nService.i18n("flow.resources.error.cb_disabled", context.locale, "Включи учёт КБ в настройках, чтобы изменить значение."),
                     showAlert = true
                 )
             ))
@@ -424,8 +411,7 @@ class ResourcesFlow(
                         flowKey = key,
                         stepKey = ResourcesStep.SERVER.key,
                         model = ResourcesServerModel(detail),
-                        parseMode = FlowParseMode.MARKDOWN,
-                        inlineButtons = serverButtons(detail)
+                        inlineButtons = detail.buttons.inlineButtons("ACTION")
                     )
                 ),
                 AnswerCallbackAction(callbackQuery.id)
@@ -539,51 +525,34 @@ class ResourcesFlow(
         flowKey = key,
         stepKey = ResourcesStep.MAIN.key,
         model = overview,
-        inlineButtons = overview.inlineButtons()
+        inlineButtons = overview.buttons.inlineButtons("SERVER")
     )
 
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
             FlowInlineButton(
-                text = messageSource.getMessage(
-                    "flow.resources.button.cancel",
-                    null,
-                    "Cancel",
-                    locale
-                ) ?: "Cancel",
+                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена"),
                 payload = FlowCallbackPayload(key.value, "PROMPT:CANCEL"),
                 row = 0,
                 col = 0
             )
         )
 
-    private fun serverButtons(detail: ServerDetail): List<FlowInlineButton> =
-        detail.buttons.map { button ->
-            FlowInlineButton(
-                text = button.label,
-                payload = FlowCallbackPayload(FlowKeys.RESOURCES.value, "ACTION:${button.action}"),
-                row = button.row,
-                col = button.col
-            )
-        }
+    private fun List<Button>.inlineButtons(action: String): List<FlowInlineButton> =
+        this.map { button -> buildFlowButton(button, action) }
 
-    private fun ResourcesOverviewModel.inlineButtons(): List<FlowInlineButton> =
-        buttons.map { button ->
-            FlowInlineButton(
-                text = button.label,
-                payload = FlowCallbackPayload(FlowKeys.RESOURCES.value, "SERVER:${button.serverId}"),
-                row = button.row,
-                col = button.col
-            )
-        }
+    private fun buildFlowButton(
+        button: Button,
+        action: String
+    ): FlowInlineButton = FlowInlineButton(
+        text = button.label,
+        payload = FlowCallbackPayload(FlowKeys.RESOURCES.value, "$action:${button.action}"),
+        row = button.row,
+        col = button.col
+    )
 
     private fun nextPromptBinding(): String = "${PROMPT_MESSAGE_KEY}_${UUID.randomUUID()}"
 
-    private fun cleanupPromptActions(bindings: List<String>): MutableList<FlowAction> =
-        bindings.fold(mutableListOf()) { acc, binding ->
-            acc += DeleteMessageAction(binding)
-            acc
-        }
 
     private fun parseCallback(data: String): Pair<String, String?> {
         return if (data.contains(':')) {
@@ -611,7 +580,7 @@ class ResourcesFlow(
 
 data class ResourcesOverviewModel(
     val summaries: List<OverviewSummary>,
-    val buttons: List<OverviewButton>,
+    val buttons: List<Button>,
 )
 
 data class OverviewSummary(
@@ -626,13 +595,6 @@ data class OverviewSummary(
     val cbCount: Int,
 )
 
-data class OverviewButton(
-    val serverId: Int,
-    val label: String,
-    val row: Int,
-    val col: Int,
-)
-
 data class ResourcesServerModel(
     val detail: ServerDetail
 )
@@ -640,7 +602,7 @@ data class ResourcesServerModel(
 data class ServerDetail(
     val dto: ServerResourceDto,
     val history: List<String> = emptyList(),
-    val buttons: List<ServerButton>,
+    val buttons: List<Button>,
 )
 
 data class ResourcesPromptModel(
@@ -648,7 +610,7 @@ data class ResourcesPromptModel(
     val notes: List<String> = emptyList()
 )
 
-data class ServerButton(
+data class Button(
     val label: String,
     val action: String,
     val row: Int,

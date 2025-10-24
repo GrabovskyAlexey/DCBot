@@ -7,13 +7,11 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import org.testcontainers.containers.PostgreSQLContainer
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
-import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
 import ru.grabovsky.dungeoncrusherbot.strategy.state.maze.MazeState
-import ru.grabovsky.dungeoncrusherbot.strategy.state.settings.SettingsState
-import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.DriverManager
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -65,27 +63,6 @@ class StateMachineTest : ShouldSpec({
         }
     }
 
-    context("StateContext") {
-        val ctx = StateContext(listOf(StartState(), HelpState(), SendReportState()))
-
-        should("return next state for known state code") {
-            ctx.next(user, StateCode.START) shouldBe StateCode.WAITING
-        }
-
-        should("return null for unknown state code") {
-            ctx.next(user, StateCode.NOTIFY) shouldBe null
-        }
-    }
-
-    context("Start and SendReport states") {
-        should("lead to WAITING from StartState") {
-            StartState().getNextState(user) shouldBe StateCode.WAITING
-        }
-
-        should("lead to WAITING from SendReportState") {
-            SendReportState().getNextState(user) shouldBe StateCode.WAITING
-        }
-    }
 
     context("VerifyState") {
         val stateService = mockk<StateService>()
@@ -126,21 +103,6 @@ class StateMachineTest : ShouldSpec({
         should("default to UPDATE_MAZE") {
             every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "UNKNOWN")
             mazeState.getNextState(user) shouldBe StateCode.UPDATE_MAZE
-        }
-    }
-
-    context("SettingsState") {
-        val stateService = mockk<StateService>()
-        val settingsState = SettingsState(stateService)
-
-        should("route SEND_REPORT callback") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SETTINGS, callbackData = "SEND_REPORT")
-            settingsState.getNextState(user) shouldBe StateCode.SEND_REPORT
-        }
-
-        should("default to UPDATE_SETTINGS on other callbacks") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.SETTINGS, callbackData = "OTHER")
-            settingsState.getNextState(user) shouldBe StateCode.UPDATE_SETTINGS
         }
     }
 

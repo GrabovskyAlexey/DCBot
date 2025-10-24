@@ -10,13 +10,9 @@ enum class StateCode(
     val markType: MarkType = NONE,
     val linkedStateCode: StateCode? = null,
 ) {
-    START(SEND_MESSAGE, false),
     MAZE(SEND_MESSAGE, markType = UPDATE),
     UPDATE_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
     CONFIRM_REFRESH_MAZE(UPDATE_MESSAGE, linkedStateCode = MAZE),
-    HELP(SEND_MESSAGE, false),
-    SETTINGS(SEND_MESSAGE, markType = UPDATE),
-    UPDATE_SETTINGS(UPDATE_MESSAGE, linkedStateCode = SETTINGS),
     NOTES(SEND_MESSAGE, markType = UPDATE),
     UPDATE_NOTES(UPDATE_MESSAGE, linkedStateCode = NOTES),
     EXCHANGE(SEND_MESSAGE, markType = UPDATE),

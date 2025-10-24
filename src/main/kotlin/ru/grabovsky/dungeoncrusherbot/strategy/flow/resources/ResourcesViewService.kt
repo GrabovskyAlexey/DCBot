@@ -60,8 +60,8 @@ class ResourcesViewService(
         val buttons = serverService.getAllServers()
             .sortedBy { it.id }
             .mapIndexed { index, server ->
-                OverviewButton(
-                    serverId = server.id,
+                Button(
+                    action = server.id.toString(),
                     label = buttonLabel(server.id, server.id == mainServerId, locale),
                     row = index / 5,
                     col = index % 5
@@ -107,14 +107,14 @@ class ResourcesViewService(
         return ServerDetail(dto = dto, history = history, buttons = buttons)
     }
 
-    private fun buildServerButtons(dto: ServerResourceDto, locale: Locale): List<ServerButton> {
-        val buttons = mutableListOf<ServerButton>()
+    private fun buildServerButtons(dto: ServerResourceDto, locale: Locale): List<Button> {
+        val buttons = mutableListOf<Button>()
 
         fun label(code: String, default: String): String =
             messageSource.getMessage(code, null, default, locale) ?: default
 
-        fun button(row: Int, col: Int, code: String, default: String, action: String): ServerButton =
-            ServerButton(
+        fun button(row: Int, col: Int, code: String, default: String, action: String): Button =
+            Button(
                 label = label(code, default),
                 action = action,
                 row = row,

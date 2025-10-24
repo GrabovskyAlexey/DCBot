@@ -25,8 +25,6 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import java.util.Locale
 
-private const val MAIN_MESSAGE_BINDING = "subscribe_main"
-
 @Component
 class SubscribeFlow(
     private val userService: UserService,
@@ -131,7 +129,7 @@ class SubscribeFlow(
                         text = buttonLabel(locale, isSubscribed, server.id),
                         payload = FlowCallbackPayload(
                             flow = key.value,
-                            data = "${if (isSubscribed) SubscribeCommand.UNSUBSCRIBE.value else SubscribeCommand.SUBSCRIBE.value} ${server.id}"
+                            data = "${if (isSubscribed) SubscribeCommand.UNSUBSCRIBE.value else SubscribeCommand.SUBSCRIBE.value}:${server.id}"
                         ),
                         row = row,
                         col = col,
@@ -157,13 +155,17 @@ class SubscribeFlow(
     }
 
     private fun parseCallbackData(data: String): Pair<SubscribeCommand, Int>? {
-        val parts = data.split(" ")
+        val parts = data.split(":")
         if (parts.size != 2) {
             return null
         }
         val command = SubscribeCommand.fromRaw(parts[0]) ?: return null
         val id = parts[1].toIntOrNull() ?: return null
         return command to id
+    }
+
+    companion object {
+        private const val MAIN_MESSAGE_BINDING = "subscribe_main"
     }
 }
 

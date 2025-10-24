@@ -6,4 +6,5 @@ import ru.grabovsky.dungeoncrusherbot.entity.FlowState
 interface FlowStateRepository : JpaRepository<FlowState, Long> {
     fun findByUserIdAndFlowKey(userId: Long, flowKey: String): FlowState?
     fun deleteByUserIdAndFlowKey(userId: Long, flowKey: String)
+    fun findAllFlowStatesByUserId(userId: Long): List<FlowState>
 }

@@ -9,12 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.DataModel
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDetailDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.MazeDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.NotesDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.SettingsDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.*
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeDetailMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeDetailMessage
@@ -23,8 +18,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.MazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.UpdateMazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.RemoveNoteMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.UpdateNotesMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.settings.UpdateSettingsMessage
-import java.util.Locale
+import java.util.*
 
 private object EmptyData : DataModel
 
@@ -53,7 +47,6 @@ class MessageDelegationTest : ShouldSpec({
     should("delegate generation for notes and settings") {
         assertDelegation(RemoveNoteMessage(messageService), EmptyData)
         assertDelegation(UpdateNotesMessage(messageService), NotesDto(emptyList()))
-        assertDelegation(UpdateSettingsMessage(messageService), SettingsDto(false, false, false, false))
     }
 
     should("delegate generation for exchange messages") {

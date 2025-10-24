@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.dto.CallbackObject
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveCallbackEvent
 import ru.grabovsky.dungeoncrusherbot.event.TelegramReceiveMessageEvent
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
@@ -29,6 +30,7 @@ class ReceiverServiceImpl(
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val objectMapper: ObjectMapper,
     private val flowEngine: FlowEngine,
+    private val flowStateService: FlowStateService,
 ) : ReceiverService {
 
     override fun execute(update: Update) {
@@ -81,8 +83,10 @@ class ReceiverServiceImpl(
     private fun getState(user: User) =
         stateService.getState(user)
 
-    private fun handleFlowMessage(user: User, message: Message): Boolean =
-        flowEngine.onMessage(FlowKeys.RESOURCES, user, resolveLocale(user), message)
+    private fun handleFlowMessage(user: User, message: Message): Boolean {
+        val key = flowStateService.findListFlow(user.id)?.flowKey ?: return false
+        return flowEngine.onMessage(FlowKey(key), user, resolveLocale(user), message)
+    }
 
     private fun handleFlowCallback(user: User, callbackQuery: CallbackQuery): Boolean {
         val payload = parseFlowPayload(callbackQuery.data) ?: return false

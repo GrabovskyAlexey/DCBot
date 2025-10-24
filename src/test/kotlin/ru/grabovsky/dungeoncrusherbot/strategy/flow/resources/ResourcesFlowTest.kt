@@ -53,7 +53,7 @@ class ResourcesFlowTest : ShouldSpec({
             cbCount = 0
         )
     ),
-        buttons = listOf(OverviewButton(serverId = 5, label = "5", row = 0, col = 0))
+        buttons = listOf(Button(action = "5", label = "5", row = 0, col = 0))
     )
 
     val serverDetail = ServerDetail(
@@ -74,8 +74,8 @@ class ResourcesFlowTest : ShouldSpec({
             hasMain = false,
         ),
         buttons = listOf(
-            ServerButton(label = "Add", action = "PROMPT_ADD_VOID", row = 4, col = 1),
-            ServerButton(label = "Back", action = "BACK", row = 99, col = 0)
+            Button(label = "Add", action = "PROMPT_ADD_VOID", row = 4, col = 1),
+            Button(label = "Back", action = "BACK", row = 99, col = 0)
         )
     )
 

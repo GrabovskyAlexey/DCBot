@@ -20,7 +20,7 @@ class FlowEngine(
         val handler = handler<Any>(flowKey) ?: return false
         stateService.clear(user.id, flowKey)
         val result = handler.start(FlowStartContext(user, locale))
-        applyResult(user, flowKey, null, handler, result, locale)
+        applyResult(user, flowKey, null, result, locale)
         return true
     }
 
@@ -33,7 +33,7 @@ class FlowEngine(
             state = snapshot.toStateHolder(handler),
         )
         val result = handler.onMessage(context, message) ?: return false
-        applyResult(user, flowKey, snapshot, handler, result, locale)
+        applyResult(user, flowKey, snapshot, result, locale)
         return true
     }
 
@@ -46,7 +46,7 @@ class FlowEngine(
             state = snapshot.toStateHolder(handler),
         )
         val result = handler.onCallback(context, callbackQuery, data) ?: return false
-        applyResult(user, flowKey, snapshot, handler, result, locale)
+        applyResult(user, flowKey, snapshot, result, locale)
         return true
     }
 
@@ -66,7 +66,6 @@ class FlowEngine(
         user: User,
         flowKey: FlowKey,
         previousSnapshot: FlowStateSnapshot?,
-        handler: FlowHandler<TPayload>,
         result: FlowResult<TPayload>,
         locale: Locale,
     ) {

@@ -43,4 +43,9 @@ class FlowStateServiceImpl(
     override fun clear(userId: Long, flowKey: FlowKey) {
         repository.deleteByUserIdAndFlowKey(userId, flowKey.value)
     }
+
+    @Transactional
+    override fun findListFlow(userId: Long): FlowState? {
+        return repository.findAllFlowStatesByUserId(userId).sortedBy { it.updatedAt }.lastOrNull()
+    }
 }
