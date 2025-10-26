@@ -27,7 +27,6 @@ abstract class AbstractCommand(
         logger.info { "Process command ${classStateCode()} for user ${user.userName?:user.firstName} with id ${user.id}" }
         runCatching {
             prepare(user, chat, arguments)
-
             eventPublisher.publishEvent(
                 TelegramStateEvent(user, classStateCode())
             )

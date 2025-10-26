@@ -66,8 +66,8 @@ class SubscribeFlowTest : ShouldSpec({
         viewModel.servers shouldBe listOf(1)
         action.message.inlineButtons.shouldNotBeEmpty()
         val payloads = action.message.inlineButtons.map { it.payload.data }
-        payloads shouldContain "UNSUBSCRIBE 1"
-        payloads shouldContain "SUBSCRIBE 2"
+        payloads shouldContain "UNSUBSCRIBE:1"
+        payloads shouldContain "SUBSCRIBE:2"
     }
 
     should("subscribe user and update message on callback") {
@@ -97,7 +97,7 @@ class SubscribeFlowTest : ShouldSpec({
             )
         )
 
-        val result = flow.onCallback(context, callbackQuery, "SUBSCRIBE 2")
+        val result = flow.onCallback(context, callbackQuery, "SUBSCRIBE:2")
 
         verify { userService.saveUser(withArg { it.servers.any { server -> server.id == 2 } shouldBe true }) }
 
@@ -108,8 +108,8 @@ class SubscribeFlowTest : ShouldSpec({
         message.flowKey shouldBe FlowKeys.SUBSCRIBE
         (message.model as SubscribeViewModel).servers shouldBe listOf(2)
         val updatedPayloads = message.inlineButtons.map { it.payload.data }
-        updatedPayloads shouldContain "SUBSCRIBE 1"
-        updatedPayloads shouldContain "UNSUBSCRIBE 2"
+        updatedPayloads shouldContain "SUBSCRIBE:1"
+        updatedPayloads shouldContain "UNSUBSCRIBE:2"
 
         val answerAction = result.actions[1] as AnswerCallbackAction
         answerAction.callbackQueryId shouldBe "cb-id"

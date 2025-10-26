@@ -86,7 +86,7 @@ class ResourcesFlowTest : ShouldSpec({
         every { viewService.buildOverview(any(), any()) } returns overview
         every { viewService.buildServer(any(), any(), any(), any()) } returns serverDetail
         every { promptBuilder.amountPrompt(any(), any(), invalid = any()) } returns ResourcesPromptModel("enter amount")
-        every { i18nService.i18n(any(), any(), any(), any()) } returns "Cancel"
+        every { i18nService.i18n(any(), any(), any(), *anyVararg()) } returns "Cancel"
     }
 
     should("create main overview message on start") {

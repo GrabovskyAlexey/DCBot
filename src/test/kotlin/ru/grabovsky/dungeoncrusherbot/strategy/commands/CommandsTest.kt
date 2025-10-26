@@ -15,8 +15,8 @@ import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 
 class CommandsTest : ShouldSpec({
@@ -29,17 +29,16 @@ class CommandsTest : ShouldSpec({
         val engine = mockk<FlowEngine>(relaxed = true)
         val command = StartCommand(userService, publisher, engine)
         val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 100L }
-        every { userService.createOrUpdateUser(tgUser) } returns User(100L, "Tester", null, "tester")
-        every { publisher.publishEvent(any()) } answers {
-            val event = it.invocation.args[0] as TelegramStateEvent
-            event.user shouldBe tgUser
-            event.stateCode shouldBe command.classStateCode()
-        }
+        val persisted = User(100L, "Tester", null, "tester")
+        every { userService.createOrUpdateUser(tgUser) } returns persisted
+        every { userService.getUser(100L) } returns persisted
+        every { engine.start(FlowKeys.START, tgUser, any()) } returns true
 
         command.execute(telegramClient, tgUser, chat, emptyArray())
 
         verify { userService.createOrUpdateUser(tgUser) }
-        verify { publisher.publishEvent(any<TelegramStateEvent>()) }
+        verify { engine.start(FlowKeys.START, tgUser, any()) }
+        verify(exactly = 0) { publisher.publishEvent(any()) }
     }
 
     should("create resources when none exist for ResourcesCommand") {
