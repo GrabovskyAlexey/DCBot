@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.data
+package ru.grabovsky.dungeoncrusherbot.strategy.data
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -8,15 +8,13 @@ import io.mockk.mockk
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.VerificationErrorDto
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class VerificationErrorDataRepositoryTest : ShouldSpec({
-    val userService = mockk<UserService>()
     val stateService = mockk<StateService>()
-    val repository = VerificationErrorDataRepository(userService, stateService)
+    val repository = VerificationErrorDataRepository(stateService)
     val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 2000L }
 
     fun stub(stateCode: StateCode?) {
@@ -28,8 +26,6 @@ class VerificationErrorDataRepositoryTest : ShouldSpec({
     should("produce messages for various invalid inputs") {
         listOf(
             StateCode.ADD_EXCHANGE,
-            StateCode.ADD_NOTE,
-            StateCode.REMOVE_NOTE,
             StateCode.SAME_LEFT,
             StateCode.SAME_CENTER,
             StateCode.SAME_RIGHT,
@@ -47,3 +43,5 @@ class VerificationErrorDataRepositoryTest : ShouldSpec({
         dto.message.isNotBlank().shouldBeTrue()
     }
 })
+
+

@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
+package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -188,13 +188,10 @@ class ResourcesFlow(
             return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
         }
 
-        val user = userService.getUser(context.user.id) ?: return finalizePrompt(context, pending.serverId, message.messageId)
-        val notes = user.notes
-        if (notes.size >= 20) {
-            notes.removeFirst()
+        val added = userService.addNote(context.user.id, value)
+        if (!added) {
+            return finalizePrompt(context, pending.serverId, message.messageId)
         }
-        notes.add(value)
-        userService.saveUser(user)
         return finalizePrompt(context, pending.serverId, message.messageId)
     }
 
@@ -204,15 +201,15 @@ class ResourcesFlow(
         pending: RemoveNote
     ): FlowResult<ResourcesFlowState> {
         val index = message.text?.toIntOrNull()
-        val user = userService.getUser(context.user.id) ?: return finalizePrompt(context, pending.serverId, message.messageId)
-        val notes = user.notes
+        val user = userService.getUser(context.user.id)
+        val notes = user?.notes ?: emptyList()
         if (index == null || index <= 0 || index > notes.size) {
             val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = true)
             return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
         }
 
-        user.notes.removeAt(index - 1)
-        userService.saveUser(user)
+        userService.removeNote(context.user.id, index)
+
         return finalizePrompt(context, pending.serverId, message.messageId)
     }
 
@@ -548,8 +545,6 @@ class ResourcesFlow(
         private val logger = KotlinLogging.logger {}
     }
 }
-
-// 631
 
 data class ResourcesOverviewModel(
     val summaries: List<OverviewSummary>,

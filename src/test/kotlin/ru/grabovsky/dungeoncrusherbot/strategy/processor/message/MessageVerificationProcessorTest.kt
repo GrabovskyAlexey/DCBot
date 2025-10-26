@@ -1,4 +1,4 @@
-п»їpackage ru.grabovsky.dungeoncrusherbot.strategy.processor.message
+package ru.grabovsky.dungeoncrusherbot.strategy.processor.message
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -10,8 +10,6 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.maze.SameCenterProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.maze.SameLeftProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.maze.SameRightProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.note.AddNoteProcessor
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.message.note.RemoveNoteProcessor
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -26,15 +24,13 @@ class MessageVerificationProcessorTest : ShouldSpec({
     )
 
     val cases = listOf(
-        Case(StateCode.ADD_NOTE) { AddNoteProcessor(it) },
-        Case(StateCode.REMOVE_NOTE) { RemoveNoteProcessor(it) },
         Case(StateCode.SAME_LEFT) { SameLeftProcessor(it) },
         Case(StateCode.SAME_RIGHT) { SameRightProcessor(it) },
         Case(StateCode.SAME_CENTER) { SameCenterProcessor(it) },
     )
 
     cases.forEach { case ->
-        should("СЃРѕС…СЂР°РЅСЏС‚СЊ VerificationRequest РґР»СЏ СЃРѕСЃС‚РѕСЏРЅРёСЏ ${case.stateCode}") {
+        should("сохранять VerificationRequest для состояния ${case.stateCode}") {
             val stateService = mockk<StateService>()
             val userState = UserState(userId = 900L, state = case.stateCode)
             every { stateService.getState(telegramUser) } returns userState

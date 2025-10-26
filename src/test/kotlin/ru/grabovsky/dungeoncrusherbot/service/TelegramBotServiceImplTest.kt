@@ -126,13 +126,13 @@ class TelegramBotServiceImplTest : ShouldSpec({
     }
 
     should("add sent message id to delete list for delete mark states") {
-        val state = UserStateFactory.state(StateCode.ADD_NOTE)
+        val state = UserStateFactory.state(StateCode.ADD_EXCHANGE)
         every { stateService.getState(tgUser) } returns state
 
         val message = telegramMessage(42)
         every { telegramClient.execute(any<SendMessage>()) } returns message
 
-        service.processState(tgUser, StateCode.ADD_NOTE)
+        service.processState(tgUser, StateCode.ADD_EXCHANGE)
 
         state.deletedMessages shouldContainExactly listOf(42)
         verify { stateService.saveState(state) }

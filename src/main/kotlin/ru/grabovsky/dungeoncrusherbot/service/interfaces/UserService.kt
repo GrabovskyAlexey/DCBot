@@ -8,7 +8,8 @@ interface UserService {
     fun createOrUpdateUser(user: TgUser): User
     fun saveUser(user: User)
     fun getUser(userId: Long): User?
-    fun processNote(user: User, note: String, state: StateCode)
     fun clearNotes(user: TgUser)
+    fun addNote(userId: Long, note: String): Boolean
+    fun removeNote(userId: Long, index: Int): Boolean
     fun sendAdminMessage(user: TgUser, message: String)
 }

@@ -204,8 +204,21 @@ private class FakeUserService : UserService {
 
     override fun getUser(userId: Long): User? = users[userId]
 
-    override fun processNote(user: User, note: String, state: StateCode) =
-        throw UnsupportedOperationException("Not used in tests")
+    override fun addNote(userId: Long, note: String): Boolean {
+        val user = users[userId] ?: return false
+        user.notes.add(note)
+        return true
+    }
+
+    override fun removeNote(userId: Long, index: Int): Boolean {
+        val user = users[userId] ?: return false
+        val position = index - 1
+        if (position !in user.notes.indices) {
+            return false
+        }
+        user.notes.removeAt(position)
+        return true
+    }
 
     override fun clearNotes(user: TgUser) =
         throw UnsupportedOperationException("Not used in tests")
@@ -221,3 +234,4 @@ private class FakeGoogleFormService : GoogleFormService {
         calls += count to discordName
     }
 }
+

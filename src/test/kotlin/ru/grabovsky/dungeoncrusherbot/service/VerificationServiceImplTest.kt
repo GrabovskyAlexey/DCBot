@@ -2,7 +2,6 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.mockk.clearMocks
 import io.mockk.every
@@ -49,57 +48,17 @@ class VerificationServiceImplTest : ShouldSpec({
         clearMocks(stateService, verificationRepository, userService, mazeService, answers = true)
         dbUser = User(userId = 501L, firstName = "Tester", lastName = null, userName = "tester")
         every { userService.getUser(any()) } returns dbUser
-        justRun { userService.processNote(any(), any(), any()) }
         justRun { mazeService.processSameStep(any(), any(), any()) }
     }
 
     should("do nothing when verification request is missing") {
-        val state = UserState(userId = 501L, state = StateCode.VERIFY, verification = null)
-        every { stateService.getState(telegramUser) } returns state
+         val state = UserState(userId = 501L, state = StateCode.VERIFY, verification = null)
+         every { stateService.getState(telegramUser) } returns state
 
-        service.verify(telegramUser, StateCode.VERIFY)
+         service.verify(telegramUser, StateCode.VERIFY)
 
-        verify(exactly = 0) { verificationRepository.save(any()) }
-        verify(exactly = 0) { userService.processNote(any(), any(), any()) }
-        verify(exactly = 0) { mazeService.processSameStep(any(), any(), any()) }
-    }
-
-    should("process add note when text is present") {
-        prepareRequest("note text", StateCode.ADD_NOTE)
-
-        service.verify(telegramUser, StateCode.ADD_NOTE)
-
-        request.result.shouldBeTrue()
-        verify { userService.processNote(dbUser, "note text", StateCode.ADD_NOTE) }
-    }
-
-    should("reject add note when text is blank") {
-        prepareRequest("", StateCode.ADD_NOTE)
-
-        service.verify(telegramUser, StateCode.ADD_NOTE)
-
-        request.result.shouldBeFalse()
-        verify(exactly = 0) { userService.processNote(any(), any(), any()) }
-    }
-
-    should("process remove note when index is valid") {
-        dbUser.notes.add("first")
-        prepareRequest("1", StateCode.REMOVE_NOTE)
-
-        service.verify(telegramUser, StateCode.REMOVE_NOTE)
-
-        request.result.shouldBeTrue()
-        verify { userService.processNote(dbUser, "1", StateCode.REMOVE_NOTE) }
-    }
-
-    should("reject remove note when index is invalid") {
-        dbUser.notes.add("only")
-        prepareRequest("5", StateCode.REMOVE_NOTE)
-
-        service.verify(telegramUser, StateCode.REMOVE_NOTE)
-
-        request.result.shouldBeFalse()
-        verify(exactly = 0) { userService.processNote(any(), any(), any()) }
+         verify(exactly = 0) { verificationRepository.save(any()) }
+         verify(exactly = 0) { mazeService.processSameStep(any(), any(), any()) }
     }
 
     should("process maze verification when steps are valid") {

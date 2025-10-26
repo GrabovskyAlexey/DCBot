@@ -7,8 +7,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.*
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeDetailMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
@@ -16,16 +14,10 @@ import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeDe
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.MazeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.UpdateMazeMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.RemoveNoteMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.notes.UpdateNotesMessage
 import java.util.*
-
-private object EmptyData : DataModel
 
 class MessageDelegationTest : ShouldSpec({
     val messageService = mockk<MessageGenerateService>(relaxed = true)
-    val serverService = mockk<ServerService>(relaxed = true)
-    val userService = mockk<UserService>(relaxed = true)
 
     fun <T : DataModel> assertDelegation(message: AbstractSendMessage<T>, data: T) {
         val user = mockk<User>(relaxed = true)
@@ -42,11 +34,6 @@ class MessageDelegationTest : ShouldSpec({
         val dto = MazeDto(sameSteps = false)
         assertDelegation(MazeMessage(messageService), dto)
         assertDelegation(UpdateMazeMessage(messageService), dto)
-    }
-
-    should("delegate generation for notes and settings") {
-        assertDelegation(RemoveNoteMessage(messageService), EmptyData)
-        assertDelegation(UpdateNotesMessage(messageService), NotesDto(emptyList()))
     }
 
     should("delegate generation for exchange messages") {
@@ -68,3 +55,4 @@ class MessageDelegationTest : ShouldSpec({
         assertDelegation(UpdateExchangeDetailMessage(messageService), detailDto)
     }
 })
+

@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -8,12 +8,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.springframework.context.ApplicationEventPublisher
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -83,13 +81,4 @@ class UserServiceImplTest : ShouldSpec({
         verify(exactly = 1) { userRepository.saveAndFlush(existingUser) }
     }
 
-    should("keep notes logic untouched") {
-        val user = User(1L, "A", "B", "ab")
-        user.notes.addAll(listOf("1", "2"))
-        every { userRepository.saveAndFlush(user) } returns user
-
-        service.processNote(user, "3", StateCode.ADD_NOTE)
-        user.notes.last() shouldBe "3"
-        verify { userRepository.saveAndFlush(user) }
-    }
 })

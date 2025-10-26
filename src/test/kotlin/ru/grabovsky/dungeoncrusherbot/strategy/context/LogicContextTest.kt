@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.context
+package ru.grabovsky.dungeoncrusherbot.strategy.context
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -32,8 +32,8 @@ class LogicContextTest : ShouldSpec({
     }
 
     val context = LogicContext(
-        messageProcessors = mapOf(StateCode.NOTES to messageProcessor),
-        callbackProcessors = mapOf(StateCode.NOTES to callbackProcessor)
+        messageProcessors = mapOf(StateCode.EXCHANGE to messageProcessor),
+        callbackProcessors = mapOf(StateCode.EXCHANGE to callbackProcessor)
     )
 
     beforeTest {

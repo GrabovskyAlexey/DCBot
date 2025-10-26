@@ -29,8 +29,6 @@ class VerificationServiceImpl(
             request.result = when (request.stateCode) {
                 ADD_EXCHANGE -> request.message.isNotEmpty()
                 SAME_LEFT, SAME_RIGHT, SAME_CENTER -> request.message.toInt() in 1..10
-                ADD_NOTE -> request.message.isNotEmpty()
-                REMOVE_NOTE -> verifyRemoveNotes(user, request.message)
                 else -> false
             }
             return@runCatching request.result
@@ -40,24 +38,7 @@ class VerificationServiceImpl(
         }.getOrDefault(false)
         verificationRequestRepository.save(request)
         when {
-            noteStates.contains(request.stateCode) -> processNote(user, request.message, request.stateCode, verificationResult)
             mazeStates.contains(request.stateCode) -> processMaze(user, request.message, request.stateCode)
-        }
-    }
-
-    private fun verifyRemoveNotes(user: User, message: String): Boolean {
-        val user = userService.getUser(user.id) ?: return false
-        return runCatching {
-            val id = message.toInt() - 1
-            if (id < 0) return false
-            if (user.notes.size <= id) return false
-        }.isSuccess
-    }
-
-    private fun processNote(user: User, value: String, state: StateCode, result: Boolean) {
-        val userFromDb = userService.getUser(user.id) ?: return
-        if (result) {
-            userService.processNote(userFromDb, value, state)
         }
     }
 
@@ -75,7 +56,6 @@ class VerificationServiceImpl(
 
     companion object {
         val logger = KotlinLogging.logger {}
-        val noteStates = setOf(ADD_NOTE, REMOVE_NOTE)
         val mazeStates = setOf(SAME_LEFT, SAME_CENTER, SAME_RIGHT)
     }
 }

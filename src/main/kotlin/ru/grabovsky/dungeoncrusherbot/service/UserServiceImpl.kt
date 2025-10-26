@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
@@ -14,9 +14,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecut
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.ADD_NOTE
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.REMOVE_NOTE
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -27,6 +24,10 @@ class UserServiceImpl(
     private val adminMessageRepository: AdminMessageRepository,
     private val telegramFlowActionExecutor: FlowActionExecutor
 ) : UserService {
+    companion object {
+        private const val NOTES_LIMIT = 20
+        private val logger = KotlinLogging.logger {}
+    }
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
         return entity?.let { updateUser(it, user) }
@@ -75,18 +76,36 @@ class UserServiceImpl(
     @Transactional
     override fun getUser(userId: Long) = userRepository.findUserByUserId(userId)
 
-    override fun processNote(user: User, note: String, state: StateCode) {
-        when (state) {
-            ADD_NOTE -> addNote(user, note)
-            REMOVE_NOTE -> removeNote(user, note)
-            else -> {}
-        }
-    }
-
     override fun clearNotes(user: TgUser) {
         val userFromDb = userRepository.findUserByUserId(user.id) ?: return
         userFromDb.notes.clear()
         userRepository.saveAndFlush(userFromDb)
+    }
+
+    override fun addNote(userId: Long, note: String): Boolean {
+        val trimmed = note.trim()
+        if (trimmed.isEmpty()) {
+            return false
+        }
+        val user = userRepository.findUserByUserId(userId) ?: return false
+        val notes = user.notes
+        if (notes.size >= NOTES_LIMIT) {
+            notes.removeFirst()
+        }
+        notes.add(trimmed)
+        userRepository.saveAndFlush(user)
+        return true
+    }
+
+    override fun removeNote(userId: Long, index: Int): Boolean {
+        val user = userRepository.findUserByUserId(userId) ?: return false
+        val position = index - 1
+        if (position !in user.notes.indices) {
+            return false
+        }
+        user.notes.removeAt(position)
+        userRepository.saveAndFlush(user)
+        return true
     }
 
     override fun sendAdminMessage(user: TgUser, message: String) {
@@ -119,21 +138,4 @@ class UserServiceImpl(
         }
     }
 
-    private fun addNote(user: User, note: String) {
-        if (user.notes.size >= 20) {
-            user.notes.removeFirst()
-        }
-        user.notes.add(note)
-        userRepository.saveAndFlush(user)
-    }
-
-    private fun removeNote(user: User, note: String) {
-        val id = note.toInt() - 1
-        user.notes.removeAt(id)
-        userRepository.saveAndFlush(user)
-    }
-
-    companion object {
-        val logger = KotlinLogging.logger {}
-    }
 }
