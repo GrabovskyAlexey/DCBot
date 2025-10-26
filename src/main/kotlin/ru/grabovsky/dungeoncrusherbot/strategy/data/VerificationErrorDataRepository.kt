@@ -12,8 +12,7 @@ class VerificationErrorDataRepository(
 ): AbstractDataRepository<VerificationErrorDto>() {
     override fun getData(user: User): VerificationErrorDto {
         val stateCode = stateService.getState(user).verification?.stateCode
-        return when(stateCode) {
-            ADD_EXCHANGE -> VerificationErrorDto("Введите корректный ник")
+        return when (stateCode) {
             SAME_LEFT, SAME_CENTER, SAME_RIGHT -> VerificationErrorDto("Введите количество шагов от 1 до 10")
             else -> VerificationErrorDto("Неопознанная ошибка")
         }

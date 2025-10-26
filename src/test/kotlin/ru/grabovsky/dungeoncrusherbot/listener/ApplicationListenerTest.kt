@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.listener
+package ru.grabovsky.dungeoncrusherbot.listener
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -57,16 +57,14 @@ class ApplicationListenerTest : ShouldSpec({
         verify { telegramBotService.processState(telegramUser, StateCode.UPDATE_MAZE) }
     }
 
-    should("send admin message and switch to report complete state") {
+    should("send admin message without changing state") {
         val adminDto = AdminMessageDto("first", "tester", 10L, "body")
-        val adminEvent = TelegramAdminMessageEvent(telegramUser, StateCode.SEND_REPORT, 777L, adminDto)
+        val adminEvent = TelegramAdminMessageEvent(telegramUser, StateCode.WAITING, 777L, adminDto)
         justRun { telegramBotService.sendAdminMessage(777L, adminDto) }
-        justRun { stateService.updateState(telegramUser, StateCode.SEND_REPORT_COMPLETE) }
-        justRun { telegramBotService.processState(telegramUser, StateCode.SEND_REPORT_COMPLETE) }
 
         listener.processAdminMessageEvent(adminEvent)
 
         verify { telegramBotService.sendAdminMessage(777L, adminDto) }
-        verify { telegramBotService.processState(telegramUser, StateCode.SEND_REPORT_COMPLETE) }
+        verify(exactly = 0) { telegramBotService.processState(any(), any()) }
     }
 })

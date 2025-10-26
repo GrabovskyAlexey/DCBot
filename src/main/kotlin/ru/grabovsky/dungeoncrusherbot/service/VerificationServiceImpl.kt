@@ -27,7 +27,6 @@ class VerificationServiceImpl(
         val request = state.verification ?: return
         val verificationResult = runCatching {
             request.result = when (request.stateCode) {
-                ADD_EXCHANGE -> request.message.isNotEmpty()
                 SAME_LEFT, SAME_RIGHT, SAME_CENTER -> request.message.toInt() in 1..10
                 else -> false
             }

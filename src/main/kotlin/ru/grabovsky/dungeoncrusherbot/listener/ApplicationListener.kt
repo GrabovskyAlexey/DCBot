@@ -37,7 +37,6 @@ class ApplicationListener(
     fun processAdminMessageEvent(event: TelegramAdminMessageEvent) {
         logger.info { "Process admin message with chatId:${event.adminChatId}, message: ${event.dto}" }
         telegramBotService.sendAdminMessage(event.adminChatId, event.dto)
-        processStateEvent(TelegramStateEvent(event.user, StateCode.SEND_REPORT_COMPLETE))
     }
 
     fun processMessageEvent(event: TelegramReceiveMessageEvent) {

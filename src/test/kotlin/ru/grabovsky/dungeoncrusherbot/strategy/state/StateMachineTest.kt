@@ -69,13 +69,13 @@ class StateMachineTest : ShouldSpec({
         val verifyState = VerifyState(stateService)
 
         should("go to success when verification result is true") {
-            val verification = VerificationRequest(message = "ok", stateCode = StateCode.ADD_EXCHANGE).apply { result = true }
+            val verification = VerificationRequest(message = "ok", stateCode = StateCode.SAME_LEFT).apply { result = true }
             every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = verification)
             verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_SUCCESS
         }
 
         should("go to error when verification result is false") {
-            val verification = VerificationRequest(message = "bad", stateCode = StateCode.ADD_EXCHANGE, result = false)
+            val verification = VerificationRequest(message = "bad", stateCode = StateCode.SAME_LEFT, result = false)
             every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = verification)
             verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_ERROR
         }
@@ -107,3 +107,4 @@ class StateMachineTest : ShouldSpec({
     }
 
 })
+

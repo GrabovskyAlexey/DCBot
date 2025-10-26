@@ -25,7 +25,6 @@ class VerificationErrorDataRepositoryTest : ShouldSpec({
 
     should("produce messages for various invalid inputs") {
         listOf(
-            StateCode.ADD_EXCHANGE,
             StateCode.SAME_LEFT,
             StateCode.SAME_CENTER,
             StateCode.SAME_RIGHT,
