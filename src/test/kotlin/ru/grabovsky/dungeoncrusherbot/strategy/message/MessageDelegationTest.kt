@@ -12,8 +12,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeDetailMe
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.ExchangeMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeDetailMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.message.exchange.UpdateExchangeMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.MazeMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.message.maze.UpdateMazeMessage
 import java.util.*
 
 class MessageDelegationTest : ShouldSpec({
@@ -28,12 +26,6 @@ class MessageDelegationTest : ShouldSpec({
     beforeTest {
         clearMocks(messageService)
         every { messageService.process(any(), any(), any()) } returns "generated"
-    }
-
-    should("delegate generation for maze messages") {
-        val dto = MazeDto(sameSteps = false)
-        assertDelegation(MazeMessage(messageService), dto)
-        assertDelegation(UpdateMazeMessage(messageService), dto)
     }
 
     should("delegate generation for exchange messages") {

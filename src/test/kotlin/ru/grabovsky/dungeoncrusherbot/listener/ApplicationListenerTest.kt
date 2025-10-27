@@ -44,17 +44,17 @@ class ApplicationListenerTest : ShouldSpec({
     }
 
     should("dispatch callback final result to next state") {
-        val callbackEvent = TelegramReceiveCallbackEvent(telegramUser, StateCode.MAZE, "payload")
-        every { logicContext.execute(telegramUser, callbackData = "payload", stateCode = StateCode.MAZE) } returns ExecuteStatus.FINAL
-        every { stateContext.next(telegramUser, StateCode.MAZE) } returns StateCode.UPDATE_MAZE
-        justRun { stateService.updateState(telegramUser, StateCode.UPDATE_MAZE) }
-        justRun { telegramBotService.processState(telegramUser, StateCode.UPDATE_MAZE) }
+        val callbackEvent = TelegramReceiveCallbackEvent(telegramUser, StateCode.EXCHANGE, "payload")
+        every { logicContext.execute(telegramUser, callbackData = "payload", stateCode = StateCode.EXCHANGE) } returns ExecuteStatus.FINAL
+        every { stateContext.next(telegramUser, StateCode.EXCHANGE) } returns StateCode.UPDATE_EXCHANGE
+        justRun { stateService.updateState(telegramUser, StateCode.UPDATE_EXCHANGE) }
+        justRun { telegramBotService.processState(telegramUser, StateCode.UPDATE_EXCHANGE) }
 
         listener.processCallbackEvent(callbackEvent)
 
-        verify { logicContext.execute(telegramUser, callbackData = "payload", stateCode = StateCode.MAZE) }
-        verify { stateContext.next(telegramUser, StateCode.MAZE) }
-        verify { telegramBotService.processState(telegramUser, StateCode.UPDATE_MAZE) }
+        verify { logicContext.execute(telegramUser, callbackData = "payload", stateCode = StateCode.EXCHANGE) }
+        verify { stateContext.next(telegramUser, StateCode.EXCHANGE) }
+        verify { telegramBotService.processState(telegramUser, StateCode.UPDATE_EXCHANGE) }
     }
 
     should("send admin message without changing state") {

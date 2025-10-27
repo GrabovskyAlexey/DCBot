@@ -41,6 +41,24 @@ class CommandsTest : ShouldSpec({
         verify(exactly = 0) { publisher.publishEvent(any()) }
     }
 
+    should("start flow when executing MazeCommand") {
+        val userService = mockk<UserService>()
+        val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
+        val engine = mockk<FlowEngine>(relaxed = true)
+        val command = MazeCommand(userService, publisher, engine)
+        val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 150L }
+        val persisted = User(150L, "Maze", null, "maze")
+        every { userService.createOrUpdateUser(tgUser) } returns persisted
+        every { userService.getUser(150L) } returns persisted
+        every { engine.start(FlowKeys.MAZE, tgUser, any()) } returns true
+
+        command.execute(telegramClient, tgUser, chat, emptyArray())
+
+        verify { userService.createOrUpdateUser(tgUser) }
+        verify { engine.start(FlowKeys.MAZE, tgUser, any()) }
+        verify(exactly = 0) { publisher.publishEvent(any()) }
+    }
+
     should("create resources when none exist for ResourcesCommand") {
         val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val userService = mockk<UserService>()

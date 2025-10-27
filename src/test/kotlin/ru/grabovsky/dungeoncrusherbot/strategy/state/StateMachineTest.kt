@@ -11,7 +11,6 @@ import org.testcontainers.containers.PostgreSQLContainer
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
-import ru.grabovsky.dungeoncrusherbot.strategy.state.maze.MazeState
 import java.sql.DriverManager
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -83,26 +82,6 @@ class StateMachineTest : ShouldSpec({
         should("go to error when verification is missing") {
             every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.VERIFY, verification = null)
             verifyState.getNextState(user) shouldBe StateCode.VERIFICATION_ERROR
-        }
-    }
-
-    context("MazeState") {
-        val stateService = mockk<StateService>()
-        val mazeState = MazeState(stateService)
-
-        should("return SAME_LEFT when callback requests it") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "SAME_LEFT")
-            mazeState.getNextState(user) shouldBe StateCode.SAME_LEFT
-        }
-
-        should("return CONFIRM_REFRESH_MAZE when callback is REFRESH_MAZE") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "REFRESH_MAZE")
-            mazeState.getNextState(user) shouldBe StateCode.CONFIRM_REFRESH_MAZE
-        }
-
-        should("default to UPDATE_MAZE") {
-            every { stateService.getState(user) } returns UserState(userId = 101L, state = StateCode.MAZE, callbackData = "UNKNOWN")
-            mazeState.getNextState(user) shouldBe StateCode.UPDATE_MAZE
         }
     }
 
