@@ -11,6 +11,7 @@ import io.mockk.verify
 import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.entity.VerificationRequest
 import ru.grabovsky.dungeoncrusherbot.repository.VerificationRequestRepository
@@ -46,7 +47,9 @@ class VerificationServiceImplTest : ShouldSpec({
 
     beforeTest {
         clearMocks(stateService, verificationRepository, userService, mazeService, answers = true)
-        dbUser = User(userId = 501L, firstName = "Tester", lastName = null, userName = "tester")
+        dbUser = User(userId = 501L, firstName = "Tester", lastName = null, userName = "tester").apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         every { userService.getUser(any()) } returns dbUser
         justRun { mazeService.processSameStep(any(), any(), any()) }
     }

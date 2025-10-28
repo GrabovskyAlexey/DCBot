@@ -6,11 +6,10 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation.*
 import java.time.LocalDate
 
 @Service
@@ -21,6 +20,8 @@ class ResourcesServiceImpl(
     override fun applyOperation(user: TgUser, serverId: Int, operation: ResourceOperation) {
         val userFromDb = userService.getUser(user.id)
             ?: throw EntityNotFoundException("User with id: ${user.id} not found")
+        val profile = userFromDb.profile
+            ?: throw IllegalStateException("Profile not initialized for user: ${user.id}")
         val resources = userFromDb.resources
             ?: throw IllegalStateException("Resources not initialized for user: ${user.userName ?: user.firstName}")
 
@@ -28,7 +29,8 @@ class ResourcesServiceImpl(
         val history = resources.history.computeIfAbsent(serverId) { mutableListOf() }
 
         when (operation) {
-            is Adjust -> handleAdjustOperation(
+            is ResourceOperation.Adjust -> handleAdjustOperation(
+                user = userFromDb,
                 resources = resources,
                 serverData = serverData,
                 history = history,
@@ -37,22 +39,23 @@ class ResourcesServiceImpl(
                 serverId = serverId,
             )
 
-            is SetExchange -> serverData.exchange = operation.value.trim().takeIf { it.isNotEmpty() }
-            is ClearExchange -> serverData.exchange = null
-            is ToggleNotify -> serverData.notifyDisable = !serverData.notifyDisable
-            is MarkMain -> resources.data.mainServerId = serverId
-            is UnmarkMain -> resources.data.mainServerId = null
+            is ResourceOperation.SetExchange -> serverData.exchange = operation.value.trim().takeIf { it.isNotEmpty() }
+            ResourceOperation.ClearExchange -> serverData.exchange = null
+            ResourceOperation.ToggleNotify -> serverData.notifyDisable = !serverData.notifyDisable
+            ResourceOperation.MarkMain -> profile.mainServerId = serverId
+            ResourceOperation.UnmarkMain -> profile.mainServerId = null
         }
 
         if (shouldNotifyWatermelon(operation, serverId, userFromDb)) {
             logger.info { "Send info to Watermelon for user: ${userFromDb.userName ?: userFromDb.firstName}" }
-            googleFormService.sendDraadorCount(operationAmount(operation).toString(), userFromDb.settings.discordUsername!!)
+            googleFormService.sendDraadorCount(operationAmount(operation).toString(), profile.settings.discordUsername!!)
         }
 
         userService.saveUser(userFromDb)
     }
 
     private fun handleAdjustOperation(
+        user: User,
         resources: Resources,
         serverData: ServerResourceData,
         history: MutableList<ResourcesHistory>,
@@ -101,18 +104,19 @@ class ResourcesServiceImpl(
             }
 
             AdjustType.RECEIVE_DRAADOR -> {
-                receiveDraador(resources, serverId, amount)
+                receiveDraador(user, resources, serverId, amount)
             }
         }
     }
 
-    private fun receiveDraador(resources: Resources, serverId: Int, amount: Int) {
+    private fun receiveDraador(user: User, resources: Resources, serverId: Int, amount: Int) {
         val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
         val history = resources.history.computeIfAbsent(serverId) { mutableListOf() }
         serverData.balance -= amount
         addHistory(history, ResourceType.DRAADOR, DirectionType.INCOMING, amount)
 
-        val mainServerId = resources.data.mainServerId ?: return
+        val profile = user.profile ?: return
+        val mainServerId = profile.mainServerId ?: return
         val mainServer = resources.data.servers.computeIfAbsent(mainServerId) { ServerResourceData() }
         val mainHistory = resources.history.computeIfAbsent(mainServerId) { mutableListOf() }
         mainServer.draadorCount += amount
@@ -141,17 +145,18 @@ class ResourcesServiceImpl(
     }
 
     private fun shouldNotifyWatermelon(operation: ResourceOperation, serverId: Int, user: User): Boolean {
-        if (operation !is Adjust) {
+        if (operation !is ResourceOperation.Adjust) {
             return false
         }
         if (operation.type != AdjustType.ADD_DRAADOR) {
             return false
         }
-        return serverId == 8 && user.settings.sendWatermelon && user.settings.discordUsername != null
+        val settings = user.profile?.settings ?: return false
+        return serverId == 8 && settings.sendWatermelon && settings.discordUsername != null
     }
 
     private fun operationAmount(operation: ResourceOperation): Int =
-        (operation as? Adjust)?.amount ?: 0
+        (operation as? ResourceOperation.Adjust)?.amount ?: 0
 
     companion object {
         private val logger = KotlinLogging.logger {}

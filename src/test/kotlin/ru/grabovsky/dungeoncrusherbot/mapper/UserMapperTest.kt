@@ -1,9 +1,10 @@
-﻿package ru.grabovsky.dungeoncrusherbot.mapper
+package ru.grabovsky.dungeoncrusherbot.mapper
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class UserMapperTest : ShouldSpec({
@@ -22,5 +23,6 @@ class UserMapperTest : ShouldSpec({
         entity.lastName shouldBe "Doe"
         entity.userName shouldBe "jdoe"
         entity.language shouldBe "ru"
+        entity.profile shouldBe null
     }
 })

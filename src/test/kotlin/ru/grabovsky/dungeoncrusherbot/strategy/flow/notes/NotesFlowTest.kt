@@ -9,6 +9,7 @@ import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
@@ -115,7 +116,9 @@ class NotesFlowTest : ShouldSpec({
         )
         val callback = mockk<CallbackQuery>(relaxed = true) { every { id } returns "cb" }
         val userEntity = User(telegramUser.id, "Tester", null, "tester").apply {
-            notes.addAll(listOf("a", "b"))
+            val profileEntity = UserProfile(userId = userId, user = this)
+            profileEntity.notes.addAll(listOf("a", "b"))
+            profile = profileEntity
         }
         every { userService.getUser(101L) } returns userEntity
 

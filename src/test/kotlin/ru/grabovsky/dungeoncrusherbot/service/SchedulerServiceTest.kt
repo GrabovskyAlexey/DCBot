@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -16,6 +16,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
 import ru.grabovsky.dungeoncrusherbot.entity.Siege
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -50,7 +51,7 @@ class SchedulerServiceTest : ShouldSpec({
 
         verify { telegramBotService.sendNotification(1L, NotificationType.SIEGE, any(), false) }
         verify { telegramBotService.sendNotification(2L, NotificationType.SIEGE, any(), false) }
-        failedUser.isBlocked shouldBe true
+        failedUser.profile!!.isBlocked shouldBe true
         verify { userRepository.save(failedUser) }
 
         unmockkStatic(LocalDateTime::class)
@@ -105,13 +106,15 @@ class SchedulerServiceTest : ShouldSpec({
 
         verify { telegramBotService.sendNotification(10L, NotificationType.MINE, emptyList(), null) }
         verify { telegramBotService.sendNotification(11L, NotificationType.MINE, emptyList(), null) }
-        mineUserFail.isBlocked shouldBe true
+        mineUserFail.profile!!.isBlocked shouldBe true
         verify { userRepository.save(mineUserFail) }
     }
 })
 
 private fun createSiegeUser(id: Long, enabled: Boolean, notifyDisabled: Boolean = false): User {
-    val user = User(id, "User$id", null, "user$id")
+    val user = User(id, "User$id", null, "user$id").apply {
+        profile = UserProfile(userId = id, user = this)
+    }
     val server = Server(id.toInt(), "server$id", mutableSetOf(Siege(id.toInt(), LocalTime.of(10, 0))))
     user.servers.add(server)
     val subscribe = NotificationSubscribe(user = user, type = NotificationType.SIEGE, enabled = enabled)
@@ -124,7 +127,9 @@ private fun createSiegeUser(id: Long, enabled: Boolean, notifyDisabled: Boolean 
 }
 
 private fun createMineUser(id: Long, enabled: Boolean): User {
-    val user = User(id, "User$id", null, "user$id")
+    val user = User(id, "User$id", null, "user$id").apply {
+        profile = UserProfile(userId = id, user = this)
+    }
     val subscribe = NotificationSubscribe(user = user, type = NotificationType.MINE, enabled = enabled)
     user.notificationSubscribe.add(subscribe)
     return user

@@ -9,6 +9,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.UpdateMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -36,8 +37,8 @@ class RunAfterStartupTest : ShouldSpec({
 
     should("send release notes and mark failed users as blocked") {
         val update = UpdateMessage(version = "1.0", text = "note", sent = false)
-        val userOk = User(1L, "Ok", null, "ok")
-        val userFail = User(2L, "Fail", null, "fail")
+        val userOk = User(1L, "Ok", null, "ok").apply { profile = UserProfile(userId = userId, user = this) }
+        val userFail = User(2L, "Fail", null, "fail").apply { profile = UserProfile(userId = userId, user = this) }
 
         every { updateMessageRepository.findUpdateMessagesBySentNot() } returns listOf(update)
         every { userRepository.findAllNotBlockedUser() } returns listOf(userOk, userFail)
@@ -51,7 +52,7 @@ class RunAfterStartupTest : ShouldSpec({
 
         runner.runAfterStartup()
 
-        userFail.isBlocked shouldBe true
+        userFail.profile?.isBlocked shouldBe true
         verify { telegramBotService.sendReleaseNotes(userOk, update) }
         verify { telegramBotService.sendReleaseNotes(userFail, update) }
         verify { userRepository.save(userFail) }

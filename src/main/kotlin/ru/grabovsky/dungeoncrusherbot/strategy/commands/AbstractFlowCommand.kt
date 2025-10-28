@@ -35,6 +35,7 @@ abstract class AbstractFlowCommand(
             }
         }.onFailure { error ->
             logger.info { "Error process flow ${flowKey.value} for user ${user.userName ?: user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
+            error.printStackTrace()
         }
     }
 }

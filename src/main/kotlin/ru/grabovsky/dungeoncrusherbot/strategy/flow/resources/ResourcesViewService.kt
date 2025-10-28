@@ -29,10 +29,12 @@ class ResourcesViewService(
     fun buildOverview(user: TgUser, locale: Locale): ResourcesOverviewModel {
         val entity = userService.getUser(user.id)
             ?: return ResourcesOverviewModel(emptyList(), emptyList())
+        val profile = entity.profile ?: return ResourcesOverviewModel(emptyList(), emptyList())
         val resources = entity.resources ?: return ResourcesOverviewModel(emptyList(), emptyList())
 
-        val cbEnabled = entity.settings.resourcesCb
-        val mainServerId = resources.data.mainServerId
+        val settings = profile.settings
+        val cbEnabled = settings.resourcesCb
+        val mainServerId = profile.mainServerId
 
         val summaries = resources.data.servers
             .filter { entry ->
@@ -74,6 +76,7 @@ class ResourcesViewService(
     fun buildServer(user: TgUser, serverId: Int, includeHistory: Boolean, locale: Locale): ServerDetail {
         val entity = userService.getUser(user.id)
             ?: throw IllegalStateException("User not found: ${user.id}")
+        val profile = entity.profile ?: throw IllegalStateException("Profile not initialized for user: ${user.id}")
         val resources = entity.resources ?: throw IllegalStateException("Resources not initialized")
 
         val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
@@ -83,7 +86,7 @@ class ResourcesViewService(
             emptyList()
         }
 
-        val userNotes = entity.notes.toList()
+        val userNotes = profile.notes.toList()
 
         val dto = ServerResourceDto(
             id = serverId,
@@ -94,12 +97,12 @@ class ResourcesViewService(
             history = if (includeHistory) history else null,
             hasHistory = resources.history[serverId]?.isNotEmpty() == true,
             notifyDisable = serverData.notifyDisable,
-            main = serverId == resources.data.mainServerId,
-            cbEnabled = entity.settings.resourcesCb,
-            quickResourceEnabled = entity.settings.resourcesQuickChange,
+            main = serverId == profile.mainServerId,
+            cbEnabled = profile.settings.resourcesCb,
+            quickResourceEnabled = profile.settings.resourcesQuickChange,
             cbCount = serverData.cbCount,
-            notes = if (serverId == resources.data.mainServerId) userNotes else emptyList(),
-            hasMain = resources.data.mainServerId != null,
+            notes = if (serverId == profile.mainServerId) userNotes else emptyList(),
+            hasMain = profile.mainServerId != null,
         )
 
         val buttons = buildServerButtons(dto, locale)

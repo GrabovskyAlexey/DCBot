@@ -41,3 +41,5 @@
       file: liquibase/changelog/20.release_notes_1_1_8.sql
   - include:
       file: liquibase/changelog/21.create_flow_state_table.sql
+  - include:
+      file: liquibase/changelog/22.update_user_profile.sql

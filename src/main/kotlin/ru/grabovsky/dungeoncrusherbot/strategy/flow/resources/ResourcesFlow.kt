@@ -202,7 +202,7 @@ class ResourcesFlow(
     ): FlowResult<ResourcesFlowState> {
         val index = message.text?.toIntOrNull()
         val user = userService.getUser(context.user.id)
-        val notes = user?.notes ?: emptyList()
+        val notes = user?.profile?.notes?.toList().orEmpty()
         if (index == null || index <= 0 || index > notes.size) {
             val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = true)
             return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
@@ -329,8 +329,9 @@ class ResourcesFlow(
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? {
         val userEntity = userService.getUser(context.user.id) ?: return null
-        val quickEnabled = userEntity.settings.resourcesQuickChange
-        val cbEnabled = userEntity.settings.resourcesCb
+        val settings = userEntity.profile?.settings ?: return null
+        val quickEnabled = settings.resourcesQuickChange
+        val cbEnabled = settings.resourcesCb
 
         if (!quickEnabled) {
             return FlowResult(
@@ -429,7 +430,7 @@ class ResourcesFlow(
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
         val user = userService.getUser(context.user.id)
-        val notes = user?.notes ?: emptyList()
+        val notes = user?.profile?.notes?.toList().orEmpty()
         val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = false)
         return startPrompt(context, state, RemoveNote(serverId), ResourcesStep.PROMPT_TEXT, prompt, callbackQuery)
     }

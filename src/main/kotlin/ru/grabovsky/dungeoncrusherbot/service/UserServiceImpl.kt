@@ -2,9 +2,13 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
-import ru.grabovsky.dungeoncrusherbot.entity.*
+import ru.grabovsky.dungeoncrusherbot.entity.AdminMessage
+import ru.grabovsky.dungeoncrusherbot.entity.Maze
+import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
+import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
+import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
@@ -28,6 +32,7 @@ class UserServiceImpl(
         private const val NOTES_LIMIT = 20
         private val logger = KotlinLogging.logger {}
     }
+
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
         return entity?.let { updateUser(it, user) }
@@ -35,15 +40,16 @@ class UserServiceImpl(
     }
 
     private fun updateUser(entity: User, user: TgUser): User {
+        val profile = entity.profile ?: UserProfile(user = entity).also { entity.profile = it }
         val hasProfileChanges = entity.firstName != user.firstName ||
                 entity.lastName != user.lastName ||
                 entity.userName != user.userName ||
                 entity.language != user.languageCode ||
-                entity.isBlocked
+                profile.isBlocked
         if (hasProfileChanges) {
             logger.info { "Update user: $user, entity: $entity" }
         }
-        entity.isBlocked = false
+        profile.isBlocked = false
         entity.firstName = user.firstName
         entity.lastName = user.lastName
         entity.userName = user.userName
@@ -55,14 +61,15 @@ class UserServiceImpl(
     private fun createNewUser(userFromTelegram: User): User {
         logger.info { "Save new user: $userFromTelegram" }
         userFromTelegram.apply {
-            this.lastActionAt = Instant.now()
-            this.maze = Maze(user = this)
-            this.notificationSubscribe.addAll(
+            lastActionAt = Instant.now()
+            maze = Maze(user = this)
+            notificationSubscribe.addAll(
                 listOf(
                     NotificationSubscribe(user = this, type = NotificationType.SIEGE, enabled = true),
                     NotificationSubscribe(user = this, type = NotificationType.MINE, enabled = false)
                 )
             )
+            profile = UserProfile(user = this)
         }
         val saved = userRepository.saveAndFlush(userFromTelegram)
         logger.info { "Save user entity with id = ${saved.userId}" }
@@ -70,16 +77,21 @@ class UserServiceImpl(
     }
 
     override fun saveUser(user: User) {
+        user.profile?.user = user
         userRepository.saveAndFlush(user)
     }
 
-    @Transactional
-    override fun getUser(userId: Long) = userRepository.findUserByUserId(userId)
+    override fun getUser(userId: Long): User? {
+        val user = userRepository.findUserByUserId(userId) ?: return null
+        user.profile?.user = user
+        return user
+    }
 
     override fun clearNotes(user: TgUser) {
-        val userFromDb = userRepository.findUserByUserId(user.id) ?: return
-        userFromDb.notes.clear()
-        userRepository.saveAndFlush(userFromDb)
+        val userFromDb = getUser(user.id) ?: return
+        val profile = userFromDb.profile ?: return
+        profile.notes.clear()
+        saveUser(userFromDb)
     }
 
     override fun addNote(userId: Long, note: String): Boolean {
@@ -87,24 +99,26 @@ class UserServiceImpl(
         if (trimmed.isEmpty()) {
             return false
         }
-        val user = userRepository.findUserByUserId(userId) ?: return false
-        val notes = user.notes
+        val user = getUser(userId) ?: return false
+        val profile = user.profile ?: return false
+        val notes = profile.notes
         if (notes.size >= NOTES_LIMIT) {
             notes.removeFirst()
         }
         notes.add(trimmed)
-        userRepository.saveAndFlush(user)
+        saveUser(user)
         return true
     }
 
     override fun removeNote(userId: Long, index: Int): Boolean {
-        val user = userRepository.findUserByUserId(userId) ?: return false
+        val user = getUser(userId) ?: return false
+        val profile = user.profile ?: return false
         val position = index - 1
-        if (position !in user.notes.indices) {
+        if (position !in profile.notes.indices) {
             return false
         }
-        user.notes.removeAt(position)
-        userRepository.saveAndFlush(user)
+        profile.notes.removeAt(position)
+        saveUser(user)
         return true
     }
 
@@ -113,29 +127,33 @@ class UserServiceImpl(
         val entity = AdminMessage(userId = user.id, message = message)
         adminMessageRepository.saveAndFlush(entity)
 
-
-        userRepository.findAllNotBlockedUser().filter { it.isAdmin }.forEach {
-            val admin = TgUser.builder()
-                .id(it.userId)
-                .firstName(it.firstName!!)
-                .lastName(it.lastName)
-                .isBot(false)
-                .build()
-            telegramFlowActionExecutor.execute(
-                user = admin, locale = LocaleUtils.resolve(it.language), actions = listOf(
-                    SendMessageAction(
-                        bindingKey = "admin_message",
-                        message = FlowMessage(
-                            flowKey = FlowKeys.ADMIN_MESSAGE,
-                            stepKey = "main",
-                            model = dto,
+        userRepository.findAllNotBlockedUser()
+            .onEach { existing ->
+                existing.profile?.user = existing
+            }
+            .filter { it.profile?.isAdmin == true }
+            .forEach {
+                val admin = TgUser.builder()
+                    .id(it.userId)
+                    .firstName(it.firstName!!)
+                    .lastName(it.lastName)
+                    .isBot(false)
+                    .build()
+                telegramFlowActionExecutor.execute(
+                    user = admin,
+                    locale = LocaleUtils.resolve(it.language),
+                    actions = listOf(
+                        SendMessageAction(
+                            bindingKey = "admin_message",
+                            message = FlowMessage(
+                                flowKey = FlowKeys.ADMIN_MESSAGE,
+                                stepKey = "main",
+                                model = dto,
+                            )
                         )
-                    )
-                ),
-                currentBindings = emptyMap()
-            )
-//            eventPublisher.publishEvent(TelegramAdminMessageEvent(user, SEND_REPORT, it.userId, dto))
-        }
+                    ),
+                    currentBindings = emptyMap()
+                )
+            }
     }
-
 }

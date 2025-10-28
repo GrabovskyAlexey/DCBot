@@ -11,6 +11,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.ResourcesHistory
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
@@ -29,7 +30,9 @@ class ResourcesServiceImplTest : ShouldSpec({
     lateinit var serverData: ServerResourceData
 
     fun prepareUser(serverId: Int = 5) {
-        entityUser = User(userId = 77L, firstName = "Tester", lastName = null, userName = "tester")
+        entityUser = User(userId = 77L, firstName = "Tester", lastName = null, userName = "tester").apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         resources = Resources(user = entityUser)
         entityUser.resources = resources
         resources.data.servers[serverId] = ServerResourceData().also { serverData = it }
@@ -80,7 +83,7 @@ class ResourcesServiceImplTest : ShouldSpec({
     }
 
     should("increase and decrease CB count with history") {
-        entityUser.settings = entityUser.settings.copy(resourcesCb = true)
+        entityUser.profile!!.settings = entityUser.profile!!.settings.copy(resourcesCb = true)
 
         service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_CB, 4))
         serverData.cbCount shouldBe 4
@@ -113,7 +116,7 @@ class ResourcesServiceImplTest : ShouldSpec({
     }
 
     should("handle receive operation and transfer to main server") {
-        resources.data.mainServerId = 1
+        entityUser.profile!!.mainServerId = 1
         resources.data.servers[1] = ServerResourceData()
         resources.history[1] = mutableListOf()
 
@@ -144,10 +147,10 @@ class ResourcesServiceImplTest : ShouldSpec({
 
     should("set and remove main server") {
         service.applyOperation(telegramUser, 5, ResourceOperation.MarkMain)
-        resources.data.mainServerId shouldBe 5
+        entityUser.profile!!.mainServerId shouldBe 5
 
         service.applyOperation(telegramUser, 5, ResourceOperation.UnmarkMain)
-        resources.data.mainServerId shouldBe null
+        entityUser.profile!!.mainServerId shouldBe null
     }
 
     should("limit history to 20 records") {
@@ -170,7 +173,7 @@ class ResourcesServiceImplTest : ShouldSpec({
 
     should("send watermelon report when criteria are met") {
         prepareUser(serverId = 8)
-        entityUser.settings = UserSettings(
+        entityUser.profile!!.settings = UserSettings(
             sendWatermelon = true,
             discordUsername = "discord",
             resourcesCb = false,
@@ -184,7 +187,7 @@ class ResourcesServiceImplTest : ShouldSpec({
 
     should("skip watermelon report when criteria are not met") {
         prepareUser(serverId = 8)
-        entityUser.settings = UserSettings(sendWatermelon = false, discordUsername = "discord")
+        entityUser.profile!!.settings = UserSettings(sendWatermelon = false, discordUsername = "discord")
 
         service.applyOperation(telegramUser, 8, ResourceOperation.Adjust(AdjustType.ADD_DRAADOR, 2))
 
@@ -206,17 +209,18 @@ private class FakeUserService : UserService {
 
     override fun addNote(userId: Long, note: String): Boolean {
         val user = users[userId] ?: return false
-        user.notes.add(note)
+        user.profile?.notes?.add(note)
         return true
     }
 
     override fun removeNote(userId: Long, index: Int): Boolean {
         val user = users[userId] ?: return false
         val position = index - 1
-        if (position !in user.notes.indices) {
+        val notes = user.profile?.notes ?: return false
+        if (position !in notes.indices) {
             return false
         }
-        user.notes.removeAt(position)
+        notes.removeAt(position)
         return true
     }
 

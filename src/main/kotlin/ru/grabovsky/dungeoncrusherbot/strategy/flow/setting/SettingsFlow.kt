@@ -70,11 +70,31 @@ class SettingsFlow(
             payload = SettingFlowState(),
             actions = listOf(AnswerCallbackAction(callbackQuery.id))
         )
+        val profile = user.profile
+        if (profile == null) {
+            return FlowResult(
+                stepKey = StepKey.MAIN.key,
+                payload = SettingFlowState(),
+                actions = listOf(
+                    EditMessageAction(
+                        bindingKey = MAIN_MESSAGE_BINDING,
+                        message = buildMessage(user, context.locale),
+                    ),
+                    AnswerCallbackAction(callbackQuery.id),
+                )
+            )
+        }
         when (data) {
             "NOTIFY_SIEGE" -> processNotify(user, NotificationType.SIEGE)
             "NOTIFY_MINE" -> processNotify(user, NotificationType.MINE)
-            "CB_ENABLE" -> user.settings.resourcesCb = !user.settings.resourcesCb
-            "QUICK_RESOURCES" -> user.settings.resourcesQuickChange = !user.settings.resourcesQuickChange
+            "CB_ENABLE" -> {
+                val settings = profile.settings
+                settings.resourcesCb = !settings.resourcesCb
+            }
+            "QUICK_RESOURCES" -> {
+                val settings = profile.settings
+                settings.resourcesQuickChange = !settings.resourcesQuickChange
+            }
             "SEND_REPORT" -> return buildSendReportMessage(callbackQuery, context.state.payload, context.locale)
             "SEND_REPORT_CANCEL" -> return buildSendReportCancelMessage(callbackQuery, context.state.payload)
         }
@@ -149,11 +169,12 @@ class SettingsFlow(
     }
 
     private fun buildMessage(user: User?, locale: Locale): FlowMessage {
+        val profile = user?.profile
         val model = SettingsViewModel(
             siegeEnabled = user?.notificationSubscribe?.firstOrNull { it.type == NotificationType.SIEGE }?.enabled == true,
             mineEnabled = user?.notificationSubscribe?.firstOrNull { it.type == NotificationType.MINE }?.enabled == true,
-            cbEnabled = user?.settings?.resourcesCb ?: false,
-            quickResourceEnabled = user?.settings?.resourcesQuickChange ?: false,
+            cbEnabled = profile?.settings?.resourcesCb ?: false,
+            quickResourceEnabled = profile?.settings?.resourcesQuickChange ?: false,
         )
         return FlowMessage(
             flowKey = key,

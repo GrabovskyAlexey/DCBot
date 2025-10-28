@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.data.exchange
+package ru.grabovsky.dungeoncrusherbot.strategy.data.exchange
 
 import org.springframework.stereotype.Repository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
@@ -19,7 +19,7 @@ class ExchangeDataRepository(
     override fun getData(user: TgUser): ExchangeDto {
         val entityUser = userService.getUser(user.id)
             ?: throw IllegalStateException("User with id: ${user.id} not found")
-        val resources = entityUser.resources
+        val mainServerId = entityUser.profile?.mainServerId
         val existsRequestServers = exchangeRequestService.getActiveExchangeRequestsByUser(entityUser).map { it.sourceServerId }.toSet()
 
         val servers = serverService.getAllServers()
@@ -27,7 +27,7 @@ class ExchangeDataRepository(
             .map { server ->
                 ExchangeDto.Server(
                     id = server.id,
-                    main = resources?.data?.mainServerId == server.id,
+                    main = mainServerId == server.id,
                     hasRequests = existsRequestServers.contains(server.id),
                 )
             }

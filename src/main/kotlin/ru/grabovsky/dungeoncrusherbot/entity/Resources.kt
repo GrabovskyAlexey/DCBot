@@ -26,7 +26,6 @@ data class Resources(
 )
 
 data class ResourcesData(
-    var mainServerId: Int? = null,
     val servers: MutableMap<Int, ServerResourceData> = mutableMapOf()
 )
 

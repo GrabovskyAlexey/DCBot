@@ -16,7 +16,7 @@ class NotesViewService(
 
     fun buildOverview(user: TgUser, locale: Locale): NotesOverviewModel {
         val entity = userService.getUser(user.id)
-        val notes = entity?.notes?.toList().orEmpty()
+        val notes = entity?.profile?.notes?.toList().orEmpty()
         val items = notes.mapIndexed { index, note -> NoteItem(index = index + 1, text = note) }
         val buttons = mutableListOf<NoteButton>()
 

@@ -117,7 +117,7 @@ class NotesFlow(
     ): FlowResult<NotesFlowState> {
         val index = message.text?.toIntOrNull()
         val user = userService.getUser(context.user.id)
-        val notes = user?.notes ?: emptyList()
+        val notes = user?.profile?.notes?.toList().orEmpty()
         if (index == null || index <= 0 || index > notes.size) {
             val prompt = promptBuilder.removePrompt(context.locale, notes.toList(), invalid = true)
             return retryPrompt(context, prompt, message)
@@ -139,7 +139,8 @@ class NotesFlow(
         context: FlowCallbackContext<NotesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState>? {
-        val notes = userService.getUser(context.user.id)?.notes?.toList().orEmpty()
+        val user = userService.getUser(context.user.id)
+        val notes = user?.profile?.notes?.toList().orEmpty()
         if (notes.isEmpty()) {
             return buildFlowResult(
                 NotesStep.MAIN,

@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.data.exchange
+package ru.grabovsky.dungeoncrusherbot.strategy.data.exchange
 
 import org.springframework.stereotype.Repository
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -19,7 +19,7 @@ class SetTargetServerDataRepository(
     override fun getData(user: TgUser): ExchangeDto {
         val entityUser = userService.getUser(user.id)
             ?: throw IllegalStateException("User with id: ${user.id} not found")
-        val resources = entityUser.resources
+        val mainServerId = entityUser.profile?.mainServerId
 
         val lastServerId = stateService.getState(user).lastServerIdByState[StateCode.EXCHANGE]
 
@@ -29,7 +29,7 @@ class SetTargetServerDataRepository(
             .map { server ->
                 ExchangeDto.Server(
                     id = server.id,
-                    main = resources?.data?.mainServerId == server.id,
+                    main = mainServerId == server.id,
                     hasRequests = false
                 )
             }

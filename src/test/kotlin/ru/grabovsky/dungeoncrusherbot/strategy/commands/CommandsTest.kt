@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.strategy.commands
+package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -29,7 +30,7 @@ class CommandsTest : ShouldSpec({
         val engine = mockk<FlowEngine>(relaxed = true)
         val command = StartCommand(userService, publisher, engine)
         val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 100L }
-        val persisted = User(100L, "Tester", null, "tester")
+        val persisted = User(100L, "Tester", null, "tester").apply { profile = UserProfile(userId = userId, user = this) }
         every { userService.createOrUpdateUser(tgUser) } returns persisted
         every { userService.getUser(100L) } returns persisted
         every { engine.start(FlowKeys.START, tgUser, any()) } returns true
@@ -47,7 +48,7 @@ class CommandsTest : ShouldSpec({
         val engine = mockk<FlowEngine>(relaxed = true)
         val command = MazeCommand(userService, publisher, engine)
         val tgUser = mockk<TgUser>(relaxed = true) { every { id } returns 150L }
-        val persisted = User(150L, "Maze", null, "maze")
+        val persisted = User(150L, "Maze", null, "maze").apply { profile = UserProfile(userId = userId, user = this) }
         every { userService.createOrUpdateUser(tgUser) } returns persisted
         every { userService.getUser(150L) } returns persisted
         every { engine.start(FlowKeys.MAZE, tgUser, any()) } returns true
@@ -69,7 +70,7 @@ class CommandsTest : ShouldSpec({
             every { userName } returns "tester"
             every { firstName } returns "Tester"
         }
-        val entityUser = User(200L, "Tester", null, "tester")
+        val entityUser = User(200L, "Tester", null, "tester").apply { profile = UserProfile(userId = userId, user = this) }
         every { userService.createOrUpdateUser(tgUser) } returns entityUser
         every { userService.getUser(200L) } returns entityUser
         justRun { userService.saveUser(entityUser) }
@@ -91,6 +92,7 @@ class CommandsTest : ShouldSpec({
             every { firstName } returns "Tester"
         }
         val entityUser = User(201L, "Tester", null, "tester").apply {
+            profile = UserProfile(userId = userId, user = this)
             resources = Resources(user = this)
         }
         every { userService.createOrUpdateUser(tgUser) } returns entityUser
@@ -111,7 +113,7 @@ class CommandsTest : ShouldSpec({
             every { userName } returns "tester"
             every { firstName } returns "Tester"
         }
-        every { userService.createOrUpdateUser(tgUser) } returns User(202L, "Tester", null, "tester")
+        every { userService.createOrUpdateUser(tgUser) } returns User(202L, "Tester", null, "tester").apply { profile = UserProfile(userId = userId, user = this) }
         every { userService.getUser(202L) } returns null
 
         shouldThrow<EntityNotFoundException> {

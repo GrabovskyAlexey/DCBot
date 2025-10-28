@@ -9,6 +9,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
@@ -43,7 +44,7 @@ class UserServiceImplTest : ShouldSpec({
         saved.language shouldBe "en"
         saved.lastActionAt.shouldNotBeNull()
         saved.lastActionAt!!.isAfter(Instant.now().minusSeconds(5)) shouldBe true
-        saved.isBlocked shouldBe false
+        saved.profile!!.isBlocked shouldBe false
         result shouldBe saved
         verify(exactly = 1) { userRepository.saveAndFlush(any()) }
     }
@@ -55,9 +56,11 @@ class UserServiceImplTest : ShouldSpec({
             lastName = "Name",
             userName = "old",
             language = "ru"
-        )
+        ).apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         existingUser.lastActionAt = null
-        existingUser.isBlocked = true
+        existingUser.profile!!.isBlocked = true
 
         val tgUser = mockk<TgUser>()
         every { tgUser.id } returns 88L
@@ -75,7 +78,7 @@ class UserServiceImplTest : ShouldSpec({
         existingUser.lastName shouldBe "Name"
         existingUser.userName shouldBe "new"
         existingUser.language shouldBe "en"
-        existingUser.isBlocked shouldBe false
+        existingUser.profile!!.isBlocked shouldBe false
         existingUser.lastActionAt.shouldNotBeNull()
         result shouldBe existingUser
         verify(exactly = 1) { userRepository.saveAndFlush(existingUser) }
