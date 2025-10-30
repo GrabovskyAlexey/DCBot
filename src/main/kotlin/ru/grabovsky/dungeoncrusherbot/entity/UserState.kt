@@ -13,16 +13,8 @@ data class UserState(
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     var state: StateCode,
-    @Column(name = "prev_state")
-    @Enumerated(EnumType.STRING)
-    var prevState: StateCode? = null,
-    @Column(name = "callback_data")
-    var callbackData: String? = null,
     @Column(name = "update_message_id")
     var updateMessageId: Int? = null,
-    @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "verification_request_id", referencedColumnName = "id")
-    var verification: VerificationRequest? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "delete_message_ids")
     val deletedMessages: MutableList<Int> = mutableListOf(),

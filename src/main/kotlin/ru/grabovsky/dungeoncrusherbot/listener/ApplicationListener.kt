@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.listener
+﻿package ru.grabovsky.dungeoncrusherbot.listener
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.event.EventListener
@@ -11,16 +11,11 @@ import ru.grabovsky.dungeoncrusherbot.event.TelegramStateEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
 import ru.grabovsky.dungeoncrusherbot.strategy.context.LogicContext
-import ru.grabovsky.dungeoncrusherbot.strategy.context.StateContext
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.ExecuteStatus.FINAL
-import ru.grabovsky.dungeoncrusherbot.strategy.processor.callback.ExecuteStatus.NOTHING
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 @Component
 class ApplicationListener(
     private val telegramBotService: TelegramBotService,
     private val stateService: StateService,
-    private val stateContext: StateContext,
     private val logicContext: LogicContext,
 ) {
     @EventListener
@@ -33,7 +28,6 @@ class ApplicationListener(
         }
     }
 
-
     fun processAdminMessageEvent(event: TelegramAdminMessageEvent) {
         logger.info { "Process admin message with chatId:${event.adminChatId}, message: ${event.dto}" }
         telegramBotService.sendAdminMessage(event.adminChatId, event.dto)
@@ -41,10 +35,6 @@ class ApplicationListener(
 
     fun processMessageEvent(event: TelegramReceiveMessageEvent) {
         logicContext.execute(event.user, event.message, event.stateCode)
-
-        stateContext.next(event.user, event.stateCode)?.let {
-            processStateEvent(TelegramStateEvent(event.user, it))
-        }
     }
 
     fun processStateEvent(event: TelegramStateEvent) {
@@ -54,12 +44,7 @@ class ApplicationListener(
     }
 
     fun processCallbackEvent(event: TelegramReceiveCallbackEvent) {
-        when (logicContext.execute(event.user, event.callbackData, event.stateCode)) {
-            FINAL -> { stateContext.next(event.user, event.stateCode) }
-            NOTHING -> null // TODO реализовать отправку ошибки пользователю
-        }?.let {
-            processStateEvent(TelegramStateEvent(event.user, it))
-        }
+        logicContext.execute(event.user, event.callbackData, event.stateCode)
     }
 
     companion object {

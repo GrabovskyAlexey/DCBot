@@ -1,8 +1,7 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.commands
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.persistence.EntityNotFoundException
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
@@ -15,8 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class ResourcesCommand(
     userService: UserService,
     private val flowEngine: FlowEngine,
-    eventPublisher: ApplicationEventPublisher,
-) : AbstractFlowCommand(Command.RESOURCES, FlowKeys.RESOURCES, userService, eventPublisher, flowEngine)  {
+) : AbstractFlowCommand(Command.RESOURCES, FlowKeys.RESOURCES, userService, flowEngine)  {
 
     override fun prepare(user: TgUser, chat: Chat, arguments: Array<out String>) {
         super.prepare(user, chat, arguments)

@@ -43,3 +43,5 @@
       file: liquibase/changelog/21.create_flow_state_table.sql
   - include:
       file: liquibase/changelog/22.update_user_profile.sql
+  - include:
+      file: liquibase/changelog/23.cleanup_verification.sql

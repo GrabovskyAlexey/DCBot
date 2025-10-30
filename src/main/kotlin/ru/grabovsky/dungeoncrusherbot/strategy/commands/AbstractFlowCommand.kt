@@ -1,30 +1,32 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.commands
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
-import org.springframework.context.ApplicationEventPublisher
-import org.springframework.stereotype.Component
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
-
 
 abstract class AbstractFlowCommand(
     command: Command,
     protected val flowKey: FlowKey,
-    userService: UserService,
-    eventPublisher: ApplicationEventPublisher,
+    protected val userService: UserService,
     private val flowEngine: FlowEngine,
-) : AbstractCommand(command, eventPublisher, userService) {
+    val sortOrder: Int = command.order,
+) : BotCommand(command.command, command.text), BotCommands {
+
+    override fun prepare(user: User, chat: Chat, arguments: Array<out String>) {
+        userService.createOrUpdateUser(user)
+    }
 
     override fun execute(
         telegramClient: TelegramClient,
         user: User,
         chat: Chat,
-        arguments: Array<out String>
+        arguments: Array<out String>,
     ) {
         logger.info { "Process flow ${flowKey.value} for user ${user.userName ?: user.firstName} with id ${user.id}" }
         runCatching {
@@ -34,8 +36,11 @@ abstract class AbstractFlowCommand(
                 logger.error { "Flow $flowKey not found, command processing aborted" }
             }
         }.onFailure { error ->
-            logger.info { "Error process flow ${flowKey.value} for user ${user.userName ?: user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
-            error.printStackTrace()
+            logger.warn { "Error process flow ${flowKey.value} for user ${user.userName ?: user.firstName} with id ${user.id} with error: $error, stacktrace: ${error.stackTrace}" }
         }
+    }
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

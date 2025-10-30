@@ -1,23 +1,15 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.*
-import ru.grabovsky.dungeoncrusherbot.repository.CallbackDataRepository
 import ru.grabovsky.dungeoncrusherbot.repository.ExchangeRequestRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.SET_SOURCE_PRICE
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.SET_TARGET_PRICE
-import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
 class ExchangeRequestServiceImpl(
     private val exchangeRequestRepository: ExchangeRequestRepository,
-    private val callbackDataRepository: CallbackDataRepository,
-    private val objectMapper: ObjectMapper
 ) : ExchangeRequestService {
 
     override fun getActiveExchangeRequestsByServer(
@@ -97,19 +89,6 @@ class ExchangeRequestServiceImpl(
         type: ExchangeRequestType
     ): List<ExchangeRequest> {
         return exchangeRequestRepository.findAllBySourceServerIdAndType(serverId, type)
-    }
-
-    override fun processPrice(user: TgUser, value: String, state: StateCode) {
-        val data = callbackDataRepository.findByTypeAndUserId(CallbackDataType.EXCHANGE, user.id)
-            ?: throw IllegalStateException("User ${user.userName ?: user.firstName} not found EXCHANGE callback data")
-        val request = objectMapper.readValue(data.data, CallbackExchangeRequest::class.java)
-        when (state) {
-            SET_SOURCE_PRICE -> request.sourceResourcePrice = value.toInt()
-            SET_TARGET_PRICE -> request.targetResourcePrice = value.toInt()
-            else -> null
-        }
-        data.data = objectMapper.writeValueAsString(request)
-        callbackDataRepository.save(data)
     }
 
     override fun setRequestInactiveById(requestId: Long) {

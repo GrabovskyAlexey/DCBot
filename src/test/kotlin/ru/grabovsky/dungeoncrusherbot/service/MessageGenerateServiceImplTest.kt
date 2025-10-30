@@ -15,7 +15,7 @@ class MessageGenerateServiceImplTest : ShouldSpec({
     val configuration = mockk<Configuration>()
     val freeMarkerConfigurer = mockk<FreeMarkerConfigurer>()
 
-    every { configuration.getTemplate("verification_error.ftl") } returns template
+    every { configuration.getTemplate("notification_siege.ftl") } returns template
     every { freeMarkerConfigurer.configuration } returns configuration
     every { template.process(any(), any<StringWriter>()) } answers {
         val writer = args[1] as StringWriter
@@ -25,6 +25,6 @@ class MessageGenerateServiceImplTest : ShouldSpec({
     val service = MessageGenerateServiceImpl(freeMarkerConfigurer)
 
     should("render template with provided model data") {
-        service.process(StateCode.VERIFICATION_ERROR, mapOf("key" to "value")) shouldBe "rendered"
+        service.process(StateCode.NOTIFICATION_SIEGE, mapOf("key" to "value")) shouldBe "rendered"
     }
 })

@@ -15,7 +15,6 @@ class StateServiceImpl(
     override fun updateState(
         user: User,
         code: StateCode,
-        callbackData: String?
     ) {
         val state = stateRepository.findByUserId(user.id) ?: UserState(
             userId = user.id,

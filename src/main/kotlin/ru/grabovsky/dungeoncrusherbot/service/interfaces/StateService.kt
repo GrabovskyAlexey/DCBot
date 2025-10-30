@@ -5,7 +5,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.UserState
 import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 
 interface StateService {
-    fun updateState(user: User, code: StateCode, callbackData: String? = null)
+    fun updateState(user: User, code: StateCode)
     fun getState(user: User): UserState
     fun saveState(state: UserState): UserState
 }
