@@ -7,37 +7,17 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeDirectionType
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequest
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType
-import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.BUY_MAP
-import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.EXCHANGE_MAP
-import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.EXCHANGE_VOID
-import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.SELL_MAP
-import ru.grabovsky.dungeoncrusherbot.entity.ExchangeResourceType
+import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.*
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeResourceType.MAP
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeResourceType.VOID
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDetailDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeRequestDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.ExchangeResultDto
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.PriceDto
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import java.util.Locale
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import java.util.*
 import org.telegram.telegrambots.meta.api.objects.message.Message as TgMessage
 import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 
@@ -538,58 +518,50 @@ class ExchangeFlow(
         )
     }
 
-    private fun buildMainMessage(model: ExchangeDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.MAIN.key,
+    private fun buildMainMessage(model: ExchangeDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.MAIN,
         model = model,
         inlineButtons = buildServerButtons(model)
     )
 
-    private fun buildDetailMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.DETAIL.key,
+    private fun buildDetailMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.DETAIL,
         model = detail,
         inlineButtons = buildDetailButtons(locale, detail)
     )
 
-    private fun buildTargetServerMessage(model: ExchangeDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.TARGET_SERVER.key,
+    private fun buildTargetServerMessage(model: ExchangeDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.TARGET_SERVER,
         model = model,
         inlineButtons = buildTargetServerButtons(model, locale)
     )
 
-    private fun buildSourcePriceMessage(model: PriceDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.SOURCE_PRICE.key,
+    private fun buildSourcePriceMessage(model: PriceDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.SOURCE_PRICE,
         model = model,
         inlineButtons = buildNumericButtons("SOURCE_PRICE")
     )
 
-    private fun buildTargetPriceMessage(model: PriceDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.TARGET_PRICE.key,
+    private fun buildTargetPriceMessage(model: PriceDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.TARGET_PRICE,
         model = model,
         inlineButtons = buildNumericButtons("TARGET_PRICE")
     )
 
-    private fun buildRemoveMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.REMOVE.key,
+    private fun buildRemoveMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.REMOVE,
         model = detail,
         inlineButtons = buildRemoveButtons(detail, locale)
     )
 
-    private fun buildSearchMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.SEARCH.key,
+    private fun buildSearchMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.SEARCH,
         model = detail,
         inlineButtons = buildSearchButtons(detail, locale)
     )
 
-    private fun buildSearchResultMessage(result: ExchangeResultDto, locale: Locale): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ExchangeFlowStep.SEARCH_RESULT.key,
+    private fun buildSearchResultMessage(result: ExchangeResultDto, locale: Locale): FlowMessage = key.buildMessage(
+        step = ExchangeFlowStep.SEARCH_RESULT,
         model = result,
         inlineButtons = listOf(
             FlowInlineButton(

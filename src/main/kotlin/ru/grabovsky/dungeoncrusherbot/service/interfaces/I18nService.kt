@@ -1,6 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.service.interfaces
 
-import java.util.Locale
+import java.util.*
 
 
 interface I18nService {

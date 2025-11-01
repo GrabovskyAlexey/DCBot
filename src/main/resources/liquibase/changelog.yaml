@@ -45,3 +45,5 @@
       file: liquibase/changelog/22.update_user_profile.sql
   - include:
       file: liquibase/changelog/23.cleanup_verification.sql
+  - include:
+      file: liquibase/changelog/24.drop_user_state_table.sql

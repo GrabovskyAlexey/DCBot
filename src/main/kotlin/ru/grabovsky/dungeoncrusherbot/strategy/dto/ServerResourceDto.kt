@@ -15,4 +15,4 @@ data class ServerResourceDto(
     val cbCount: Int,
     val notes: List<String> = emptyList(),
     val hasMain: Boolean,
-) : DataModel
+)

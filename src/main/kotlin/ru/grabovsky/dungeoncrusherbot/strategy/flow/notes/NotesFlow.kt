@@ -1,28 +1,19 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.notes
 
+import java.util.Locale
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.DeleteMessageIdAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import ru.grabovsky.dungeoncrusherbot.util.FlowUtils
-import java.util.Locale
-import java.util.UUID
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPromptButton
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMessages
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.retryPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.startPrompt
 
 @Component
 class NotesFlow(
@@ -65,7 +56,7 @@ class NotesFlow(
         val (command, argument) = parseCallback(data)
         return when (command) {
             "ACTION" -> argument?.let { handleAction(context, callbackQuery, it) }
-            "PROMPT" -> handlePromptCallback(context.state.payload, callbackQuery, argument)
+            "PROMPT" -> handlePromptCallback(context, callbackQuery, argument)
             else -> null
         }
     }
@@ -74,25 +65,23 @@ class NotesFlow(
         context: FlowCallbackContext<NotesFlowState>,
         callbackQuery: CallbackQuery,
         action: String
-    ): FlowResult<NotesFlowState>? {
-        return when (action) {
+    ): FlowResult<NotesFlowState>? =
+        when (action) {
             "ADD" -> enterAddPrompt(context, callbackQuery)
             "REMOVE" -> enterRemovePrompt(context, callbackQuery)
             "CLEAR" -> clearNotes(context, callbackQuery)
             else -> null
         }
-    }
 
     private fun handlePromptCallback(
-        state: NotesFlowState,
+        context: FlowCallbackContext<NotesFlowState>,
         callbackQuery: CallbackQuery,
         argument: String?
-    ): FlowResult<NotesFlowState>? {
-        return when (argument) {
-            "CANCEL" -> cancelPrompt(state, callbackQuery)
+    ): FlowResult<NotesFlowState>? =
+        when (argument) {
+            "CANCEL" -> cancelPrompt(context, callbackQuery)
             else -> null
         }
-    }
 
     private fun handleAddInput(
         context: FlowMessageContext<NotesFlowState>,
@@ -101,14 +90,12 @@ class NotesFlow(
         val value = message.text?.trim().orEmpty()
         if (value.isBlank()) {
             val prompt = promptBuilder.addPrompt(context.locale, invalid = true)
-            return retryPrompt(context, prompt, message)
+            return context.retryNotesPrompt(prompt, message)
         }
 
-        val added = userService.addNote(context.user.id, value)
-        if (!added) {
-            return finalizePrompt(context, message.messageId)
-        }
-        return finalizePrompt(context, message.messageId)
+        userService.addNote(context.user.id, value)
+
+        return context.finalizeNotesPrompt(message.messageId)
     }
 
     private fun handleRemoveInput(
@@ -119,12 +106,13 @@ class NotesFlow(
         val user = userService.getUser(context.user.id)
         val notes = user?.profile?.notes?.toList().orEmpty()
         if (index == null || index <= 0 || index > notes.size) {
-            val prompt = promptBuilder.removePrompt(context.locale, notes.toList(), invalid = true)
-            return retryPrompt(context, prompt, message)
+            val prompt = promptBuilder.removePrompt(context.locale, notes, invalid = true)
+            return context.retryNotesPrompt(prompt, message)
         }
 
         userService.removeNote(context.user.id, index)
-        return finalizePrompt(context, message.messageId)
+
+        return context.finalizeNotesPrompt(message.messageId)
     }
 
     private fun enterAddPrompt(
@@ -132,7 +120,11 @@ class NotesFlow(
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState> {
         val prompt = promptBuilder.addPrompt(context.locale)
-        return startPrompt(context, NotesPendingAction.Add, prompt, callbackQuery)
+        return context.startNotesPrompt(
+            callbackQuery = callbackQuery,
+            pending = NotesPendingAction.Add,
+            prompt = prompt
+        )
     }
 
     private fun enterRemovePrompt(
@@ -155,7 +147,11 @@ class NotesFlow(
             )
         }
         val prompt = promptBuilder.removePrompt(context.locale, notes, invalid = false)
-        return startPrompt(context, NotesPendingAction.Remove, prompt, callbackQuery)
+        return context.startNotesPrompt(
+            callbackQuery = callbackQuery,
+            pending = NotesPendingAction.Remove,
+            prompt = prompt
+        )
     }
 
     private fun clearNotes(
@@ -177,109 +173,35 @@ class NotesFlow(
         )
     }
 
-    private fun retryPrompt(
-        context: FlowMessageContext<NotesFlowState>,
-        prompt: NotesPromptModel,
-        message: Message
-    ): FlowResult<NotesFlowState> {
-        val state = context.state.payload
-        val promptBinding = nextPromptBinding()
-        state.promptBindings.add(promptBinding)
-        return FlowResult(
-            stepKey = NotesStep.MAIN.key,
-            payload = state,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = promptBinding,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = NotesStep.PROMPT_TEXT.key,
-                        model = prompt,
-                        inlineButtons = promptButtons(context.locale)
-                    )
-                ),
-                DeleteMessageIdAction(message.messageId)
-            )
-        )
-    }
-
-    private fun finalizePrompt(
-        context: FlowMessageContext<NotesFlowState>,
-        userMessageId: Int?
-    ): FlowResult<NotesFlowState> {
-        val state = context.state.payload
-        val cleanup = FlowUtils.cleanupPromptActions(state.promptBindings)
-        userMessageId?.let { cleanup += DeleteMessageIdAction(it) }
-        state.promptBindings.clear()
-        state.pendingAction = null
-
-        val overview = viewService.buildOverview(context.user, context.locale)
-        cleanup += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(overview)
-        )
-
-        return buildFlowResult(NotesStep.MAIN, state, cleanup)
-    }
-
     private fun cancelPrompt(
-        state: NotesFlowState,
-        callbackQuery: CallbackQuery
-    ): FlowResult<NotesFlowState> {
-        val cleanup = FlowUtils.cleanupPromptActions(state.promptBindings)
-        state.promptBindings.clear()
-        state.pendingAction = null
-        cleanup += AnswerCallbackAction(callbackQuery.id)
-        return FlowResult(
-            stepKey = NotesStep.MAIN.key,
-            payload = state,
-            actions = cleanup
-        )
-    }
-
-    private fun startPrompt(
         context: FlowCallbackContext<NotesFlowState>,
-        pendingAction: NotesPendingAction,
-        prompt: NotesPromptModel,
         callbackQuery: CallbackQuery
-    ): FlowResult<NotesFlowState> {
-        val state = context.state.payload
-        val promptBinding = nextPromptBinding()
-        state.promptBindings.add(promptBinding)
-        state.pendingAction = pendingAction
-        return buildFlowResult(
-            NotesStep.MAIN,
-            state,
-            listOf(
-                SendMessageAction(
-                    bindingKey = promptBinding,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = NotesStep.PROMPT_TEXT.key,
-                        model = prompt,
-                        inlineButtons = promptButtons(context.locale)
-                    )
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+    ): FlowResult<NotesFlowState> =
+        context.cancelPrompt(
+            targetStep = NotesStep.MAIN,
+            callbackQuery = callbackQuery,
+            updateState = { pendingAction = null }
         )
-    }
 
     private fun buildMainMessage(overview: NotesOverviewModel): FlowMessage =
-        FlowMessage(
-            flowKey = key,
-            stepKey = NotesStep.MAIN.key,
+        key.buildMessage(
+            step = NotesStep.MAIN,
             model = overview,
             inlineButtons = overview.buttons.inlineButtons()
         )
 
+    private fun buildPromptMessage(prompt: NotesPromptModel, locale: Locale): FlowMessage =
+        key.buildMessage(
+            step = NotesStep.PROMPT_TEXT,
+            model = prompt,
+            inlineButtons = promptButtons(locale)
+        )
+
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
-            FlowInlineButton(
-                text = i18nService.i18n("flow.button.cancel", locale, "Отмена"),
-                payload = FlowCallbackPayload(key.value, "PROMPT:CANCEL"),
-                row = 0,
-                col = 0
+            key.cancelPromptButton(
+                locale = locale,
+                text = i18nService.i18n("flow.button.cancel", locale, "Отмена")
             )
         )
 
@@ -292,6 +214,53 @@ class NotesFlow(
                 col = button.col
             )
         }
+
+    private fun FlowMessageContext<NotesFlowState>.retryNotesPrompt(
+        prompt: NotesPromptModel,
+        message: Message
+    ): FlowResult<NotesFlowState> {
+        val cleanup = state.payload.cleanupPromptMessages()
+        return retryPrompt(
+            targetStep = NotesStep.MAIN,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            userMessageId = message.messageId,
+            appendActions = { addAll(cleanup) }
+        ) {
+            buildPromptMessage(prompt, locale)
+        }
+    }
+
+    private fun FlowMessageContext<NotesFlowState>.finalizeNotesPrompt(
+        userMessageId: Int?
+    ): FlowResult<NotesFlowState> =
+        finalizePrompt(
+            targetStep = NotesStep.MAIN,
+            userMessageId = userMessageId,
+            updateState = { pendingAction = null }
+        ) {
+            val overview = viewService.buildOverview(user, locale)
+            this += EditMessageAction(
+                bindingKey = MAIN_MESSAGE_KEY,
+                message = buildMainMessage(overview)
+            )
+        }
+
+    private fun FlowCallbackContext<NotesFlowState>.startNotesPrompt(
+        callbackQuery: CallbackQuery,
+        pending: NotesPendingAction,
+        prompt: NotesPromptModel
+    ): FlowResult<NotesFlowState> {
+        val cleanup = state.payload.cleanupPromptMessages()
+        return startPrompt(
+            targetStep = NotesStep.MAIN,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            callbackQuery = callbackQuery,
+            updateState = { pendingAction = pending },
+            appendActions = { addAll(cleanup) }
+        ) {
+            buildPromptMessage(prompt, locale)
+        }
+    }
 
     private fun parseCallback(data: String): Pair<String, String?> =
         if (data.contains(':')) {
@@ -310,8 +279,6 @@ class NotesFlow(
         payload = payload,
         actions = actions
     )
-
-    private fun nextPromptBinding(): String = "${PROMPT_MESSAGE_KEY}_${UUID.randomUUID()}"
 
     companion object {
         private const val MAIN_MESSAGE_KEY = "notes_main_message"

@@ -1,9 +1,8 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
-import java.util.Locale
+import java.util.*
 
 @Component
 class ResourcesPromptBuilder(

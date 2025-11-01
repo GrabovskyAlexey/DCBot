@@ -3,24 +3,15 @@ package ru.grabovsky.dungeoncrusherbot.strategy.flow.notes
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateHolder
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery
-import org.telegram.telegrambots.meta.api.objects.message.Message
-import java.util.Locale
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import java.util.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class NotesFlowTest : ShouldSpec({

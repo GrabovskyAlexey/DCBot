@@ -1,9 +1,9 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine
 
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery
-import java.util.Locale
+import java.util.*
 
 interface FlowHandler<TPayload : Any> {
     val key: FlowKey

@@ -2,4 +2,4 @@
 
 data class PriceDto(
     val resource: String
-) : DataModel
+)

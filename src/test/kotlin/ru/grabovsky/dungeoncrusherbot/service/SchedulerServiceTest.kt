@@ -2,21 +2,8 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
-import ru.grabovsky.dungeoncrusherbot.entity.Resources
-import ru.grabovsky.dungeoncrusherbot.entity.Server
-import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
-import ru.grabovsky.dungeoncrusherbot.entity.Siege
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
+import io.mockk.*
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService

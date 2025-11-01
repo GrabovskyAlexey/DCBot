@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import java.io.StringWriter
-import java.util.Locale
+import java.util.*
 
 @Component
 class FlowTemplateRenderer(

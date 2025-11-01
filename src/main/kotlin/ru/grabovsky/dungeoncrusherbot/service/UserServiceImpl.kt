@@ -1,14 +1,8 @@
 package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
-import ru.grabovsky.dungeoncrusherbot.entity.AdminMessage
-import ru.grabovsky.dungeoncrusherbot.entity.Maze
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationSubscribe
-import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository

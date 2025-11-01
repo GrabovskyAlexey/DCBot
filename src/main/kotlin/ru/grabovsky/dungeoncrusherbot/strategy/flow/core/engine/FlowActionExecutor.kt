@@ -1,7 +1,7 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine
 
 import org.telegram.telegrambots.meta.api.objects.User
-import java.util.Locale
+import java.util.*
 
 /**
  * Выполняет набор действий, возвращая изменённые биндинги сообщений.

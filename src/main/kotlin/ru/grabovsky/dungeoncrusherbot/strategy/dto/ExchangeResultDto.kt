@@ -6,4 +6,4 @@ data class ExchangeResultDto(
     val firstName: String,
     val active: Boolean,
     val request: ExchangeRequestDto
-) : DataModel
+)

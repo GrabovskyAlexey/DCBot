@@ -1,36 +1,22 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.help
 
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery
-import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.AbstractStaticFlow
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 
 @Component
-class HelpFlow() : FlowHandler<Unit> {
-    override val key: FlowKey = FlowKeys.HELP
-    override val payloadType: Class<Unit> = Unit::class.java
-
-    override fun start(context: FlowStartContext): FlowResult<Unit> {
-        return FlowResult(
-            stepKey = StepKey.MAIN.key,
-            payload = Unit,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = MAIN_MESSAGE_BINDING,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = StepKey.MAIN.key,
-                    )
-                )
-            )
-        )
-    }
-
-    override fun onMessage(context: FlowMessageContext<Unit>, message: Message): FlowResult<Unit>? = null
-
-    override fun onCallback(context: FlowCallbackContext<Unit>, callbackQuery: CallbackQuery, data: String): FlowResult<Unit>? = null
-
+class HelpFlow : AbstractStaticFlow(
+    key = FlowKeys.HELP,
+    step = StepKey.MAIN,
+    bindingKey = MAIN_MESSAGE_BINDING,
+    modelProvider = { null }
+) {
     companion object {
         private const val MAIN_MESSAGE_BINDING = "help_main"
     }
+}
+
+enum class StepKey(override val key: String) : FlowStep {
+    MAIN("main"),
 }

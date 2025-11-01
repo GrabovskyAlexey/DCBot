@@ -1,5 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.maze
 
+import java.util.Locale
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -7,24 +8,14 @@ import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MazeService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.DeleteMessageIdAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import ru.grabovsky.dungeoncrusherbot.util.FlowUtils
-import java.util.Locale
-import java.util.UUID
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPromptButton
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMessages
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.retryPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.startPrompt
 
 @Component
 class MazeFlow(
@@ -75,7 +66,7 @@ class MazeFlow(
         val (command, argument) = parseCallback(data)
         return when (command) {
             "MAIN" -> argument?.let { handleMainAction(context, callbackQuery, it) }
-            "PROMPT" -> handlePromptAction(context.state.payload, callbackQuery, argument)
+            "PROMPT" -> handlePromptAction(context, callbackQuery, argument)
             "CONFIRM" -> argument?.let { handleConfirmAction(context, callbackQuery, it) }
             else -> null
         }
@@ -100,12 +91,12 @@ class MazeFlow(
         }
 
     private fun handlePromptAction(
-        state: MazeFlowState,
+        context: FlowCallbackContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String?
     ): FlowResult<MazeFlowState>? =
         when (argument) {
-            "CANCEL" -> cancelPrompt(state, callbackQuery)
+            "CANCEL" -> cancelPrompt(context, callbackQuery)
             else -> null
         }
 
@@ -127,14 +118,13 @@ class MazeFlow(
     ): FlowResult<MazeFlowState>? {
         val maze = ensureMaze(context) ?: return null
         mazeService.processStep(maze, direction)
-        val actions = resetPromptState(context.state.payload)
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
         val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, context.locale)
-        )
+        actions += mainViewEditAction(view, context.locale)
         actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, context.state.payload, actions)
+        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
     }
 
     private fun enterSameStepPrompt(
@@ -143,22 +133,22 @@ class MazeFlow(
         direction: Direction
     ): FlowResult<MazeFlowState> {
         val state = context.state.payload
-        val actions = resetPromptState(state)
-        val promptBinding = nextPromptBinding()
-        state.promptBindings.add(promptBinding)
-        state.pendingDirection = direction
-        val prompt = promptBuilder.build(direction, context.locale)
-        actions += SendMessageAction(
-            bindingKey = promptBinding,
-            message = FlowMessage(
-                flowKey = key,
-                stepKey = MazeFlowStep.PROMPT.key,
-                model = prompt,
+        val cleanup = state.cleanupPromptMessages()
+        return context.startPrompt(
+            targetStep = MazeFlowStep.MAIN,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            callbackQuery = callbackQuery,
+            updateState = {
+                pendingDirection = direction
+            },
+            appendActions = { addAll(cleanup) }
+        ) {
+            key.buildMessage(
+                step = MazeFlowStep.PROMPT,
+                model = promptBuilder.build(direction, context.locale),
                 inlineButtons = promptButtons(context.locale)
             )
-        )
-        actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+        }
     }
 
     private fun toggleSameSteps(
@@ -166,15 +156,14 @@ class MazeFlow(
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState>? {
         val maze = ensureMaze(context) ?: return null
-        val actions = resetPromptState(context.state.payload)
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
         mazeService.revertSameSteps(maze)
         val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, context.locale)
-        )
+        actions += mainViewEditAction(view, context.locale)
         actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, context.state.payload, actions)
+        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
     }
 
     private fun showMain(
@@ -182,32 +171,32 @@ class MazeFlow(
         callbackQuery: CallbackQuery,
         showHistory: Boolean
     ): FlowResult<MazeFlowState> {
-        val actions = resetPromptState(context.state.payload)
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
         val view = viewService.buildMainView(context.user, context.locale, showHistory)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, context.locale)
-        )
+        actions += mainViewEditAction(view, context.locale)
         actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, context.state.payload, actions)
+        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
     }
 
     private fun showConfirmReset(
         context: FlowCallbackContext<MazeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState> {
-        val actions = resetPromptState(context.state.payload)
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
         actions += EditMessageAction(
             bindingKey = MAIN_MESSAGE_KEY,
-            message = FlowMessage(
-                flowKey = key,
-                stepKey = MazeFlowStep.CONFIRM_RESET.key,
+            message = key.buildMessage(
+                step = MazeFlowStep.CONFIRM_RESET,
                 model = null,
                 inlineButtons = confirmButtons(context.locale)
             )
         )
         actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.CONFIRM_RESET, context.state.payload, actions)
+        return buildFlowResult(MazeFlowStep.CONFIRM_RESET, state, actions)
     }
 
     private fun confirmReset(
@@ -216,14 +205,13 @@ class MazeFlow(
     ): FlowResult<MazeFlowState>? {
         val maze = ensureMaze(context) ?: return null
         mazeService.refreshMaze(maze)
-        val actions = resetPromptState(context.state.payload)
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
         val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, context.locale)
-        )
+        actions += mainViewEditAction(view, context.locale)
         actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, context.state.payload, actions)
+        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
     }
 
     private fun retryPrompt(
@@ -231,70 +219,62 @@ class MazeFlow(
         prompt: MazePromptModel,
         message: Message
     ): FlowResult<MazeFlowState> {
-        val state = context.state.payload
-        val promptBinding = nextPromptBinding()
-        state.promptBindings.add(promptBinding)
-        return FlowResult(
-            stepKey = MazeFlowStep.MAIN.key,
-            payload = state,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = promptBinding,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = MazeFlowStep.PROMPT.key,
-                        model = prompt,
-                        inlineButtons = promptButtons(context.locale)
-                    )
-                ),
-                DeleteMessageIdAction(message.messageId)
+        val cleanup = context.state.payload.cleanupPromptMessages()
+        return context.retryPrompt(
+            targetStep = MazeFlowStep.MAIN,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            userMessageId = message.messageId,
+            appendActions = { addAll(cleanup) }
+        ) {
+            key.buildMessage(
+                step = MazeFlowStep.PROMPT,
+                model = prompt,
+                inlineButtons = promptButtons(context.locale)
             )
-        )
+        }
     }
 
     private fun finalizePrompt(
         context: FlowMessageContext<MazeFlowState>,
         userMessageId: Int?
-    ): FlowResult<MazeFlowState> {
-        val state = context.state.payload
-        val cleanup = resetPromptState(state)
-        userMessageId?.let { cleanup += DeleteMessageIdAction(it) }
-        val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        cleanup += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, context.locale)
-        )
-        return buildFlowResult(MazeFlowStep.MAIN, state, cleanup)
-    }
+    ): FlowResult<MazeFlowState> =
+        context.finalizePrompt(
+            targetStep = MazeFlowStep.MAIN,
+            userMessageId = userMessageId,
+            updateState = { pendingDirection = null }
+        ) {
+            val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
+            this += mainViewEditAction(view, context.locale)
+        }
 
     private fun cancelPrompt(
-        state: MazeFlowState,
+        context: FlowCallbackContext<MazeFlowState>,
         callbackQuery: CallbackQuery
-    ): FlowResult<MazeFlowState> {
-        val cleanup = resetPromptState(state)
-        cleanup += AnswerCallbackAction(callbackQuery.id)
-        return FlowResult(
-            stepKey = MazeFlowStep.MAIN.key,
-            payload = state,
-            actions = cleanup
+    ): FlowResult<MazeFlowState> =
+        context.cancelPrompt(
+            targetStep = MazeFlowStep.MAIN,
+            callbackQuery = callbackQuery,
+            updateState = { pendingDirection = null }
         )
-    }
 
     private fun buildMainMessage(view: MazeMainView, locale: Locale): FlowMessage =
-        FlowMessage(
-            flowKey = key,
-            stepKey = MazeFlowStep.MAIN.key,
+        key.buildMessage(
+            step = MazeFlowStep.MAIN,
             model = view.overview,
             inlineButtons = view.buttons.inlineButtons()
         )
 
+    private fun mainViewEditAction(view: MazeMainView, locale: Locale): EditMessageAction =
+        EditMessageAction(
+            bindingKey = MAIN_MESSAGE_KEY,
+            message = buildMainMessage(view, locale)
+        )
+
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
-            FlowInlineButton(
-                text = i18nService.i18n("flow.button.cancel", locale, "Отмена"),
-                payload = FlowCallbackPayload(key.value, "PROMPT:CANCEL"),
-                row = 0,
-                col = 0
+            key.cancelPromptButton(
+                locale = locale,
+                text = i18nService.i18n("flow.button.cancel", locale, "Отмена")
             )
         )
 
@@ -347,15 +327,6 @@ class MazeFlow(
         payload = payload,
         actions = actions
     )
-
-    private fun resetPromptState(state: MazeFlowState): MutableList<FlowAction> {
-        val cleanup = FlowUtils.cleanupPromptActions(state.promptBindings)
-        state.promptBindings.clear()
-        state.pendingDirection = null
-        return cleanup
-    }
-
-    private fun nextPromptBinding(): String = "${PROMPT_MESSAGE_KEY}_${UUID.randomUUID()}"
 
     companion object {
         private const val MAIN_MESSAGE_KEY = "maze_main_message"

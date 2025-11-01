@@ -2,18 +2,14 @@
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.UpdateMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
-import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 
 class RunAfterStartupTest : ShouldSpec({
 

@@ -4,40 +4,28 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessages
-import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.NotifyHistory
 import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.entity.UpdateMessage
-import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.MessageGenerateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ReleaseNoteDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerDto
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 
 @Service
 class TelegramBotServiceImpl(
     private val messageServiceGenerate: MessageGenerateService,
     private val telegramClient: TelegramClient,
-    private val stateService: StateService,
-    private val userService: UserService,
     private val notifyHistoryService: NotifyHistoryService,
 ) : TelegramBotService {
-
-    override fun processState(user: User, stateCode: StateCode) {
-        logger.debug { "Persist state $stateCode for user ${user.id}" }
-        stateService.updateState(user, stateCode)
-    }
 
     override fun sendNotification(
         chatId: Long,
@@ -50,13 +38,13 @@ class TelegramBotServiceImpl(
                 if (servers.isEmpty()) {
                     return false
                 }
-                messageServiceGenerate.process(
-                    StateCode.NOTIFICATION_SIEGE,
+                messageServiceGenerate.processTemplate(
+                    SIEGE_NOTIFICATION_TEMPLATE,
                     ServerDto(servers.sortedBy { it.id }.map { it.id }, isBefore)
                 )
             }
 
-            NotificationType.MINE -> messageServiceGenerate.process(StateCode.NOTIFICATION_MINE)
+            NotificationType.MINE -> messageServiceGenerate.processTemplate(MINE_NOTIFICATION_TEMPLATE)
         }
 
         val sendMessage = SendMessage.builder()
@@ -115,7 +103,7 @@ class TelegramBotServiceImpl(
             text = updateMessage.text,
             textEn = updateMessage.textEn
         )
-        val message = messageServiceGenerate.process(StateCode.RELEASE_NOTES, dto, locale)
+        val message = messageServiceGenerate.processTemplate(RELEASE_NOTES_TEMPLATE, dto, locale)
         SendMessage.builder()
             .chatId(user.userId)
             .text(message)
@@ -124,17 +112,10 @@ class TelegramBotServiceImpl(
             .let(telegramClient::execute)
     }
 
-    override fun sendAdminMessage(chatId: Long, dto: AdminMessageDto) {
-        val message = messageServiceGenerate.process(StateCode.ADMIN_MESSAGE, dto)
-        SendMessage.builder()
-            .chatId(chatId)
-            .text(message)
-            .build()
-            .also { it.enableMarkdown(true) }
-            .let(telegramClient::execute)
-    }
-
     companion object {
         private val logger = KotlinLogging.logger {}
+        private const val SIEGE_NOTIFICATION_TEMPLATE = "notification/siege"
+        private const val MINE_NOTIFICATION_TEMPLATE = "notification/mine"
+        private const val RELEASE_NOTES_TEMPLATE = "release_notes/main"
     }
 }

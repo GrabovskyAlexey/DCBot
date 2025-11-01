@@ -4,27 +4,14 @@ import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
-import ru.grabovsky.dungeoncrusherbot.entity.Server
-import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
+import ru.grabovsky.dungeoncrusherbot.entity.Server
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.StepKey
-import java.util.Locale
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import java.util.*
+import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 
 @Component
 class SubscribeFlow(
@@ -38,7 +25,7 @@ class SubscribeFlow(
     override fun start(context: FlowStartContext): FlowResult<Unit> {
         val subscriptions = loadSubscriptions(context.user.id)
         return FlowResult(
-            stepKey = StepKey.MAIN.key,
+            stepKey = SubscribeStepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 SendMessageAction(
@@ -79,7 +66,7 @@ class SubscribeFlow(
 
         val subscriptions = user.servers.map(Server::id).sorted()
         return FlowResult(
-            stepKey = StepKey.MAIN.key,
+            stepKey = SubscribeStepKey.MAIN.key,
             payload = Unit,
             actions = listOf(
                 EditMessageAction(
@@ -106,9 +93,8 @@ class SubscribeFlow(
 
     private fun buildMessage(locale: Locale, subscriptions: List<Int>): FlowMessage {
         val allServers = serverService.getAllServers().sortedBy { it.id }
-        return FlowMessage(
-            flowKey = key,
-            stepKey = StepKey.MAIN.key,
+        return key.buildMessage(
+            step = SubscribeStepKey.MAIN,
             model = SubscribeViewModel(subscriptions),
             inlineButtons = buildButtons(locale, allServers, subscriptions)
         )
@@ -173,3 +159,7 @@ class SubscribeFlow(
 data class SubscribeViewModel(
     val servers: List<Int>
 )
+
+enum class SubscribeStepKey(override val key: String) : FlowStep {
+    MAIN("main"),
+}

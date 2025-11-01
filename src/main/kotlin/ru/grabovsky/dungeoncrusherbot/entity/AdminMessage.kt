@@ -1,7 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.entity
 
 import jakarta.persistence.*
-import java.time.LocalTime
 
 @Entity
 @Table(name = "admin_messages", schema = "dc_bot")

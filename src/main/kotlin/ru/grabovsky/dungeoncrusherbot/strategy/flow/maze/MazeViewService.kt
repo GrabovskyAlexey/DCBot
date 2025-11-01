@@ -5,7 +5,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.Location
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import java.util.Locale
+import java.util.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Component

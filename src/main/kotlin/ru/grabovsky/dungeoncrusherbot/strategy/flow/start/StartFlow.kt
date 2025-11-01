@@ -1,41 +1,18 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.start
 
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery
-import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
-import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.AbstractStaticFlow
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 
 @Component
-class StartFlow() : FlowHandler<Unit> {
-    override val key: FlowKey = FlowKeys.START
-    override val payloadType: Class<Unit> = Unit::class.java
-
-    override fun start(context: FlowStartContext): FlowResult<Unit> {
-        return FlowResult(
-            stepKey = StepKey.MAIN.key,
-            payload = Unit,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = MAIN_MESSAGE_BINDING,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = StepKey.MAIN.key,
-                        model = StartViewModel(context.user.userName ?: context.user.firstName),
-                    )
-                )
-            )
-        )
-    }
-
-    override fun onMessage(context: FlowMessageContext<Unit>, message: Message): FlowResult<Unit>? = null
-
-    override fun onCallback(context: FlowCallbackContext<Unit>, callbackQuery: CallbackQuery, data: String): FlowResult<Unit>? = null
-
+class StartFlow : AbstractStaticFlow(
+    key = FlowKeys.START,
+    step = StepKey.MAIN,
+    bindingKey = MAIN_MESSAGE_BINDING,
+    modelProvider = { context -> StartViewModel(context.user.userName ?: context.user.firstName) }
+) {
     companion object {
         private const val MAIN_MESSAGE_BINDING = "start_main"
     }
@@ -44,3 +21,7 @@ class StartFlow() : FlowHandler<Unit> {
 data class StartViewModel(
     val username: String
 )
+
+enum class StepKey(override val key: String) : FlowStep {
+    MAIN("main"),
+}

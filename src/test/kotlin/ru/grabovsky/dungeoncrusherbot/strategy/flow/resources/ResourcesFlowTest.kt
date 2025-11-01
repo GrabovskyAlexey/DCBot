@@ -3,25 +3,16 @@ package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.justRun
-import io.mockk.mockk
-import io.mockk.verify
-import org.springframework.context.MessageSource
+import io.mockk.*
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.*
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateHolder
-import java.util.Locale
+import java.util.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesFlowTest : ShouldSpec({

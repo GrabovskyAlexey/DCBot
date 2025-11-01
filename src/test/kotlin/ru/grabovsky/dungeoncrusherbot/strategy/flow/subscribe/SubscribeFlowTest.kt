@@ -54,14 +54,14 @@ class SubscribeFlowTest : ShouldSpec({
 
         val result = flow.start(FlowStartContext(telegramUser, locale))
 
-        result.stepKey shouldBe StepKey.MAIN.key
+        result.stepKey shouldBe SubscribeStepKey.MAIN.key
         result.payload shouldBe Unit
         result.actions shouldHaveSize 1
 
         val action = result.actions.single() as SendMessageAction
         action.bindingKey shouldBe "subscribe_main"
         action.message.flowKey shouldBe FlowKeys.SUBSCRIBE
-        action.message.stepKey shouldBe StepKey.MAIN.key
+        action.message.stepKey shouldBe SubscribeStepKey.MAIN.key
         val viewModel = action.message.model as SubscribeViewModel
         viewModel.servers shouldBe listOf(1)
         action.message.inlineButtons.shouldNotBeEmpty()
@@ -91,7 +91,7 @@ class SubscribeFlowTest : ShouldSpec({
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
-                stepKey = StepKey.MAIN.key,
+                stepKey = SubscribeStepKey.MAIN.key,
                 payload = Unit,
                 messageBindings = mapOf("subscribe_main" to 100)
             )

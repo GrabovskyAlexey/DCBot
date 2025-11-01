@@ -3,10 +3,10 @@ package ru.grabovsky.dungeoncrusherbot.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.grabovsky.dungeoncrusherbot.entity.FlowState
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateSnapshot
 import ru.grabovsky.dungeoncrusherbot.repository.FlowStateRepository
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateSnapshot
 
 @Service
 class FlowStateServiceImpl(

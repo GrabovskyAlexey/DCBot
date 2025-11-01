@@ -1,17 +1,24 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.*
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation.*
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourcesService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPromptButton
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMessages
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.retryPrompt
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.startPrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.resources.ResourcesPendingAction.*
-import ru.grabovsky.dungeoncrusherbot.util.FlowUtils
 import java.util.Locale
-import java.util.UUID
 
 @Component
 class ResourcesFlow(
@@ -57,7 +64,7 @@ class ResourcesFlow(
             "MAIN" -> showMain(context, callbackQuery)
             "SERVER" -> argument?.toIntOrNull()?.let { showServer(context, it, callbackQuery) }
             "ACTION" -> argument?.let { handleAction(context, payload, it, callbackQuery) }
-            "PROMPT" -> handlePromptCallback(payload, argument, callbackQuery)
+            "PROMPT" -> handlePromptCallback(context, argument, callbackQuery)
             else -> null
         }
     }
@@ -86,12 +93,7 @@ class ResourcesFlow(
         return buildFlowResult(ResourcesStep.SERVER, state, listOf(
             EditMessageAction(
                 bindingKey = MAIN_MESSAGE_KEY,
-                message = FlowMessage(
-                    flowKey = key,
-                    stepKey = ResourcesStep.SERVER.key,
-                    model = ResourcesServerModel(detail),
-                    inlineButtons = detail.buttons.inlineButtons("ACTION")
-                )
+                message = buildServerMessage(detail)
             ),
             AnswerCallbackAction(callbackQuery.id)
         ))
@@ -106,7 +108,7 @@ class ResourcesFlow(
         val serverId = state.selectedServerId ?: return null
         state.showHistory = false
         AMOUNT_PROMPT_ACTIONS[actionName]?.let { type ->
-            return enterAmountPrompt(context, state, serverId, type, callbackQuery)
+            return enterAmountPrompt(context, serverId, type, callbackQuery)
         }
 
         QUICK_ADJUST_ACTIONS[actionName]?.let { adjustType ->
@@ -128,23 +130,128 @@ class ResourcesFlow(
                 resourcesService.applyOperation(context.user, serverId, ClearExchange)
             }
             "SHOW_HISTORY" -> showHistory(context, state, callbackQuery)
-            "PROMPT_ADD_EXCHANGE" -> enterExchangePrompt(context, state, serverId, callbackQuery)
-            "PROMPT_ADD_NOTE" -> enterAddNotePrompt(context, state, serverId, callbackQuery)
-            "PROMPT_REMOVE_NOTE" -> enterRemoveNotePrompt(context, state, serverId, callbackQuery)
+            "PROMPT_ADD_EXCHANGE" -> enterExchangePrompt(context, serverId, callbackQuery)
+            "PROMPT_ADD_NOTE" -> enterAddNotePrompt(context, serverId, callbackQuery)
+            "PROMPT_REMOVE_NOTE" -> enterRemoveNotePrompt(context, serverId, callbackQuery)
             else -> null
         }
     }
 
-    private fun handlePromptCallback(
-        state: ResourcesFlowState,
-        argument: String?,
+    private fun enterAmountPrompt(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        serverId: Int,
+        type: AmountActionType,
         callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState>? {
-        return when (argument) {
-            "CANCEL" -> cancelPrompt(state, callbackQuery)
-            else -> null
+    ): FlowResult<ResourcesFlowState> {
+        val prompt = promptBuilder.amountPrompt(context.locale, type, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            promptStep = ResourcesStep.PROMPT_AMOUNT,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = Amount(type, serverId)
         }
     }
+
+    private fun enterExchangePrompt(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        serverId: Int,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState> {
+        val prompt = promptBuilder.exchangePrompt(context.locale, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = Exchange(serverId)
+        }
+    }
+
+    private fun enterAddNotePrompt(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        serverId: Int,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState> {
+        val prompt = promptBuilder.addNotePrompt(context.locale, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = AddNote(serverId)
+        }
+    }
+
+    private fun enterRemoveNotePrompt(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        serverId: Int,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState>? {
+        val state = context.state.payload
+        val user = userService.getUser(context.user.id)
+        val notes = user?.profile?.notes?.toList().orEmpty()
+        if (notes.isEmpty()) {
+            return buildFlowResult(
+                ResourcesStep.SERVER,
+                state,
+                listOf(
+                    AnswerCallbackAction(
+                        callbackQueryId = callbackQuery.id,
+                        text = i18nService.i18n(
+                            "flow.notes.error.no_notes",
+                            context.locale,
+                            "Заметок пока нет"
+                        ),
+                        showAlert = true
+                    )
+                )
+            )
+        }
+
+        val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = RemoveNote(serverId)
+        }
+    }
+
+    private fun FlowCallbackContext<ResourcesFlowState>.startServerPrompt(
+        serverId: Int,
+        callbackQuery: CallbackQuery,
+        prompt: ResourcesPromptModel,
+        promptStep: ResourcesStep = ResourcesStep.PROMPT_TEXT,
+        stateUpdater: ResourcesFlowState.() -> Unit,
+    ): FlowResult<ResourcesFlowState> {
+        val state = this.state.payload
+        val cleanup = state.cleanupPromptMessages()
+        return startPrompt(
+            targetStep = ResourcesStep.SERVER,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            callbackQuery = callbackQuery,
+            updateState = {
+                selectedServerId = serverId
+                stateUpdater()
+            },
+            appendActions = { addAll(cleanup) }
+        ) {
+            buildPromptMessage(promptStep, prompt, locale)
+        }
+    }
+
+    private fun handlePromptCallback(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        argument: String?,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState>? =
+        when (argument) {
+            "CANCEL" -> cancelPrompt(context, callbackQuery)
+            else -> null
+        }
 
     private fun handleAmountInput(
         context: FlowMessageContext<ResourcesFlowState>,
@@ -154,12 +261,13 @@ class ResourcesFlow(
         val amount = message.text?.toIntOrNull()
         if (amount == null || amount <= 0) {
             val prompt = promptBuilder.amountPrompt(context.locale, pending.operation, invalid = true)
-            return retryPrompt(context, ResourcesStep.PROMPT_AMOUNT, prompt, message)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_AMOUNT, prompt, message.messageId)
         }
 
         val operation = Adjust(pending.operation.toAdjustType(), amount)
         resourcesService.applyOperation(context.user, pending.serverId, operation)
-        return finalizePrompt(context, pending.serverId, message.messageId)
+
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
 
     private fun handleExchangeInput(
@@ -170,11 +278,11 @@ class ResourcesFlow(
         val value = message.text?.trim().orEmpty()
         if (value.isEmpty()) {
             val prompt = promptBuilder.exchangePrompt(context.locale, invalid = true)
-            return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_TEXT, prompt, message.messageId)
         }
 
         resourcesService.applyOperation(context.user, pending.serverId, SetExchange(value))
-        return finalizePrompt(context, pending.serverId, message.messageId)
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
 
     private fun handleAddNoteInput(
@@ -185,14 +293,11 @@ class ResourcesFlow(
         val value = message.text?.trim().orEmpty()
         if (value.isEmpty()) {
             val prompt = promptBuilder.addNotePrompt(context.locale, invalid = true)
-            return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_TEXT, prompt, message.messageId)
         }
 
-        val added = userService.addNote(context.user.id, value)
-        if (!added) {
-            return finalizePrompt(context, pending.serverId, message.messageId)
-        }
-        return finalizePrompt(context, pending.serverId, message.messageId)
+        userService.addNote(context.user.id, value)
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
 
     private fun handleRemoveNoteInput(
@@ -205,80 +310,80 @@ class ResourcesFlow(
         val notes = user?.profile?.notes?.toList().orEmpty()
         if (index == null || index <= 0 || index > notes.size) {
             val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = true)
-            return retryPrompt(context, ResourcesStep.PROMPT_TEXT, prompt, message)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_TEXT, prompt, message.messageId)
         }
 
         userService.removeNote(context.user.id, index)
-
-        return finalizePrompt(context, pending.serverId, message.messageId)
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
-
-    private fun retryPrompt(
-        context: FlowMessageContext<ResourcesFlowState>,
-        step: ResourcesStep,
-        prompt: ResourcesPromptModel,
-        message: Message
+    private fun cancelPrompt(
+        context: FlowCallbackContext<ResourcesFlowState>,
+        callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
-        val promptBinding = nextPromptBinding()
-        val state = context.state.payload
-        state.promptBindings.add(promptBinding)
-        return FlowResult(
-            stepKey = ResourcesStep.SERVER.key,
-            payload = state,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = promptBinding,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = step.key,
-                        model = prompt,
-                        inlineButtons = promptButtons(context.locale)
-                    )
-                ),
-                DeleteMessageIdAction(message.messageId)
-            )
+        val targetStep = if (context.state.payload.selectedServerId != null) {
+            ResourcesStep.SERVER
+        } else {
+            ResourcesStep.MAIN
+        }
+        return context.cancelPrompt(
+            targetStep = targetStep,
+            callbackQuery = callbackQuery,
+            updateState = { resourcesPendingAction = null }
         )
     }
 
-    private fun finalizePrompt(
+    private fun rebuildServerAfterPrompt(
         context: FlowMessageContext<ResourcesFlowState>,
         serverId: Int,
         userMessageId: Int?
-    ): FlowResult<ResourcesFlowState> {
-        val cleanupActions = FlowUtils.cleanupPromptActions(context.state.payload.promptBindings)
-        userMessageId?.let { cleanupActions += DeleteMessageIdAction(it) }
-        val state = context.state.payload
-        clearState(state)
-        val detail = viewService.buildServer(context.user, serverId, includeHistory = state.showHistory, locale = context.locale)
-        cleanupActions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = FlowMessage(
-                flowKey = key,
-                stepKey = ResourcesStep.SERVER.key,
-                model = ResourcesServerModel(detail),
-                inlineButtons = detail.buttons.inlineButtons("ACTION")
+    ): FlowResult<ResourcesFlowState> =
+        context.finalizePrompt(
+            targetStep = ResourcesStep.SERVER,
+            userMessageId = userMessageId,
+            updateState = { resourcesPendingAction = null }
+        ) {
+            val detail = viewService.buildServer(
+                context.user,
+                serverId,
+                includeHistory = context.state.payload.showHistory,
+                locale = context.locale
             )
-        )
-        return buildFlowResult(ResourcesStep.SERVER, state, cleanupActions)
-    }
+            this += EditMessageAction(
+                bindingKey = MAIN_MESSAGE_KEY,
+                message = buildServerMessage(detail)
+            )
+        }
 
-    private fun cancelPrompt(
-        state: ResourcesFlowState,
-        callbackQuery: CallbackQuery
+    private fun buildPromptMessage(
+        step: ResourcesStep,
+        prompt: ResourcesPromptModel,
+        locale: Locale
+    ): FlowMessage = key.buildMessage(
+        step = step,
+        model = prompt,
+        inlineButtons = promptButtons(locale)
+    )
+
+    private fun buildServerMessage(detail: ServerDetail): FlowMessage = key.buildMessage(
+        step = ResourcesStep.SERVER,
+        model = ResourcesServerModel(detail),
+        inlineButtons = detail.buttons.inlineButtons("ACTION")
+    )
+
+    private fun FlowMessageContext<ResourcesFlowState>.retryServerPrompt(
+        step: ResourcesStep,
+        prompt: ResourcesPromptModel,
+        userMessageId: Int
     ): FlowResult<ResourcesFlowState> {
-        val cleanupActions = FlowUtils.cleanupPromptActions(state.promptBindings)
-        clearState(state)
-        cleanupActions += AnswerCallbackAction(callbackQuery.id)
-        return FlowResult(
-            stepKey = if (state.selectedServerId != null) ResourcesStep.SERVER.key else ResourcesStep.MAIN.key,
-            payload = state,
-            actions = cleanupActions
-        )
-    }
-
-    private fun clearState(state: ResourcesFlowState) {
-        state.resourcesPendingAction = null
-        state.promptBindings.clear()
+        val cleanup = state.payload.cleanupPromptMessages()
+        return retryPrompt(
+            targetStep = ResourcesStep.SERVER,
+            bindingPrefix = PROMPT_MESSAGE_KEY,
+            userMessageId = userMessageId,
+            appendActions = { addAll(cleanup) }
+        ) {
+            buildPromptMessage(step, prompt, locale)
+        }
     }
 
     private fun showHistory(
@@ -309,12 +414,7 @@ class ResourcesFlow(
             actions = listOf(
                 EditMessageAction(
                     bindingKey = MAIN_MESSAGE_KEY,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = ResourcesStep.SERVER.key,
-                        model = ResourcesServerModel(detail),
-                        inlineButtons = detail.buttons.inlineButtons("ACTION")
-                    )
+                    message = buildServerMessage(detail)
                 ),
                 AnswerCallbackAction(callbackQuery.id)
             )
@@ -340,7 +440,11 @@ class ResourcesFlow(
                 actions = listOf(
                     AnswerCallbackAction(
                         callbackQueryId = callbackQuery.id,
-                        text = i18nService.i18n("flow.resources.error.quick_disabled", context.locale, "Включи быстрый учёт ресурсов в настройках, чтобы пользоваться этой кнопкой."),
+                        text = i18nService.i18n(
+                            "flow.resources.error.quick_disabled",
+                            context.locale,
+                            "Включи быстрый учёт ресурсов в настройках, чтобы пользоваться этой кнопкой."
+                        ),
                         showAlert = true
                     )
                 )
@@ -348,13 +452,21 @@ class ResourcesFlow(
         }
 
         if ((adjustType == AdjustType.ADD_CB || adjustType == AdjustType.REMOVE_CB) && !cbEnabled) {
-            return buildFlowResult(ResourcesStep.SERVER, state, listOf(
-                AnswerCallbackAction(
-                    callbackQueryId = callbackQuery.id,
-                    text = i18nService.i18n("flow.resources.error.cb_disabled", context.locale, "Включи учёт КБ в настройках, чтобы изменить значение."),
-                    showAlert = true
+            return buildFlowResult(
+                ResourcesStep.SERVER,
+                state,
+                listOf(
+                    AnswerCallbackAction(
+                        callbackQueryId = callbackQuery.id,
+                        text = i18nService.i18n(
+                            "flow.resources.error.cb_disabled",
+                            context.locale,
+                            "Включи учёт КБ в настройках, чтобы изменить значение."
+                        ),
+                        showAlert = true
+                    )
                 )
-            ))
+            )
         }
 
         resourcesService.applyOperation(
@@ -373,117 +485,37 @@ class ResourcesFlow(
     ): FlowResult<ResourcesFlowState>? {
         val serverId = state.selectedServerId ?: return null
         block()
-        val detail = viewService.buildServer(context.user, serverId, includeHistory = state.showHistory, locale = context.locale)
+        val detail = viewService.buildServer(
+            context.user,
+            serverId,
+            includeHistory = state.showHistory,
+            locale = context.locale
+        )
         return FlowResult(
             stepKey = ResourcesStep.SERVER.key,
             payload = state.apply { resourcesPendingAction = null },
             actions = listOf(
                 EditMessageAction(
                     bindingKey = MAIN_MESSAGE_KEY,
-                    message = FlowMessage(
-                        flowKey = key,
-                        stepKey = ResourcesStep.SERVER.key,
-                        model = ResourcesServerModel(detail),
-                        inlineButtons = detail.buttons.inlineButtons("ACTION")
-                    )
+                    message = buildServerMessage(detail)
                 ),
                 AnswerCallbackAction(callbackQuery.id)
             )
         )
     }
 
-    private fun enterAmountPrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
-        state: ResourcesFlowState,
-        serverId: Int,
-        type: AmountActionType,
-        callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState> {
-        val prompt = promptBuilder.amountPrompt(context.locale, type)
-        return startPrompt(context, state, Amount(type, serverId), ResourcesStep.PROMPT_AMOUNT, prompt, callbackQuery)
-    }
 
-    private fun enterExchangePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
-        state: ResourcesFlowState,
-        serverId: Int,
-        callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState> {
-        val prompt = promptBuilder.exchangePrompt(context.locale, invalid = false)
-        return startPrompt(context, state, Exchange(serverId), ResourcesStep.PROMPT_TEXT, prompt, callbackQuery)
-    }
-
-    private fun enterAddNotePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
-        state: ResourcesFlowState,
-        serverId: Int,
-        callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState> {
-        val prompt = promptBuilder.addNotePrompt(context.locale, invalid = false)
-        return startPrompt(context, state, AddNote(serverId), ResourcesStep.PROMPT_TEXT, prompt, callbackQuery)
-    }
-
-    private fun enterRemoveNotePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
-        state: ResourcesFlowState,
-        serverId: Int,
-        callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState> {
-        val user = userService.getUser(context.user.id)
-        val notes = user?.profile?.notes?.toList().orEmpty()
-        val prompt = promptBuilder.removeNotePrompt(context.locale, notes, invalid = false)
-        return startPrompt(context, state, RemoveNote(serverId), ResourcesStep.PROMPT_TEXT, prompt, callbackQuery)
-    }
-
-    private fun startPrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
-        state: ResourcesFlowState,
-        pending: ResourcesPendingAction,
-        step: ResourcesStep,
-        prompt: ResourcesPromptModel,
-        callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState> {
-        val promptBinding = nextPromptBinding()
-        state.promptBindings.add(promptBinding)
-        state.resourcesPendingAction = pending
-        return FlowResult(
-            stepKey = ResourcesStep.SERVER.key,
-            payload = state,
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = promptBinding,
-                    message = buildPromptMessage(step, prompt, context)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
-        )
-    }
-
-    private fun buildPromptMessage(
-        step: ResourcesStep,
-        prompt: ResourcesPromptModel,
-        context: FlowCallbackContext<ResourcesFlowState>
-    ): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = step.key,
-        model = prompt,
-        inlineButtons = promptButtons(context.locale)
-    )
-
-    private fun buildOverviewMessage(overview: ResourcesOverviewModel): FlowMessage = FlowMessage(
-        flowKey = key,
-        stepKey = ResourcesStep.MAIN.key,
+    private fun buildOverviewMessage(overview: ResourcesOverviewModel): FlowMessage = key.buildMessage(
+        step = ResourcesStep.MAIN,
         model = overview,
         inlineButtons = overview.buttons.inlineButtons("SERVER")
     )
 
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
-            FlowInlineButton(
-                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена"),
-                payload = FlowCallbackPayload(key.value, "PROMPT:CANCEL"),
-                row = 0,
-                col = 0
+            key.cancelPromptButton(
+                locale = locale,
+                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена")
             )
         )
 
@@ -499,8 +531,6 @@ class ResourcesFlow(
         row = button.row,
         col = button.col
     )
-
-    private fun nextPromptBinding(): String = "${PROMPT_MESSAGE_KEY}_${UUID.randomUUID()}"
 
 
     private fun parseCallback(data: String): Pair<String, String?> {
@@ -543,7 +573,6 @@ class ResourcesFlow(
 
         private const val MAIN_MESSAGE_KEY = "resources_main_message"
         private const val PROMPT_MESSAGE_KEY = "resources_prompt_message"
-        private val logger = KotlinLogging.logger {}
     }
 }
 

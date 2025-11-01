@@ -2,14 +2,12 @@
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import jakarta.persistence.EntityNotFoundException
-import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
@@ -18,6 +16,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class CommandsTest : ShouldSpec({
     val telegramClient = mockk<TelegramClient>(relaxed = true)

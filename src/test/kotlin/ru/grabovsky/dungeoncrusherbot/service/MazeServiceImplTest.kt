@@ -7,12 +7,7 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import ru.grabovsky.dungeoncrusherbot.entity.Direction
-import ru.grabovsky.dungeoncrusherbot.entity.Location
-import ru.grabovsky.dungeoncrusherbot.entity.Maze
-import ru.grabovsky.dungeoncrusherbot.entity.Step
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
 
 class MazeServiceImplTest : ShouldSpec({

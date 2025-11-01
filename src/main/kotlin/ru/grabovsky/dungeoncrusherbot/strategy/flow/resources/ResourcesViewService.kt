@@ -2,14 +2,13 @@ package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.objects.User as TgUser
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
-import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
-import java.util.Locale
+import java.util.*
+import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Component
 class ResourcesViewService(

@@ -5,7 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
-import java.util.Locale
+import java.util.*
 
 @Component
 class FlowEngine(
