@@ -786,7 +786,7 @@ class ExchangeFlow(
     private fun escapeMarkdown(source: String?): String? {
         source ?: return null
         val regex = Regex("""([_*\[\]()~`>#+\-=|{}!])""")
-        return source.replace(regex, """\\\$1""")
+        return source.replace(regex, """\\$1""")
     }
 
     private fun FlowAction.asResult(
