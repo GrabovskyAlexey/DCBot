@@ -51,3 +51,5 @@
       file: liquibase/changelog/25.add_admin_message_source_id.sql
   - include:
       file: liquibase/changelog/26.cleanup_unused_resources.sql
+  - include:
+      file: liquibase/changelog/27.exchange_audit.sql

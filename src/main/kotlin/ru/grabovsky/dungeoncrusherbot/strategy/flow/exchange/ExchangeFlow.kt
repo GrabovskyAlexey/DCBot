@@ -1,7 +1,7 @@
-﻿
-package ru.grabovsky.dungeoncrusherbot.strategy.flow.exchange
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.flow.exchange
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeDirectionType
@@ -17,6 +17,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
+import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeContactsSharedEvent
 import java.util.*
 import org.telegram.telegrambots.meta.api.objects.message.Message as TgMessage
 import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
@@ -27,6 +28,7 @@ class ExchangeFlow(
     private val serverService: ServerService,
     private val exchangeRequestService: ExchangeRequestService,
     private val i18nService: I18nService,
+    private val eventPublisher: ApplicationEventPublisher,
 ) : FlowHandler<ExchangeFlowState> {
 
     override val key: FlowKey = FlowKeys.EXCHANGE
@@ -396,7 +398,7 @@ class ExchangeFlow(
         }
         val requestId = argument.toLongOrNull() ?: return AnswerCallbackAction(callbackQuery.id)
             .asResult(state, context.state.stepKey)
-        val result = runCatching { buildSearchResultModel(requestId) }
+        val result = runCatching { buildSearchResultModel(context.user.id, requestId) }
         return result.fold(
             onSuccess = { model ->
                 editMainMessageResult(
@@ -504,9 +506,19 @@ class ExchangeFlow(
         )
     }
 
-    private fun buildSearchResultModel(requestId: Long): ExchangeResultDto {
+    private fun buildSearchResultModel(searcherId: Long, requestId: Long): ExchangeResultDto {
         val request = exchangeRequestService.getRequestById(requestId)
             ?: throw IllegalStateException("Exchange request $requestId not found")
+        eventPublisher.publishEvent(
+            ExchangeContactsSharedEvent(
+                userId = searcherId,
+                requestId = requestId,
+                contactUserId = request.user.userId,
+                requestType = request.type,
+                sourceServerId = request.sourceServerId,
+                targetServerId = request.targetServerId,
+            )
+        )
         return ExchangeResultDto(
             username = escapeMarkdown(request.user.userName),
             firstName = request.user.firstName ?: "",

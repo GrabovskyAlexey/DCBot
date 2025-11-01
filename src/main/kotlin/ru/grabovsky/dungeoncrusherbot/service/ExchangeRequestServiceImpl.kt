@@ -1,15 +1,18 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.service
 
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.*
 import ru.grabovsky.dungeoncrusherbot.repository.ExchangeRequestRepository
+import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeSearchPerformedEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
 
 @Service
 class ExchangeRequestServiceImpl(
     private val exchangeRequestRepository: ExchangeRequestRepository,
+    private val eventPublisher: ApplicationEventPublisher,
 ) : ExchangeRequestService {
 
     override fun getActiveExchangeRequestsByServer(
@@ -37,7 +40,9 @@ class ExchangeRequestServiceImpl(
             .filterNot { it.user == user }
             .filter {it.user.isActiveAndHasUsername()}
         val self = getActiveExchangeRequestsByServer(user, serverId, ExchangeDirectionType.SOURCE).filter { it.isActive }
-        return filterRequests(all, self)
+        val filtered = filterRequests(all, self)
+        publishSearchEvent(user, serverId, serverType, filtered)
+        return filtered
     }
 
     override fun createOrUpdateExchangeRequest(
@@ -123,5 +128,23 @@ class ExchangeRequestServiceImpl(
         val exchangeVoidRequest = all.filter { it.type == EXCHANGE_VOID }.filter {voidRequest.any { req -> req.targetServerId == it.sourceServerId } }
 
         return buyRequests + sellRequests + exchangeMapRequest + exchangeVoidRequest
+    }
+
+    private fun publishSearchEvent(
+        user: User,
+        serverId: Int,
+        direction: ExchangeDirectionType,
+        matches: List<ExchangeRequest>,
+    ) {
+        val typeCounts = matches.groupingBy { it.type }.eachCount()
+        eventPublisher.publishEvent(
+            ExchangeSearchPerformedEvent(
+                userId = user.userId,
+                serverId = serverId,
+                direction = direction,
+                matchesCount = matches.size,
+                matchTypeCounts = typeCounts,
+            )
+        )
     }
 }
