@@ -19,9 +19,11 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateSnapshot
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SetReactionAction
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowPayloadSerializer
 import java.time.Instant
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
@@ -127,7 +129,7 @@ class UserServiceImpl(
         return true
     }
 
-    override fun sendAdminMessage(user: TgUser, message: String, sourceMessageId: Int) {
+    override fun sendAdminMessage(user: TgUser, message: String, sourceMessageId: Int, sourceChatId: Long) {
         val dto = AdminMessageDto(user.firstName, user.userName, user.id, message)
         val entity = adminMessageRepository.saveAndFlush(
             AdminMessage(userId = user.id, message = message, sourceMessageId = sourceMessageId)
@@ -191,6 +193,25 @@ class UserServiceImpl(
                     )
                 )
             }
+
+        if (sourceMessageId > 0) {
+            runCatching {
+                telegramFlowActionExecutor.execute(
+                    user = user,
+                    locale = LocaleUtils.resolve(user.languageCode),
+                    currentBindings = emptyMap(),
+                    actions = listOf(
+                        SetReactionAction(
+                            chatId = sourceChatId,
+                            messageId = sourceMessageId,
+                            emoji = "✅"
+                        )
+                    )
+                )
+            }.onFailure {
+                logger.warn { "Failed to set reaction for user ${user.userName ?: user.id}: ${it.message}" }
+            }
+        }
     }
 
     override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) {
@@ -206,21 +227,52 @@ class UserServiceImpl(
 
         val dto = AdminReplyDto(text = message)
 
-        telegramFlowActionExecutor.execute(
-            user = targetUser,
-            locale = locale,
-            currentBindings = emptyMap(),
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = null,
-                    message = FlowMessage(
-                        flowKey = FlowKeys.ADMIN_REPLY,
-                        stepKey = "main",
-                        model = dto,
-                        replyToMessageId = replyToMessageId
+        val replyMessage = FlowMessage(
+            flowKey = FlowKeys.ADMIN_REPLY,
+            stepKey = "main",
+            model = dto,
+            replyToMessageId = replyToMessageId
+        )
+        val initialAction = SendMessageAction(
+            bindingKey = null,
+            message = replyMessage
+        )
+
+        val result = runCatching {
+            telegramFlowActionExecutor.execute(
+                user = targetUser,
+                locale = locale,
+                currentBindings = emptyMap(),
+                actions = listOf(initialAction)
+            )
+        }
+
+        val failure = result.exceptionOrNull()
+        if (failure != null) {
+            if (replyToMessageId != null && failure is TelegramApiRequestException && failure.isReplyTargetMissing()) {
+                logger.info { "Reply message not found for user ${targetUser.userName ?: targetUser.id}, send without reply binding" }
+                telegramFlowActionExecutor.execute(
+                    user = targetUser,
+                    locale = locale,
+                    currentBindings = emptyMap(),
+                    actions = listOf(
+                        SendMessageAction(
+                            bindingKey = null,
+                            message = replyMessage.copy(replyToMessageId = null)
+                        )
                     )
                 )
-            )
-        )
+            } else {
+                throw failure
+            }
+        }
+    }
+
+    private fun TelegramApiRequestException.isReplyTargetMissing(): Boolean {
+        if (errorCode != 400) {
+            return false
+        }
+        val details = (apiResponse ?: message ?: "").lowercase()
+        return details.contains("message to be replied not found")
     }
 }

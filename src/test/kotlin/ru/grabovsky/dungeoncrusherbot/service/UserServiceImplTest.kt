@@ -9,7 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageFlow
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageViewBuilder
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowPayloadSerializer
 import java.time.Instant
@@ -20,14 +20,14 @@ class UserServiceImplTest : ShouldSpec({
     val adminMessageRepository = mockk<AdminMessageRepository>(relaxed = true)
     val flowStateService = mockk<FlowStateService>(relaxed = true)
     val payloadSerializer = mockk<FlowPayloadSerializer>(relaxed = true)
-    val adminMessageFlow = mockk<AdminMessageFlow>(relaxed = true)
+    val adminMessageViewBuilder = mockk<AdminMessageViewBuilder>(relaxed = true)
     val actionExecutor = mockk<FlowActionExecutor>(relaxed = true)
     val service = UserServiceImpl(
         userRepository,
         adminMessageRepository,
         flowStateService,
         payloadSerializer,
-        adminMessageFlow,
+        adminMessageViewBuilder,
         actionExecutor
     )
 

@@ -15,6 +15,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageConte
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SetReactionAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMessages
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.retryPrompt
@@ -67,15 +68,9 @@ class AdminMessageFlow(
 
         state.messages.removeIf { it.id == pending.messageId }
 
-        val confirmation = i18nService.i18n(
-            code = "flow.admin.message.reply_sent",
-            locale = context.locale,
-            default = "Ответ отправлен пользователю."
-        )
-
         return context.finalizePrompt(
             targetStep = AdminMessageStep.MAIN,
-            userMessageId = message.messageId,
+            userMessageId = null,
             updateState = { pendingReply = null }
         ) {
             this += EditMessageAction(
@@ -87,9 +82,10 @@ class AdminMessageFlow(
                     includeActions = false
                 )
             )
-            this += SendMessageAction(
-                bindingKey = null,
-                message = viewBuilder.buildInfoMessage(confirmation)
+            this += SetReactionAction(
+                chatId = message.chatId,
+                messageId = message.messageId,
+                emoji = "\uD83D\uDC4D"
             )
         }
     }

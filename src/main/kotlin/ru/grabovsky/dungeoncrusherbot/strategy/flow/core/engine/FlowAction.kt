@@ -31,3 +31,11 @@ data class AnswerCallbackAction(
 ) : FlowAction {
     override val bindingKey: String? = null
 }
+
+data class SetReactionAction(
+    val chatId: Long,
+    val messageId: Int,
+    val emoji: String,
+) : FlowAction {
+    override val bindingKey: String? = null
+}

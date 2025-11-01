@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessages
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
@@ -15,6 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.telegram.telegrambots.meta.api.objects.reactions.ReactionTypeEmoji
+import io.github.oshai.kotlinlogging.KotlinLogging
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.templating.FlowTemplateRenderer
 import java.util.*
@@ -82,6 +85,25 @@ class TelegramFlowActionExecutor(
                         .showAlert(action.showAlert)
                         .build()
                 )
+
+                is SetReactionAction -> {
+                    if (action.messageId > 0) {
+                        val reaction = ReactionTypeEmoji.builder()
+                            .emoji(action.emoji)
+                            .build()
+                        runCatching {
+                            val request = SetMessageReaction.builder()
+                                .chatId(action.chatId.toString())
+                                .messageId(action.messageId)
+                                .reactionTypes(listOf(reaction))
+                                .isBig(false)
+                                .build()
+                            telegramClient.execute(request)
+                        }.onFailure {
+                            logger.warn { "Failed to set reaction ${action.emoji} for chat ${action.chatId}, message ${action.messageId}: ${it.message}" }
+                        }
+                    }
+                }
             }
         }
 
@@ -154,5 +176,9 @@ class TelegramFlowActionExecutor(
             )
         }
         return InlineKeyboardMarkup(rows)
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }

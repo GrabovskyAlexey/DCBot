@@ -60,26 +60,13 @@ class SettingsFlow(
         val pending = context.state.payload.pendingAction ?: return null
         if (!pending.sendReport) return null
 
-        userService.sendAdminMessage(context.user, message.text, message.messageId)
+        userService.sendAdminMessage(context.user, message.text, message.messageId, message.chatId)
 
         return context.finalizePrompt(
             targetStep = SettingStepKey.SEND_REPORT,
-            userMessageId = message.messageId,
+            userMessageId = null,
             updateState = { pendingAction = null }
-        ) {
-            this += SendMessageAction(
-                bindingKey = MAIN_MESSAGE_BINDING,
-                message = key.buildMessage(
-                    step = SettingStepKey.SEND_REPORT,
-                    model = SendReportModel(
-                        i18nService.i18n(
-                            "flow.settings.send_report_complete",
-                            context.locale
-                        )
-                    )
-                )
-            )
-        }
+        ) { }
     }
 
     override fun onCallback(
