@@ -200,8 +200,7 @@ class NotesFlow(
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
             key.cancelPromptButton(
-                locale = locale,
-                text = i18nService.i18n("flow.button.cancel", locale, "Отмена")
+                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена")
             )
         )
 
@@ -218,17 +217,15 @@ class NotesFlow(
     private fun FlowMessageContext<NotesFlowState>.retryNotesPrompt(
         prompt: NotesPromptModel,
         message: Message
-    ): FlowResult<NotesFlowState> {
-        val cleanup = state.payload.cleanupPromptMessages()
-        return retryPrompt(
+    ): FlowResult<NotesFlowState> =
+        retryPrompt(
             targetStep = NotesStep.MAIN,
             bindingPrefix = PROMPT_MESSAGE_KEY,
             userMessageId = message.messageId,
-            appendActions = { addAll(cleanup) }
+            appendActions = { addAll(state.payload.cleanupPromptMessages()) }
         ) {
             buildPromptMessage(prompt, locale)
         }
-    }
 
     private fun FlowMessageContext<NotesFlowState>.finalizeNotesPrompt(
         userMessageId: Int?

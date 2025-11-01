@@ -121,10 +121,7 @@ class MazeFlow(
         val state = context.state.payload
         val actions = state.cleanupPromptMessages()
         state.pendingDirection = null
-        val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += mainViewEditAction(view, context.locale)
-        actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+        return buildMainResult(context, state, showHistory = false, callbackQuery = callbackQuery, actions = actions)
     }
 
     private fun enterSameStepPrompt(
@@ -160,10 +157,7 @@ class MazeFlow(
         val actions = state.cleanupPromptMessages()
         state.pendingDirection = null
         mazeService.revertSameSteps(maze)
-        val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += mainViewEditAction(view, context.locale)
-        actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+        return buildMainResult(context, state, showHistory = false, callbackQuery = callbackQuery, actions = actions)
     }
 
     private fun showMain(
@@ -174,10 +168,7 @@ class MazeFlow(
         val state = context.state.payload
         val actions = state.cleanupPromptMessages()
         state.pendingDirection = null
-        val view = viewService.buildMainView(context.user, context.locale, showHistory)
-        actions += mainViewEditAction(view, context.locale)
-        actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+        return buildMainResult(context, state, showHistory = showHistory, callbackQuery = callbackQuery, actions = actions)
     }
 
     private fun showConfirmReset(
@@ -208,10 +199,7 @@ class MazeFlow(
         val state = context.state.payload
         val actions = state.cleanupPromptMessages()
         state.pendingDirection = null
-        val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-        actions += mainViewEditAction(view, context.locale)
-        actions += AnswerCallbackAction(callbackQuery.id)
-        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+        return buildMainResult(context, state, showHistory = false, callbackQuery = callbackQuery, actions = actions)
     }
 
     private fun retryPrompt(
@@ -270,11 +258,23 @@ class MazeFlow(
             message = buildMainMessage(view, locale)
         )
 
+    private fun buildMainResult(
+        context: FlowCallbackContext<MazeFlowState>,
+        state: MazeFlowState,
+        showHistory: Boolean,
+        callbackQuery: CallbackQuery,
+        actions: MutableList<FlowAction>
+    ): FlowResult<MazeFlowState> {
+        val view = viewService.buildMainView(context.user, context.locale, showHistory)
+        actions += mainViewEditAction(view, context.locale)
+        actions += AnswerCallbackAction(callbackQuery.id)
+        return buildFlowResult(MazeFlowStep.MAIN, state, actions)
+    }
+
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
             key.cancelPromptButton(
-                locale = locale,
-                text = i18nService.i18n("flow.button.cancel", locale, "Отмена")
+                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена")
             )
         )
 

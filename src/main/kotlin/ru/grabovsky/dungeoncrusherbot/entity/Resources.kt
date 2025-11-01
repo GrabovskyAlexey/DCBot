@@ -15,8 +15,6 @@ data class Resources(
     @OneToOne
     @JoinColumn(name = "user_id")
     val user: User,
-    @Column(name = "last_server_id")
-    var lastServerId: Int? = null,
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "data")
     var data: ResourcesData = ResourcesData(),

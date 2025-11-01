@@ -1,4 +1,4 @@
-﻿<#assign lang = (locale.language!"")?lower_case>
+<#assign lang = (locale.language!"")?lower_case>
 <#if lang?starts_with("en")>
     <#include "main_en.ftl">
 <#else>

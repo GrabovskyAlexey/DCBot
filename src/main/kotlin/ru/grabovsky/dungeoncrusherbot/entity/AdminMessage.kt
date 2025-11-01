@@ -13,5 +13,7 @@ data class AdminMessage(
     @Column(name = "user_id", nullable = false)
     val userId: Long,
     @Column(name = "message", nullable = false)
-    val message: String
+    val message: String,
+    @Column(name = "source_message_id")
+    val sourceMessageId: Int? = null,
 )

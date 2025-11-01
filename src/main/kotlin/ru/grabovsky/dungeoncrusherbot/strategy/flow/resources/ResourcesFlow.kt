@@ -188,7 +188,7 @@ class ResourcesFlow(
         context: FlowCallbackContext<ResourcesFlowState>,
         serverId: Int,
         callbackQuery: CallbackQuery
-    ): FlowResult<ResourcesFlowState>? {
+    ): FlowResult<ResourcesFlowState> {
         val state = context.state.payload
         val user = userService.getUser(context.user.id)
         val notes = user?.profile?.notes?.toList().orEmpty()
@@ -380,7 +380,8 @@ class ResourcesFlow(
             targetStep = ResourcesStep.SERVER,
             bindingPrefix = PROMPT_MESSAGE_KEY,
             userMessageId = userMessageId,
-            appendActions = { addAll(cleanup) }
+            appendActions = { addAll(cleanup) },
+            updateState = { resourcesPendingAction = state.payload.resourcesPendingAction }
         ) {
             buildPromptMessage(step, prompt, locale)
         }
@@ -514,7 +515,6 @@ class ResourcesFlow(
     private fun promptButtons(locale: Locale): List<FlowInlineButton> =
         listOf(
             key.cancelPromptButton(
-                locale = locale,
                 text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена")
             )
         )

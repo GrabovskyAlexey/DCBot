@@ -34,9 +34,15 @@ class ResourcesPromptBuilder(
         return buildResourcePromptModel("flow.resources.prompt.text.note_remove", "flow.resources.prompt.error.note_range", invalid, locale, enumerated)
     }
 
-    private fun buildResourcePromptModel(baseKey: String, errorKey: String, invalid: Boolean, locale: Locale, notes: List<String>? = null): ResourcesPromptModel {
-            val base = i18nService.i18n(baseKey, locale)
-            val error = if (invalid) { "\n${i18nService.i18n(errorKey, locale)}" } else ""
-            return ResourcesPromptModel(text = "$base$error")
+    private fun buildResourcePromptModel(
+        baseKey: String,
+        errorKey: String,
+        invalid: Boolean,
+        locale: Locale,
+        notes: List<String>? = null
+    ): ResourcesPromptModel {
+        val base = i18nService.i18n(baseKey, locale)
+        val error = if (invalid) "\n${i18nService.i18n(errorKey, locale)}" else ""
+        return ResourcesPromptModel(text = "$base$error", notes = notes.orEmpty())
     }
 }

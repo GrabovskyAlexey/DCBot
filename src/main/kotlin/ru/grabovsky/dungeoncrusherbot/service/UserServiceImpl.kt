@@ -6,13 +6,21 @@ import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
+import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminReplyDto
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageFlow
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageFlowState
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageStep
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminPendingMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateSnapshot
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowPayloadSerializer
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -20,6 +28,9 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val adminMessageRepository: AdminMessageRepository,
+    private val flowStateService: FlowStateService,
+    private val payloadSerializer: FlowPayloadSerializer,
+    private val adminMessageFlow: AdminMessageFlow,
     private val telegramFlowActionExecutor: FlowActionExecutor
 ) : UserService {
     companion object {
@@ -116,38 +127,100 @@ class UserServiceImpl(
         return true
     }
 
-    override fun sendAdminMessage(user: TgUser, message: String) {
+    override fun sendAdminMessage(user: TgUser, message: String, sourceMessageId: Int) {
         val dto = AdminMessageDto(user.firstName, user.userName, user.id, message)
-        val entity = AdminMessage(userId = user.id, message = message)
-        adminMessageRepository.saveAndFlush(entity)
+        val entity = adminMessageRepository.saveAndFlush(
+            AdminMessage(userId = user.id, message = message, sourceMessageId = sourceMessageId)
+        )
 
         userRepository.findAllNotBlockedUser()
             .onEach { existing ->
                 existing.profile?.user = existing
             }
             .filter { it.profile?.isAdmin == true }
-            .forEach {
-                val admin = TgUser.builder()
-                    .id(it.userId)
-                    .firstName(it.firstName!!)
-                    .lastName(it.lastName)
+            .forEach { admin ->
+                val locale = LocaleUtils.resolve(admin.language)
+                val bindingKey = "admin_message_${entity.id}"
+
+                val snapshot = flowStateService.load(admin.userId, FlowKeys.ADMIN_MESSAGE)
+                val state = snapshot?.payload?.let {
+                    payloadSerializer.deserialize(it, AdminMessageFlowState::class.java)
+                } ?: AdminMessageFlowState()
+
+                state.messages.removeIf { it.id == entity.id }
+                state.messages += AdminPendingMessage(
+                    id = entity.id!!,
+                    dto = dto,
+                    bindingKey = bindingKey,
+                    sourceMessageId = entity.sourceMessageId,
+                )
+
+                val adminUser = TgUser.builder()
+                    .id(admin.userId)
+                    .firstName(admin.firstName ?: "")
+                    .lastName(admin.lastName)
+                    .userName(admin.userName)
                     .isBot(false)
                     .build()
-                telegramFlowActionExecutor.execute(
-                    user = admin,
-                    locale = LocaleUtils.resolve(it.language),
+
+                val currentBindings = snapshot?.messageBindings ?: emptyMap()
+                val mutation = telegramFlowActionExecutor.execute(
+                    user = adminUser,
+                    locale = locale,
+                    currentBindings = currentBindings,
                     actions = listOf(
                         SendMessageAction(
-                            bindingKey = "admin_message",
-                            message = FlowMessage(
-                                flowKey = FlowKeys.ADMIN_MESSAGE,
-                                stepKey = "main",
-                                model = dto,
-                            )
+                            bindingKey = bindingKey,
+                            message = adminMessageFlow.buildInboxMessage(dto, entity.id!!, locale)
                         )
-                    ),
-                    currentBindings = emptyMap()
+                    )
+                )
+
+                val updatedBindings = currentBindings.toMutableMap().apply {
+                    putAll(mutation.replacements)
+                    mutation.removed.forEach { remove(it) }
+                }
+
+                flowStateService.save(
+                    FlowStateSnapshot(
+                        userId = admin.userId,
+                        flowKey = FlowKeys.ADMIN_MESSAGE,
+                        stepKey = AdminMessageStep.MAIN.key,
+                        payload = payloadSerializer.serialize(state),
+                        messageBindings = updatedBindings
+                    )
                 )
             }
+    }
+
+    override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) {
+        val userEntity = getUser(targetUserId) ?: return
+        val locale = LocaleUtils.resolve(userEntity.language)
+        val targetUser = TgUser.builder()
+            .id(userEntity.userId)
+            .firstName(userEntity.firstName ?: "")
+            .lastName(userEntity.lastName)
+            .userName(userEntity.userName)
+            .isBot(false)
+            .build()
+
+        val dto = AdminReplyDto(text = message)
+
+        telegramFlowActionExecutor.execute(
+            user = targetUser,
+            locale = locale,
+            currentBindings = emptyMap(),
+            actions = listOf(
+                SendMessageAction(
+                    bindingKey = null,
+                    message = FlowMessage(
+                        flowKey = FlowKeys.ADMIN_REPLY,
+                        stepKey = "main",
+                        model = dto,
+                        replyToMessageId = replyToMessageId
+                    )
+                )
+            )
+        )
     }
 }

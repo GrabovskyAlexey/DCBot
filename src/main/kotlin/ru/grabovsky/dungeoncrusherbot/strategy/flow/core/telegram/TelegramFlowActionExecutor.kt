@@ -101,6 +101,7 @@ class TelegramFlowActionExecutor(
             .build()
 
         message.parseMode.telegramValue?.let { sendMessage.parseMode = it }
+        message.replyToMessageId?.let { sendMessage.replyToMessageId = it }
         sendMessage.replyMarkup = buildReplyMarkup(message)
         return sendMessage
     }

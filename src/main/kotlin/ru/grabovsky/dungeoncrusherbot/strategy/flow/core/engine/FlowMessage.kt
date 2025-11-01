@@ -7,6 +7,7 @@ data class FlowMessage(
     val inlineButtons: List<FlowInlineButton> = emptyList(),
     val replyButtons: List<FlowReplyButton> = emptyList(),
     val parseMode: FlowParseMode = FlowParseMode.MARKDOWN,
+    val replyToMessageId: Int? = null,
 )
 
 data class FlowInlineButton(

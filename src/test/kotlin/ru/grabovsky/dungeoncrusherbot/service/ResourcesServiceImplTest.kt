@@ -220,7 +220,10 @@ private class FakeUserService : UserService {
     override fun clearNotes(user: TgUser) =
         throw UnsupportedOperationException("Not used in tests")
 
-    override fun sendAdminMessage(user: TgUser, message: String) =
+    override fun sendAdminMessage(user: TgUser, message: String, sourceMessageId: Int) =
+        throw UnsupportedOperationException("Not used in tests")
+
+    override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) =
         throw UnsupportedOperationException("Not used in tests")
 }
 
@@ -231,4 +234,3 @@ private class FakeGoogleFormService : GoogleFormService {
         calls += count to discordName
     }
 }
-

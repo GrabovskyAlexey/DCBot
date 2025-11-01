@@ -29,7 +29,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMe
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.startPrompt
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.setting.SettingsType.*
 
 @Component
 class SettingsFlow(
@@ -61,7 +60,7 @@ class SettingsFlow(
         val pending = context.state.payload.pendingAction ?: return null
         if (!pending.sendReport) return null
 
-        userService.sendAdminMessage(context.user, message.text)
+        userService.sendAdminMessage(context.user, message.text, message.messageId)
 
         return context.finalizePrompt(
             targetStep = SettingStepKey.SEND_REPORT,
@@ -211,75 +210,26 @@ class SettingsFlow(
         model: SettingsViewModel,
         locale: Locale
     ): List<FlowInlineButton> =
-        listOf(
-            buildButton(getText(model, SIEGE, locale), "NOTIFY_SIEGE", 1),
-            buildButton(getText(model, MINE, locale), "NOTIFY_MINE", 2),
-            buildButton(getText(model, CB_ENABLE, locale), "CB_ENABLE", 3),
-            buildButton(getText(model, QUICK_RESOURCE, locale), "QUICK_RESOURCES", 4),
-            buildButton(
-                i18nService.i18n(
-                    code = "buttons.settings.send_report",
+        buildList {
+            TOGGLE_DEFINITIONS.forEach { definition ->
+                val enabled = definition.isEnabled(model)
+                val text = i18nService.i18n(
+                    code = if (enabled) definition.enabledCode else definition.disabledCode,
                     locale = locale,
-                    default = "\u270D\uFE0F Отправить пожелание/сообщение об ошибке"
-                ),
-                "SEND_REPORT",
-                99
-            )
-        )
-
-    private fun getText(model: SettingsViewModel, type: SettingsType, locale: Locale): String =
-        when (type) {
-            SIEGE -> i18nService.i18n(
-                code = if (model.siegeEnabled) {
-                    "buttons.settings.siege.enabled"
-                } else {
-                    "buttons.settings.siege.disabled"
-                },
-                locale = locale,
-                default = if (model.siegeEnabled) {
-                    "\uD83D\uDCF4 Включить в момент осады"
-                } else {
-                    "\uD83D\uDCF4 Включить за 5 минут до осады"
-                }
-            )
-            MINE -> i18nService.i18n(
-                code = if (model.mineEnabled) {
-                    "buttons.settings.mine.disable"
-                } else {
-                    "buttons.settings.mine.enable"
-                },
-                locale = locale,
-                default = if (model.mineEnabled) {
-                    "\u274C Отключить КШ"
-                } else {
-                    "\u2705 Включить КШ"
-                }
-            )
-            CB_ENABLE -> i18nService.i18n(
-                code = if (model.cbEnabled) {
-                    "buttons.settings.cb.disable"
-                } else {
-                    "buttons.settings.cb.enable"
-                },
-                locale = locale,
-                default = if (model.cbEnabled) {
-                    "\u274C Отключить учет КБ"
-                } else {
-                    "\u2705 Включить учет КБ"
-                }
-            )
-            QUICK_RESOURCE -> i18nService.i18n(
-                code = if (model.quickResourceEnabled) {
-                    "buttons.settings.quick.disable"
-                } else {
-                    "buttons.settings.quick.enable"
-                },
-                locale = locale,
-                default = if (model.quickResourceEnabled) {
-                    "\u274C Отключить быстрый учет"
-                } else {
-                    "\u2705 Включить быстрый учет"
-                }
+                    default = if (enabled) definition.enabledDefault else definition.disabledDefault
+                )
+                add(buildButton(text, definition.payload, definition.row))
+            }
+            add(
+                buildButton(
+                    i18nService.i18n(
+                        code = "buttons.settings.send_report",
+                        locale = locale,
+                        default = "\u270D\uFE0F Отправить пожелание/сообщение об ошибке"
+                    ),
+                    "SEND_REPORT",
+                    99
+                )
             )
         }
 
@@ -293,17 +243,58 @@ class SettingsFlow(
             row = row
         )
 
+    private data class ToggleDefinition(
+        val row: Int,
+        val payload: String,
+        val isEnabled: (SettingsViewModel) -> Boolean,
+        val enabledCode: String,
+        val disabledCode: String,
+        val enabledDefault: String,
+        val disabledDefault: String,
+    )
+
     companion object {
         private const val MAIN_MESSAGE_BINDING = "settings_main"
         private const val PROMPT_MESSAGE_BINDING = "settings_send_report_prompt"
+        private val TOGGLE_DEFINITIONS = listOf(
+            ToggleDefinition(
+                row = 1,
+                payload = "NOTIFY_SIEGE",
+                isEnabled = { it.siegeEnabled },
+                enabledCode = "buttons.settings.siege.enabled",
+                disabledCode = "buttons.settings.siege.disabled",
+                enabledDefault = "\uD83D\uDCF4 Включить в момент осады",
+                disabledDefault = "\uD83D\uDCF4 Включить за 5 минут до осады"
+            ),
+            ToggleDefinition(
+                row = 2,
+                payload = "NOTIFY_MINE",
+                isEnabled = { it.mineEnabled },
+                enabledCode = "buttons.settings.mine.disable",
+                disabledCode = "buttons.settings.mine.enable",
+                enabledDefault = "\u274C Отключить КШ",
+                disabledDefault = "\u2705 Включить КШ"
+            ),
+            ToggleDefinition(
+                row = 3,
+                payload = "CB_ENABLE",
+                isEnabled = { it.cbEnabled },
+                enabledCode = "buttons.settings.cb.disable",
+                disabledCode = "buttons.settings.cb.enable",
+                enabledDefault = "\u274C Отключить учет КБ",
+                disabledDefault = "\u2705 Включить учет КБ"
+            ),
+            ToggleDefinition(
+                row = 4,
+                payload = "QUICK_RESOURCES",
+                isEnabled = { it.quickResourceEnabled },
+                enabledCode = "buttons.settings.quick.disable",
+                disabledCode = "buttons.settings.quick.enable",
+                enabledDefault = "\u274C Отключить быстрый учет",
+                disabledDefault = "\u2705 Включить быстрый учет"
+            )
+        )
     }
-}
-
-enum class SettingsType {
-    SIEGE,
-    MINE,
-    CB_ENABLE,
-    QUICK_RESOURCE
 }
 
 data class SettingsViewModel(

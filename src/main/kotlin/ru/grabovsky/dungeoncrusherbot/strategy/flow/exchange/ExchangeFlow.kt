@@ -35,14 +35,13 @@ class ExchangeFlow(
     override fun start(context: FlowStartContext): FlowResult<ExchangeFlowState> {
         val user = getUserEntity(context.user.id)
         val model = buildOverviewModel(user)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.MAIN.key,
+        return sendMainMessageResult(
+            step = ExchangeFlowStep.MAIN,
             payload = ExchangeFlowState(),
-            actions = listOf(
-                SendMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildMainMessage(model, context.locale)
-                )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.MAIN,
+                model = model,
+                inlineButtons = buildServerButtons(model)
             )
         )
     }
@@ -78,16 +77,15 @@ class ExchangeFlow(
     ): FlowResult<ExchangeFlowState> {
         val user = getUserEntity(context.user.id)
         val model = buildOverviewModel(user)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.MAIN.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.MAIN,
             payload = ExchangeFlowState(),
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildMainMessage(model, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.MAIN,
+                model = model,
+                inlineButtons = buildServerButtons(model)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -99,16 +97,15 @@ class ExchangeFlow(
         val user = getUserEntity(context.user.id)
         val detail = buildDetailModel(user, serverId)
         val payload = ExchangeFlowState(selectedServerId = serverId)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.DETAIL.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.DETAIL,
             payload = payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildDetailMessage(detail, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.DETAIL,
+                model = detail,
+                inlineButtons = buildDetailButtons(context.locale, detail)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -121,16 +118,15 @@ class ExchangeFlow(
         val user = getUserEntity(context.user.id)
         val detail = buildDetailModel(user, serverId)
         val payload = state.copy(pendingRequest = null)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.DETAIL.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.DETAIL,
             payload = payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildDetailMessage(detail, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.DETAIL,
+                model = detail,
+                inlineButtons = buildDetailButtons(context.locale, detail)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
     private fun handleDetailAction(
@@ -156,7 +152,7 @@ class ExchangeFlow(
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState,
         type: ExchangeRequestType
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val serverId = state.selectedServerId ?: return showMain(context, callbackQuery)
         val pending = ExchangeFlowState.PendingRequest(
             type = type,
@@ -169,16 +165,15 @@ class ExchangeFlow(
         val user = getUserEntity(context.user.id)
         val model = buildOverviewModel(user)
         val payload = state.copy(pendingRequest = pending)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.TARGET_SERVER.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.TARGET_SERVER,
             payload = payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildTargetServerMessage(model, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.TARGET_SERVER,
+                model = model,
+                inlineButtons = buildTargetServerButtons(model, context.locale)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -186,7 +181,7 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val state = context.state.payload
         if (argument == "BACK") {
             return showDetail(context, callbackQuery, state)
@@ -203,7 +198,7 @@ class ExchangeFlow(
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState,
         type: ExchangeRequestType
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val serverId = state.selectedServerId ?: return showMain(context, callbackQuery)
         val pending = ExchangeFlowState.PendingRequest(
             type = type,
@@ -214,16 +209,15 @@ class ExchangeFlow(
         )
         val payload = state.copy(pendingRequest = pending)
         val model = PriceDto(resource = resourceLabelForSource(pending.type, context.locale))
-        return FlowResult(
-            stepKey = ExchangeFlowStep.SOURCE_PRICE.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.SOURCE_PRICE,
             payload = payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildSourcePriceMessage(model, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.SOURCE_PRICE,
+                model = model,
+                inlineButtons = buildNumericButtons("SOURCE_PRICE")
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -231,7 +225,7 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val state = context.state.payload
         if (argument == "BACK") {
             return showDetail(context, callbackQuery, state)
@@ -242,16 +236,15 @@ class ExchangeFlow(
         val updated = pending.copy(sourcePrice = price)
         val payload = state.copy(pendingRequest = updated)
         val model = PriceDto(resource = resourceLabelForTarget(updated.type, context.locale))
-        return FlowResult(
-            stepKey = ExchangeFlowStep.TARGET_PRICE.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.TARGET_PRICE,
             payload = payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildTargetPriceMessage(model, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.TARGET_PRICE,
+                model = model,
+                inlineButtons = buildNumericButtons("TARGET_PRICE")
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -259,7 +252,7 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val state = context.state.payload
         if (argument == "BACK") {
             return showDetail(context, callbackQuery, state.copy(pendingRequest = null))
@@ -323,20 +316,19 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val serverId = state.selectedServerId ?: return showMain(context, callbackQuery)
         val user = getUserEntity(context.user.id)
         val detail = buildDetailModel(user, serverId)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.REMOVE.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.REMOVE,
             payload = state.copy(pendingRequest = null),
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildRemoveMessage(detail, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.REMOVE,
+                model = detail,
+                inlineButtons = buildRemoveButtons(detail, context.locale)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -344,7 +336,7 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val state = context.state.payload
         if (argument == "BACK") {
             return showDetail(context, callbackQuery, state)
@@ -377,20 +369,19 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val serverId = state.selectedServerId ?: return showMain(context, callbackQuery)
         val user = getUserEntity(context.user.id)
         val detail = buildSearchModel(user, serverId)
-        return FlowResult(
-            stepKey = ExchangeFlowStep.SEARCH.key,
+        return editMainMessageResult(
+            step = ExchangeFlowStep.SEARCH,
             payload = state.copy(pendingRequest = null),
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildSearchMessage(detail, context.locale)
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+            message = exchangeMessage(
+                step = ExchangeFlowStep.SEARCH,
+                model = detail,
+                inlineButtons = buildSearchButtons(detail, context.locale)
+            ),
+            callbackQueryId = callbackQuery.id
         )
     }
 
@@ -398,7 +389,7 @@ class ExchangeFlow(
         context: FlowCallbackContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
-    ): FlowResult<ExchangeFlowState>? {
+    ): FlowResult<ExchangeFlowState> {
         val state = context.state.payload
         if (argument == "BACK") {
             return showDetail(context, callbackQuery, state)
@@ -408,16 +399,22 @@ class ExchangeFlow(
         val result = runCatching { buildSearchResultModel(requestId) }
         return result.fold(
             onSuccess = { model ->
-                FlowResult(
-                    stepKey = ExchangeFlowStep.SEARCH_RESULT.key,
+                editMainMessageResult(
+                    step = ExchangeFlowStep.SEARCH_RESULT,
                     payload = state,
-                    actions = listOf(
-                        EditMessageAction(
-                            bindingKey = MAIN_MESSAGE_KEY,
-                            message = buildSearchResultMessage(model, context.locale)
-                        ),
-                        AnswerCallbackAction(callbackQuery.id)
-                    )
+                    message = exchangeMessage(
+                        step = ExchangeFlowStep.SEARCH_RESULT,
+                        model = model,
+                        inlineButtons = listOf(
+                            FlowInlineButton(
+                                text = i18nService.i18n("buttons.exchange.back", context.locale, "↩ Назад"),
+                                payload = FlowCallbackPayload(key.value, "SEARCH_RESULT:BACK"),
+                                row = 0,
+                                col = 0
+                            )
+                        )
+                    ),
+                    callbackQueryId = callbackQuery.id
                 )
             },
             onFailure = {
@@ -518,60 +515,43 @@ class ExchangeFlow(
         )
     }
 
-    private fun buildMainMessage(model: ExchangeDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.MAIN,
-        model = model,
-        inlineButtons = buildServerButtons(model)
-    )
 
-    private fun buildDetailMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.DETAIL,
-        model = detail,
-        inlineButtons = buildDetailButtons(locale, detail)
-    )
-
-    private fun buildTargetServerMessage(model: ExchangeDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.TARGET_SERVER,
-        model = model,
-        inlineButtons = buildTargetServerButtons(model, locale)
-    )
-
-    private fun buildSourcePriceMessage(model: PriceDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.SOURCE_PRICE,
-        model = model,
-        inlineButtons = buildNumericButtons("SOURCE_PRICE")
-    )
-
-    private fun buildTargetPriceMessage(model: PriceDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.TARGET_PRICE,
-        model = model,
-        inlineButtons = buildNumericButtons("TARGET_PRICE")
-    )
-
-    private fun buildRemoveMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.REMOVE,
-        model = detail,
-        inlineButtons = buildRemoveButtons(detail, locale)
-    )
-
-    private fun buildSearchMessage(detail: ExchangeDetailDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.SEARCH,
-        model = detail,
-        inlineButtons = buildSearchButtons(detail, locale)
-    )
-
-    private fun buildSearchResultMessage(result: ExchangeResultDto, locale: Locale): FlowMessage = key.buildMessage(
-        step = ExchangeFlowStep.SEARCH_RESULT,
-        model = result,
-        inlineButtons = listOf(
-            FlowInlineButton(
-                text = i18nService.i18n("buttons.exchange.back", locale, "↩ Назад"),
-                payload = FlowCallbackPayload(key.value, "SEARCH_RESULT:BACK"),
-                row = 0,
-                col = 0
+    private fun sendMainMessageResult(step: ExchangeFlowStep, payload: ExchangeFlowState, message: FlowMessage): FlowResult<ExchangeFlowState> =
+        FlowResult(
+            stepKey = step.key,
+            payload = payload,
+            actions = listOf(
+                SendMessageAction(
+                    bindingKey = MAIN_MESSAGE_KEY,
+                    message = message
+                )
             )
         )
-    )
+
+    private fun editMainMessageResult(
+        step: ExchangeFlowStep,
+        payload: ExchangeFlowState,
+        message: FlowMessage,
+        callbackQueryId: String
+    ): FlowResult<ExchangeFlowState> =
+        FlowResult(
+            stepKey = step.key,
+            payload = payload,
+            actions = listOf(
+                EditMessageAction(
+                    bindingKey = MAIN_MESSAGE_KEY,
+                    message = message
+                ),
+                AnswerCallbackAction(callbackQueryId)
+            )
+        )
+
+    private fun exchangeMessage(
+        step: ExchangeFlowStep,
+        model: Any?,
+        inlineButtons: List<FlowInlineButton> = emptyList()
+    ): FlowMessage = key.buildMessage(step = step, model = model, inlineButtons = inlineButtons)
+
     private fun buildServerButtons(model: ExchangeDto): List<FlowInlineButton> {
         var row = 0
         var col = 0
@@ -793,7 +773,7 @@ class ExchangeFlow(
 
     private fun escapeMarkdown(source: String?): String? {
         source ?: return null
-        val regex = Regex("""([_*\\[\\]()~`>#+\-=|{}!\\\\])""")
+        val regex = Regex("""([_*\[\]()~`>#+\-=|{}!])""")
         return source.replace(regex, """\\\$1""")
     }
 

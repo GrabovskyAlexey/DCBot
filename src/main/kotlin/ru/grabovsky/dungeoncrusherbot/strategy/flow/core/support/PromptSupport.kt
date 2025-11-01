@@ -14,7 +14,6 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import java.util.Locale
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 
 /**
@@ -30,7 +29,7 @@ object PromptSupport {
     fun nextBinding(prefix: String): String = "${prefix}_${UUID.randomUUID()}"
 }
 
-fun FlowKey.cancelPromptButton(locale: Locale, text: String): FlowInlineButton =
+fun FlowKey.cancelPromptButton(text: String): FlowInlineButton =
     FlowInlineButton(
         text = text,
         payload = FlowCallbackPayload(value, "PROMPT:CANCEL"),
@@ -54,26 +53,22 @@ fun <S : PromptState> FlowCallbackContext<S>.startPrompt(
     updateState: S.() -> Unit = {},
     appendActions: ActionAppender = {},
     buildMessage: (binding: String) -> FlowMessage,
-): FlowResult<S> {
-    val state = this.state.payload
-    val binding = PromptSupport.nextBinding(bindingPrefix)
-    state.promptBindings.add(binding)
-    state.updateState()
+): FlowResult<S> =
+    withPromptBinding(bindingPrefix, updateState) { state, binding ->
+        val actions = mutableListOf<FlowAction>()
+        actions += SendMessageAction(
+            bindingKey = binding,
+            message = buildMessage(binding)
+        )
+        actions.appendActions()
+        actions += AnswerCallbackAction(callbackQuery.id)
 
-    val actions = mutableListOf<FlowAction>()
-    actions += SendMessageAction(
-        bindingKey = binding,
-        message = buildMessage(binding)
-    )
-    actions.appendActions()
-    actions += AnswerCallbackAction(callbackQuery.id)
-
-    return FlowResult(
-        stepKey = targetStep.key,
-        payload = state,
-        actions = actions
-    )
-}
+        FlowResult(
+            stepKey = targetStep.key,
+            payload = state,
+            actions = actions
+        )
+    }
 
 fun <S : PromptState> FlowMessageContext<S>.retryPrompt(
     targetStep: FlowStep,
@@ -82,28 +77,24 @@ fun <S : PromptState> FlowMessageContext<S>.retryPrompt(
     updateState: S.() -> Unit = {},
     appendActions: ActionAppender = {},
     buildMessage: (binding: String) -> FlowMessage,
-): FlowResult<S> {
-    val state = this.state.payload
-    val binding = PromptSupport.nextBinding(bindingPrefix)
-    state.promptBindings.add(binding)
-    state.updateState()
+): FlowResult<S> =
+    withPromptBinding(bindingPrefix, updateState) { state, binding ->
+        val actions = mutableListOf<FlowAction>()
+        actions += SendMessageAction(
+            bindingKey = binding,
+            message = buildMessage(binding)
+        )
+        if (userMessageId != null) {
+            actions += DeleteMessageIdAction(userMessageId)
+        }
+        actions.appendActions()
 
-    val actions = mutableListOf<FlowAction>()
-    actions += SendMessageAction(
-        bindingKey = binding,
-        message = buildMessage(binding)
-    )
-    if (userMessageId != null) {
-        actions += DeleteMessageIdAction(userMessageId)
+        FlowResult(
+            stepKey = targetStep.key,
+            payload = state,
+            actions = actions
+        )
     }
-    actions.appendActions()
-
-    return FlowResult(
-        stepKey = targetStep.key,
-        payload = state,
-        actions = actions
-    )
-}
 
 fun <S : PromptState> FlowMessageContext<S>.finalizePrompt(
     targetStep: FlowStep,
@@ -143,4 +134,28 @@ fun <S : PromptState> FlowCallbackContext<S>.cancelPrompt(
         payload = state,
         actions = actions
     )
+}
+
+private inline fun <S : PromptState> FlowCallbackContext<S>.withPromptBinding(
+    prefix: String,
+    updateState: S.() -> Unit,
+    block: (S, String) -> FlowResult<S>
+): FlowResult<S> {
+    val state = this.state.payload
+    val binding = PromptSupport.nextBinding(prefix)
+    state.promptBindings.add(binding)
+    state.updateState()
+    return block(state, binding)
+}
+
+private inline fun <S : PromptState> FlowMessageContext<S>.withPromptBinding(
+    prefix: String,
+    updateState: S.() -> Unit,
+    block: (S, String) -> FlowResult<S>
+): FlowResult<S> {
+    val state = this.state.payload
+    val binding = PromptSupport.nextBinding(prefix)
+    state.promptBindings.add(binding)
+    state.updateState()
+    return block(state, binding)
 }

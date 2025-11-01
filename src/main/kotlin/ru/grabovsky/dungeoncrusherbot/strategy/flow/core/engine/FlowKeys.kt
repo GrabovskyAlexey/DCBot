@@ -9,5 +9,6 @@ object FlowKeys {
     val MAZE = FlowKey("MAZE")
     val EXCHANGE = FlowKey("EXCHANGE")
     val ADMIN_MESSAGE = FlowKey("ADMIN_MESSAGE")
+    val ADMIN_REPLY = FlowKey("ADMIN_REPLY")
     val HELP = FlowKey("HELP")
 }

@@ -47,3 +47,7 @@
       file: liquibase/changelog/23.cleanup_verification.sql
   - include:
       file: liquibase/changelog/24.drop_user_state_table.sql
+  - include:
+      file: liquibase/changelog/25.add_admin_message_source_id.sql
+  - include:
+      file: liquibase/changelog/26.cleanup_unused_resources.sql
