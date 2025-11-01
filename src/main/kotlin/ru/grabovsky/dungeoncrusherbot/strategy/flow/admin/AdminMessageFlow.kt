@@ -1,27 +1,20 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.admin
 
-import java.util.Locale
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayload
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPromptButton
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMessages
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.retryPrompt
@@ -33,6 +26,7 @@ private const val PROMPT_MESSAGE_KEY = "admin_message_prompt"
 class AdminMessageFlow(
     private val i18nService: I18nService,
     private val userService: UserService,
+    private val viewBuilder: AdminMessageViewBuilder,
 ) : FlowHandler<AdminMessageFlowState> {
 
     override val key: FlowKey = FlowKeys.ADMIN_MESSAGE
@@ -65,7 +59,7 @@ class AdminMessageFlow(
                 userMessageId = message.messageId,
                 appendActions = { addAll(state.cleanupPromptMessages()) }
             ) {
-                buildReplyPromptMessage(targetMessage, context.locale, invalid = true)
+                viewBuilder.buildReplyPromptMessage(targetMessage, context.locale, invalid = true)
             }
         }
 
@@ -86,7 +80,7 @@ class AdminMessageFlow(
         ) {
             this += EditMessageAction(
                 bindingKey = pending.bindingKey,
-                message = buildInboxMessage(
+                message = viewBuilder.buildInboxMessage(
                     dto = pending.dto,
                     messageId = pending.messageId,
                     locale = context.locale,
@@ -95,7 +89,7 @@ class AdminMessageFlow(
             )
             this += SendMessageAction(
                 bindingKey = null,
-                message = buildInfoMessage(confirmation)
+                message = viewBuilder.buildInfoMessage(confirmation)
             )
         }
     }
@@ -134,7 +128,7 @@ class AdminMessageFlow(
                 },
                 appendActions = { addAll(cleanup) }
             ) {
-                buildReplyPromptMessage(message, context.locale, invalid = false)
+                viewBuilder.buildReplyPromptMessage(message, context.locale, invalid = false)
             }
         } ?: context.notFoundResult(callbackQuery)
 
@@ -158,7 +152,7 @@ class AdminMessageFlow(
 
             actions += EditMessageAction(
                 bindingKey = message.bindingKey,
-                message = buildInboxMessage(
+                message = viewBuilder.buildInboxMessage(
                     dto = message.dto,
                     messageId = message.id,
                     locale = context.locale,
@@ -167,7 +161,7 @@ class AdminMessageFlow(
             )
             actions += SendMessageAction(
                 bindingKey = null,
-                message = buildInfoMessage(infoText)
+                message = viewBuilder.buildInfoMessage(infoText)
             )
             actions += AnswerCallbackAction(callbackQuery.id)
 
@@ -177,72 +171,6 @@ class AdminMessageFlow(
                 actions = actions
             )
         } ?: context.notFoundResult(callbackQuery)
-
-    fun buildInboxMessage(
-        dto: AdminMessageDto,
-        messageId: Long,
-        locale: Locale,
-        includeActions: Boolean = true,
-    ): FlowMessage {
-        val buttons = if (includeActions) {
-            listOf(
-                FlowInlineButton(
-                    text = i18nService.i18n(
-                        "flow.admin.message.reply_button",
-                        locale,
-                        "✉️ Ответить"
-                    ),
-                    payload = FlowCallbackPayload(key.value, "REPLY:$messageId"),
-                    row = 0,
-                    col = 0
-                ),
-                FlowInlineButton(
-                    text = i18nService.i18n(
-                        "flow.admin.message.close_button",
-                        locale,
-                        "✅ Закрыть"
-                    ),
-                    payload = FlowCallbackPayload(key.value, "CLOSE:$messageId"),
-                    row = 0,
-                    col = 1
-                )
-            )
-        } else {
-            emptyList()
-        }
-
-        return key.buildMessage(
-            step = AdminMessageStep.MAIN,
-            model = dto,
-            inlineButtons = buttons
-        )
-    }
-
-    private fun buildReplyPromptMessage(
-        message: AdminPendingMessage,
-        locale: Locale,
-        invalid: Boolean
-    ): FlowMessage = key.buildMessage(
-        step = AdminMessageStep.PROMPT_REPLY,
-        model = AdminReplyPromptModel(
-            firstName = message.dto.firstName,
-            userName = message.dto.userName,
-            userId = message.dto.userId,
-            invalid = invalid
-        ),
-        inlineButtons = listOf(
-            key.cancelPromptButton(
-                text = i18nService.i18n("flow.button.cancel", locale, "❌Отмена")
-            )
-        )
-    )
-
-    private fun buildInfoMessage(text: String): FlowMessage =
-        key.buildMessage(
-            step = AdminMessageStep.INFO,
-            model = AdminMessageInfoModel(text),
-            inlineButtons = emptyList()
-        )
 
     private fun parseCallback(data: String): Pair<String, String?> =
         if (data.contains(':')) {

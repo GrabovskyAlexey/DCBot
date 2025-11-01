@@ -10,10 +10,10 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminMessageDto
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.AdminReplyDto
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageFlow
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageFlowState
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageStep
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminPendingMessage
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageViewBuilder
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateSnapshot
@@ -30,7 +30,7 @@ class UserServiceImpl(
     private val adminMessageRepository: AdminMessageRepository,
     private val flowStateService: FlowStateService,
     private val payloadSerializer: FlowPayloadSerializer,
-    private val adminMessageFlow: AdminMessageFlow,
+    private val adminMessageViewBuilder: AdminMessageViewBuilder,
     private val telegramFlowActionExecutor: FlowActionExecutor
 ) : UserService {
     companion object {
@@ -171,7 +171,7 @@ class UserServiceImpl(
                     actions = listOf(
                         SendMessageAction(
                             bindingKey = bindingKey,
-                            message = adminMessageFlow.buildInboxMessage(dto, entity.id!!, locale)
+                            message = adminMessageViewBuilder.buildInboxMessage(dto, entity.id!!, locale)
                         )
                     )
                 )
