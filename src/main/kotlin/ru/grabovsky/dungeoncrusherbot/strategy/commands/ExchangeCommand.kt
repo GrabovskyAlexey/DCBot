@@ -9,7 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class ExchangeCommand(
     userService: UserService,
     flowEngine: FlowEngine,
-) : AbstractFlowCommand(
+) : AbstractCommand(
     command = Command.EXCHANGE,
     flowKey = FlowKeys.EXCHANGE,
     userService = userService,

@@ -64,9 +64,7 @@ class TelegramBotServiceImpl(
             }
         }.onFailure { error ->
             logger.warn { "Notification to chatId=$chatId failed: ${error.message}" }
-            if (error is TelegramApiRequestException && error.errorCode == 403) {
-                return false
-            }
+            return !(error is TelegramApiRequestException && error.errorCode == 403)
         }.isSuccess
     }
 

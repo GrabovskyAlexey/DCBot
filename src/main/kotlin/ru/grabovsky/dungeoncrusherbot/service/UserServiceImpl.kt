@@ -204,7 +204,7 @@ class UserServiceImpl(
                         SetReactionAction(
                             chatId = sourceChatId,
                             messageId = sourceMessageId,
-                            emoji = "✅"
+                            emoji = "\uD83D\uDC4D"
                         )
                     )
                 )

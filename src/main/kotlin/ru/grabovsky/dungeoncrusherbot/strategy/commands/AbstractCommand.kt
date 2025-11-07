@@ -10,7 +10,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 
-abstract class AbstractFlowCommand(
+abstract class AbstractCommand(
     command: Command,
     protected val flowKey: FlowKey,
     protected val userService: UserService,

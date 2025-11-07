@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class ResourcesCommand(
     userService: UserService,
     private val flowEngine: FlowEngine,
-) : AbstractFlowCommand(Command.RESOURCES, FlowKeys.RESOURCES, userService, flowEngine)  {
+) : AbstractCommand(Command.RESOURCES, FlowKeys.RESOURCES, userService, flowEngine)  {
 
     override fun prepare(user: TgUser, chat: Chat, arguments: Array<out String>) {
         super.prepare(user, chat, arguments)

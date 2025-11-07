@@ -9,4 +9,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class SettingsCommand(
     userService: UserService,
     flowEngine: FlowEngine
-): AbstractFlowCommand(Command.SETTINGS, FlowKeys.SETTINGS, userService, flowEngine)
+): AbstractCommand(Command.SETTINGS, FlowKeys.SETTINGS, userService, flowEngine)

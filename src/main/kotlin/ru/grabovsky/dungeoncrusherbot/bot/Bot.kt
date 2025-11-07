@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.config.BotConfig
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
-import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractFlowCommand
+import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractCommand
 
 
 @Component
@@ -20,7 +20,7 @@ class Bot(
     private val config: BotConfig,
     private val client: TelegramClient,
     private val receiverService: ReceiverService,
-    commands: List<AbstractFlowCommand>
+    commands: List<AbstractCommand>
 ): SpringLongPollingBot, CommandLongPollingTelegramBot(client, true, { config.name }) {
 
     init {

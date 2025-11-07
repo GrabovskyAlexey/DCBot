@@ -9,4 +9,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class SubscribeCommand(
     userService: UserService,
     flowEngine: FlowEngine,
-) : AbstractFlowCommand(Command.SUBSCRIBE, FlowKeys.SUBSCRIBE, userService, flowEngine)
+) : AbstractCommand(Command.SUBSCRIBE, FlowKeys.SUBSCRIBE, userService, flowEngine)

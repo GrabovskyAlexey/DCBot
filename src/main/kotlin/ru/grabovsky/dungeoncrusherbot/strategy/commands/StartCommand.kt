@@ -9,4 +9,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class StartCommand(
     userService: UserService,
     flowEngine: FlowEngine
-) : AbstractFlowCommand(Command.START, FlowKeys.START, userService, flowEngine)
+) : AbstractCommand(Command.START, FlowKeys.START, userService, flowEngine)

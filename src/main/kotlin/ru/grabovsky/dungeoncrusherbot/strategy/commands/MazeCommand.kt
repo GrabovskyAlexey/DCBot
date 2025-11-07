@@ -9,4 +9,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class MazeCommand(
     userService: UserService,
     flowEngine: FlowEngine
-) : AbstractFlowCommand(Command.MAZE, FlowKeys.MAZE, userService,  flowEngine)
+) : AbstractCommand(Command.MAZE, FlowKeys.MAZE, userService,  flowEngine)

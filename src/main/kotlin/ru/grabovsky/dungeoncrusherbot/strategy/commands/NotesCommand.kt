@@ -9,5 +9,5 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class NotesCommand(
     userService: UserService,
     flowEngine: FlowEngine
-) : AbstractFlowCommand(Command.NOTES, FlowKeys.NOTES, userService, flowEngine)
+) : AbstractCommand(Command.NOTES, FlowKeys.NOTES, userService, flowEngine)
 

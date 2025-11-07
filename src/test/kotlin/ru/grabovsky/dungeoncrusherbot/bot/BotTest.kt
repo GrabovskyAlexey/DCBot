@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.config.BotConfig
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractFlowCommand
+import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractCommand
 import ru.grabovsky.dungeoncrusherbot.strategy.commands.Command
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
@@ -26,8 +26,8 @@ class BotTest : ShouldSpec({
     val userService = mockk<UserService>(relaxed = true)
     val flowEngine = mockk<FlowEngine>(relaxed = true)
 
-    val firstCommand = object : AbstractFlowCommand(Command.HELP, FlowKeys.HELP, userService, flowEngine) {}
-    val secondCommand = object : AbstractFlowCommand(Command.START, FlowKeys.START, userService, flowEngine) {}
+    val firstCommand = object : AbstractCommand(Command.HELP, FlowKeys.HELP, userService, flowEngine) {}
+    val secondCommand = object : AbstractCommand(Command.START, FlowKeys.START, userService, flowEngine) {}
 
     should("set bot commands sorted by order and expose token") {
         val commandSlot = slot<SetMyCommands>()

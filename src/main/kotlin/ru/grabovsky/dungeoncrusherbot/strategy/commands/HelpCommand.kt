@@ -9,4 +9,4 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 class HelpCommand(
     userService: UserService,
     flowEngine: FlowEngine
-) : AbstractFlowCommand(Command.HELP, FlowKeys.HELP, userService, flowEngine)
+) : AbstractCommand(Command.HELP, FlowKeys.HELP, userService, flowEngine)

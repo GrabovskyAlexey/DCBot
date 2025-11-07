@@ -1,6 +1,7 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.maze
 
 import org.springframework.stereotype.Component
+import ru.grabovsky.dungeoncrusherbot.entity.Direction
 import ru.grabovsky.dungeoncrusherbot.entity.Location
 import ru.grabovsky.dungeoncrusherbot.entity.Maze
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
@@ -17,7 +18,7 @@ class MazeViewService(
     fun buildMainView(user: TgUser, locale: Locale, showHistory: Boolean): MazeMainView {
         val entity = userService.getUser(user.id)
         val maze = entity?.maze
-        val location = maze?.currentLocation
+        val location = maze?.currentLocation ?: Location(0, 0, Direction.CENTER)
         val sameSteps = maze?.sameSteps ?: false
         val history = if (showHistory) {
             maze?.steps.orEmpty().takeLast(HISTORY_LIMIT).map { it.toString() }
