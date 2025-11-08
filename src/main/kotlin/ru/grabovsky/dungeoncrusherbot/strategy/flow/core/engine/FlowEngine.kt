@@ -27,7 +27,7 @@ class FlowEngine(
     fun onMessage(flowKey: FlowKey, user: User, locale: Locale, message: Message): Boolean {
         val handler = handler<Any>(flowKey) ?: return false
         val snapshot = stateService.load(user.id, flowKey) ?: return false
-        val context = FlowMessageContext(
+        val context = FlowContext(
             user = user,
             locale = locale,
             state = snapshot.toStateHolder(handler),
@@ -40,7 +40,7 @@ class FlowEngine(
     fun onCallback(flowKey: FlowKey, user: User, locale: Locale, callbackQuery: CallbackQuery, data: String): Boolean {
         val handler = handler<Any>(flowKey) ?: return false
         val snapshot = stateService.load(user.id, flowKey) ?: return false
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = user,
             locale = locale,
             state = snapshot.toStateHolder(handler),

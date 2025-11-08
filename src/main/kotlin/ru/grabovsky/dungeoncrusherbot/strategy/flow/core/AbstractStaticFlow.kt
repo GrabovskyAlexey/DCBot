@@ -42,10 +42,10 @@ abstract class AbstractStaticFlow(
         )
     }
 
-    override fun onMessage(context: FlowMessageContext<Unit>, message: Message): FlowResult<Unit>? = null
+    override fun onMessage(context: FlowContext<Unit>, message: Message): FlowResult<Unit>? = null
 
     override fun onCallback(
-        context: FlowCallbackContext<Unit>,
+        context: FlowContext<Unit>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<Unit>? = null

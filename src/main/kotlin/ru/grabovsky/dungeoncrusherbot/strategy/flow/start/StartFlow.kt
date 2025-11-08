@@ -2,7 +2,6 @@ package ru.grabovsky.dungeoncrusherbot.strategy.flow.start
 
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.AbstractStaticFlow
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 

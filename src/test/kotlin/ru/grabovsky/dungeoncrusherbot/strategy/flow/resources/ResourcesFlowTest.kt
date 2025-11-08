@@ -8,8 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.*
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStateHolder
 import java.util.*
@@ -94,7 +93,7 @@ class ResourcesFlowTest : ShouldSpec({
     }
 
     should("show server details on callback") {
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -113,7 +112,7 @@ class ResourcesFlowTest : ShouldSpec({
     }
 
     should("send prompt and handle amount input") {
-        val promptContext = FlowCallbackContext(
+        val promptContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -127,7 +126,7 @@ class ResourcesFlowTest : ShouldSpec({
         val promptResult = flow.onCallback(promptContext, promptCallback, "ACTION:PROMPT_ADD_VOID")
         promptResult!!.payload.resourcesPendingAction shouldBe ResourcesPendingAction.Amount(AmountActionType.ADD_VOID, 5)
 
-        val messageContext = FlowMessageContext(
+        val messageContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(

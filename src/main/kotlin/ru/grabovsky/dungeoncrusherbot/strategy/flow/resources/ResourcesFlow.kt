@@ -43,7 +43,7 @@ class ResourcesFlow(
         ))
     }
 
-    override fun onMessage(context: FlowMessageContext<ResourcesFlowState>, message: Message): FlowResult<ResourcesFlowState>? {
+    override fun onMessage(context: FlowContext<ResourcesFlowState>, message: Message): FlowResult<ResourcesFlowState>? {
         val pending = context.state.payload.resourcesPendingAction ?: return null
         return when (pending) {
             is Amount -> handleAmountInput(context, message, pending)
@@ -54,7 +54,7 @@ class ResourcesFlow(
     }
 
     override fun onCallback(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<ResourcesFlowState>? {
@@ -70,7 +70,7 @@ class ResourcesFlow(
     }
 
     private fun showMain(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
         val overview = viewService.buildOverview(context.user, context.locale)
@@ -84,7 +84,7 @@ class ResourcesFlow(
     }
 
     private fun showServer(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
@@ -100,7 +100,7 @@ class ResourcesFlow(
     }
 
     private fun handleAction(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         state: ResourcesFlowState,
         actionName: String,
         callbackQuery: CallbackQuery
@@ -138,7 +138,7 @@ class ResourcesFlow(
     }
 
     private fun enterAmountPrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         type: AmountActionType,
         callbackQuery: CallbackQuery
@@ -155,7 +155,7 @@ class ResourcesFlow(
     }
 
     private fun enterExchangePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
@@ -170,7 +170,7 @@ class ResourcesFlow(
     }
 
     private fun enterAddNotePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
@@ -185,7 +185,7 @@ class ResourcesFlow(
     }
 
     private fun enterRemoveNotePrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
@@ -220,7 +220,7 @@ class ResourcesFlow(
         }
     }
 
-    private fun FlowCallbackContext<ResourcesFlowState>.startServerPrompt(
+    private fun FlowContext<ResourcesFlowState>.startServerPrompt(
         serverId: Int,
         callbackQuery: CallbackQuery,
         prompt: ResourcesPromptModel,
@@ -244,7 +244,7 @@ class ResourcesFlow(
     }
 
     private fun handlePromptCallback(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         argument: String?,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? =
@@ -254,7 +254,7 @@ class ResourcesFlow(
         }
 
     private fun handleAmountInput(
-        context: FlowMessageContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         message: Message,
         pending: Amount
     ): FlowResult<ResourcesFlowState> {
@@ -271,7 +271,7 @@ class ResourcesFlow(
     }
 
     private fun handleExchangeInput(
-        context: FlowMessageContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         message: Message,
         pending: Exchange
     ): FlowResult<ResourcesFlowState> {
@@ -286,7 +286,7 @@ class ResourcesFlow(
     }
 
     private fun handleAddNoteInput(
-        context: FlowMessageContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         message: Message,
         pending: AddNote
     ): FlowResult<ResourcesFlowState> {
@@ -301,7 +301,7 @@ class ResourcesFlow(
     }
 
     private fun handleRemoveNoteInput(
-        context: FlowMessageContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         message: Message,
         pending: RemoveNote
     ): FlowResult<ResourcesFlowState> {
@@ -317,7 +317,7 @@ class ResourcesFlow(
         return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
     private fun cancelPrompt(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState> {
         val targetStep = if (context.state.payload.selectedServerId != null) {
@@ -333,7 +333,7 @@ class ResourcesFlow(
     }
 
     private fun rebuildServerAfterPrompt(
-        context: FlowMessageContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         userMessageId: Int?
     ): FlowResult<ResourcesFlowState> =
@@ -370,7 +370,7 @@ class ResourcesFlow(
         inlineButtons = detail.buttons.inlineButtons("ACTION")
     )
 
-    private fun FlowMessageContext<ResourcesFlowState>.retryServerPrompt(
+    private fun FlowContext<ResourcesFlowState>.retryServerPrompt(
         step: ResourcesStep,
         prompt: ResourcesPromptModel,
         userMessageId: Int
@@ -388,7 +388,7 @@ class ResourcesFlow(
     }
 
     private fun showHistory(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         state: ResourcesFlowState,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? {
@@ -398,7 +398,7 @@ class ResourcesFlow(
     }
 
     private fun result(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         serverId: Int,
         state: ResourcesFlowState,
         callbackQuery: CallbackQuery
@@ -423,7 +423,7 @@ class ResourcesFlow(
     }
 
     private fun quickAmountOperation(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         state: ResourcesFlowState,
         serverId: Int,
         adjustType: AdjustType,
@@ -479,7 +479,7 @@ class ResourcesFlow(
     }
 
     private fun applyOperation(
-        context: FlowCallbackContext<ResourcesFlowState>,
+        context: FlowContext<ResourcesFlowState>,
         state: ResourcesFlowState,
         callbackQuery: CallbackQuery,
         block: () -> Unit

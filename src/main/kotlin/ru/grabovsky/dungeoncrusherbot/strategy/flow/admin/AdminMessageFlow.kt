@@ -40,7 +40,7 @@ class AdminMessageFlow(
         )
 
     override fun onMessage(
-        context: FlowMessageContext<AdminMessageFlowState>,
+        context: FlowContext<AdminMessageFlowState>,
         message: Message
     ): FlowResult<AdminMessageFlowState>? {
         val text = message.text?.trim().orEmpty()
@@ -91,7 +91,7 @@ class AdminMessageFlow(
     }
 
     override fun onCallback(
-        context: FlowCallbackContext<AdminMessageFlowState>,
+        context: FlowContext<AdminMessageFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<AdminMessageFlowState>? {
@@ -104,7 +104,7 @@ class AdminMessageFlow(
     }
 
     private fun handleReply(
-        context: FlowCallbackContext<AdminMessageFlowState>,
+        context: FlowContext<AdminMessageFlowState>,
         callbackQuery: CallbackQuery,
         messageId: Long,
     ): FlowResult<AdminMessageFlowState> =
@@ -129,7 +129,7 @@ class AdminMessageFlow(
         } ?: context.notFoundResult(callbackQuery)
 
     private fun handleClose(
-        context: FlowCallbackContext<AdminMessageFlowState>,
+        context: FlowContext<AdminMessageFlowState>,
         callbackQuery: CallbackQuery,
         messageId: Long,
     ): FlowResult<AdminMessageFlowState> =
@@ -176,7 +176,7 @@ class AdminMessageFlow(
             data to null
         }
 
-    private fun FlowCallbackContext<AdminMessageFlowState>.withMessage(
+    private fun FlowContext<AdminMessageFlowState>.withMessage(
         messageId: Long,
         block: (AdminMessageFlowState, AdminPendingMessage) -> FlowResult<AdminMessageFlowState>?
     ): FlowResult<AdminMessageFlowState>? {
@@ -185,7 +185,7 @@ class AdminMessageFlow(
         return block(flowState, message)
     }
 
-    private fun FlowCallbackContext<AdminMessageFlowState>.notFoundResult(
+    private fun FlowContext<AdminMessageFlowState>.notFoundResult(
         callbackQuery: CallbackQuery
     ): FlowResult<AdminMessageFlowState> =
         FlowResult(

@@ -40,7 +40,7 @@ class NotesFlow(
         )
     }
 
-    override fun onMessage(context: FlowMessageContext<NotesFlowState>, message: Message): FlowResult<NotesFlowState>? {
+    override fun onMessage(context: FlowContext<NotesFlowState>, message: Message): FlowResult<NotesFlowState>? {
         return when (context.state.payload.pendingAction) {
             NotesPendingAction.Add -> handleAddInput(context, message)
             NotesPendingAction.Remove -> handleRemoveInput(context, message)
@@ -49,7 +49,7 @@ class NotesFlow(
     }
 
     override fun onCallback(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<NotesFlowState>? {
@@ -62,7 +62,7 @@ class NotesFlow(
     }
 
     private fun handleAction(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery,
         action: String
     ): FlowResult<NotesFlowState>? =
@@ -74,7 +74,7 @@ class NotesFlow(
         }
 
     private fun handlePromptCallback(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery,
         argument: String?
     ): FlowResult<NotesFlowState>? =
@@ -84,7 +84,7 @@ class NotesFlow(
         }
 
     private fun handleAddInput(
-        context: FlowMessageContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         message: Message
     ): FlowResult<NotesFlowState> {
         val value = message.text?.trim().orEmpty()
@@ -99,7 +99,7 @@ class NotesFlow(
     }
 
     private fun handleRemoveInput(
-        context: FlowMessageContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         message: Message
     ): FlowResult<NotesFlowState> {
         val index = message.text?.toIntOrNull()
@@ -116,7 +116,7 @@ class NotesFlow(
     }
 
     private fun enterAddPrompt(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState> {
         val prompt = promptBuilder.addPrompt(context.locale)
@@ -128,7 +128,7 @@ class NotesFlow(
     }
 
     private fun enterRemovePrompt(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState>? {
         val user = userService.getUser(context.user.id)
@@ -155,7 +155,7 @@ class NotesFlow(
     }
 
     private fun clearNotes(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState> {
         userService.clearNotes(context.user)
@@ -174,7 +174,7 @@ class NotesFlow(
     }
 
     private fun cancelPrompt(
-        context: FlowCallbackContext<NotesFlowState>,
+        context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<NotesFlowState> =
         context.cancelPrompt(
@@ -214,7 +214,7 @@ class NotesFlow(
             )
         }
 
-    private fun FlowMessageContext<NotesFlowState>.retryNotesPrompt(
+    private fun FlowContext<NotesFlowState>.retryNotesPrompt(
         prompt: NotesPromptModel,
         message: Message
     ): FlowResult<NotesFlowState> =
@@ -227,7 +227,7 @@ class NotesFlow(
             buildPromptMessage(prompt, locale)
         }
 
-    private fun FlowMessageContext<NotesFlowState>.finalizeNotesPrompt(
+    private fun FlowContext<NotesFlowState>.finalizeNotesPrompt(
         userMessageId: Int?
     ): FlowResult<NotesFlowState> =
         finalizePrompt(
@@ -242,7 +242,7 @@ class NotesFlow(
             )
         }
 
-    private fun FlowCallbackContext<NotesFlowState>.startNotesPrompt(
+    private fun FlowContext<NotesFlowState>.startNotesPrompt(
         callbackQuery: CallbackQuery,
         pending: NotesPendingAction,
         prompt: NotesPromptModel

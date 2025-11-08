@@ -49,12 +49,12 @@ class ExchangeFlow(
     }
 
     override fun onMessage(
-        context: FlowMessageContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         message: TgMessage
     ): FlowResult<ExchangeFlowState>? = null
 
     override fun onCallback(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<ExchangeFlowState>? {
@@ -74,7 +74,7 @@ class ExchangeFlow(
     }
 
     private fun showMain(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<ExchangeFlowState> {
         val user = getUserEntity(context.user.id)
@@ -92,7 +92,7 @@ class ExchangeFlow(
     }
 
     private fun openDetail(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         serverId: Int
     ): FlowResult<ExchangeFlowState> {
@@ -112,7 +112,7 @@ class ExchangeFlow(
     }
 
     private fun showDetail(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
     ): FlowResult<ExchangeFlowState> {
@@ -132,7 +132,7 @@ class ExchangeFlow(
         )
     }
     private fun handleDetailAction(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         action: String
     ): FlowResult<ExchangeFlowState>? {
@@ -150,7 +150,7 @@ class ExchangeFlow(
     }
 
     private fun enterTargetServer(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState,
         type: ExchangeRequestType
@@ -180,7 +180,7 @@ class ExchangeFlow(
     }
 
     private fun handleTargetServer(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState> {
@@ -196,7 +196,7 @@ class ExchangeFlow(
     }
 
     private fun enterSourcePrice(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState,
         type: ExchangeRequestType
@@ -224,7 +224,7 @@ class ExchangeFlow(
     }
 
     private fun handleSourcePrice(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState> {
@@ -251,7 +251,7 @@ class ExchangeFlow(
     }
 
     private fun handleTargetPrice(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState> {
@@ -267,7 +267,7 @@ class ExchangeFlow(
     }
 
     private fun finalizeRequest(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
     ): FlowResult<ExchangeFlowState> {
@@ -315,7 +315,7 @@ class ExchangeFlow(
     }
 
     private fun enterRemove(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
     ): FlowResult<ExchangeFlowState> {
@@ -335,7 +335,7 @@ class ExchangeFlow(
     }
 
     private fun handleRemove(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState> {
@@ -368,7 +368,7 @@ class ExchangeFlow(
         return showDetail(context, callbackQuery, state)
     }
     private fun enterSearch(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         state: ExchangeFlowState
     ): FlowResult<ExchangeFlowState> {
@@ -388,7 +388,7 @@ class ExchangeFlow(
     }
 
     private fun handleSearch(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState> {
@@ -441,7 +441,7 @@ class ExchangeFlow(
     }
 
     private fun handleSearchResult(
-        context: FlowCallbackContext<ExchangeFlowState>,
+        context: FlowContext<ExchangeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String
     ): FlowResult<ExchangeFlowState>? {

@@ -11,9 +11,9 @@ interface FlowHandler<TPayload : Any> {
 
     fun start(context: FlowStartContext): FlowResult<TPayload>
 
-    fun onMessage(context: FlowMessageContext<TPayload>, message: Message): FlowResult<TPayload>?
+    fun onMessage(context: FlowContext<TPayload>, message: Message): FlowResult<TPayload>?
 
-    fun onCallback(context: FlowCallbackContext<TPayload>, callbackQuery: CallbackQuery, data: String): FlowResult<TPayload>?
+    fun onCallback(context: FlowContext<TPayload>, callbackQuery: CallbackQuery, data: String): FlowResult<TPayload>?
 }
 
 data class FlowStartContext(
@@ -27,13 +27,7 @@ data class FlowStateHolder<TPayload : Any>(
     val messageBindings: Map<String, Int>,
 )
 
-data class FlowMessageContext<TPayload : Any>(
-    val user: User,
-    val locale: Locale,
-    val state: FlowStateHolder<TPayload>,
-)
-
-data class FlowCallbackContext<TPayload : Any>(
+data class FlowContext<TPayload : Any>(
     val user: User,
     val locale: Locale,
     val state: FlowStateHolder<TPayload>,

@@ -72,7 +72,7 @@ class MazeFlowTest : ShouldSpec({
     }
 
     should("process single step callback") {
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -100,7 +100,7 @@ class MazeFlowTest : ShouldSpec({
 
     should("enter same step prompt on callback") {
         val state = MazeFlowState()
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -128,7 +128,7 @@ class MazeFlowTest : ShouldSpec({
 
     should("retry prompt when message is invalid") {
         val state = MazeFlowState(pendingDirection = Direction.LEFT)
-        val context = FlowMessageContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -150,7 +150,7 @@ class MazeFlowTest : ShouldSpec({
 
     should("process same steps input") {
         val state = MazeFlowState(pendingDirection = Direction.LEFT, promptBindings = mutableListOf("maze_prompt_message_1"))
-        val context = FlowMessageContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -174,7 +174,7 @@ class MazeFlowTest : ShouldSpec({
 
     should("show confirm reset view") {
         val state = MazeFlowState()
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -198,7 +198,7 @@ class MazeFlowTest : ShouldSpec({
 
     should("confirm reset and refresh maze") {
         val state = MazeFlowState()
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(

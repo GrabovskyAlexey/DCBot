@@ -46,7 +46,7 @@ fun PromptState.cleanupPromptMessages(): MutableList<FlowAction> {
     return actions
 }
 
-fun <S : PromptState> FlowCallbackContext<S>.startPrompt(
+fun <S : PromptState> FlowContext<S>.startPrompt(
     targetStep: FlowStep,
     bindingPrefix: String,
     callbackQuery: CallbackQuery,
@@ -70,7 +70,7 @@ fun <S : PromptState> FlowCallbackContext<S>.startPrompt(
         )
     }
 
-fun <S : PromptState> FlowMessageContext<S>.retryPrompt(
+fun <S : PromptState> FlowContext<S>.retryPrompt(
     targetStep: FlowStep,
     bindingPrefix: String,
     userMessageId: Int?,
@@ -96,7 +96,7 @@ fun <S : PromptState> FlowMessageContext<S>.retryPrompt(
         )
     }
 
-fun <S : PromptState> FlowMessageContext<S>.finalizePrompt(
+fun <S : PromptState> FlowContext<S>.finalizePrompt(
     targetStep: FlowStep,
     userMessageId: Int?,
     updateState: S.() -> Unit = {},
@@ -117,7 +117,7 @@ fun <S : PromptState> FlowMessageContext<S>.finalizePrompt(
     )
 }
 
-fun <S : PromptState> FlowCallbackContext<S>.cancelPrompt(
+fun <S : PromptState> FlowContext<S>.cancelPrompt(
     targetStep: FlowStep,
     callbackQuery: CallbackQuery,
     updateState: S.() -> Unit = {},
@@ -136,19 +136,7 @@ fun <S : PromptState> FlowCallbackContext<S>.cancelPrompt(
     )
 }
 
-private inline fun <S : PromptState> FlowCallbackContext<S>.withPromptBinding(
-    prefix: String,
-    updateState: S.() -> Unit,
-    block: (S, String) -> FlowResult<S>
-): FlowResult<S> {
-    val state = this.state.payload
-    val binding = PromptSupport.nextBinding(prefix)
-    state.promptBindings.add(binding)
-    state.updateState()
-    return block(state, binding)
-}
-
-private inline fun <S : PromptState> FlowMessageContext<S>.withPromptBinding(
+private inline fun <S : PromptState> FlowContext<S>.withPromptBinding(
     prefix: String,
     updateState: S.() -> Unit,
     block: (S, String) -> FlowResult<S>

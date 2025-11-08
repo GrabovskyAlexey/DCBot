@@ -54,7 +54,7 @@ class SettingsFlow(
     }
 
     override fun onMessage(
-        context: FlowMessageContext<SettingFlowState>,
+        context: FlowContext<SettingFlowState>,
         message: Message
     ): FlowResult<SettingFlowState>? {
         val pending = context.state.payload.pendingAction ?: return null
@@ -70,7 +70,7 @@ class SettingsFlow(
     }
 
     override fun onCallback(
-        context: FlowCallbackContext<SettingFlowState>,
+        context: FlowContext<SettingFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<SettingFlowState>? {
@@ -122,7 +122,7 @@ class SettingsFlow(
     }
 
     private fun startSendReportPrompt(
-        context: FlowCallbackContext<SettingFlowState>,
+        context: FlowContext<SettingFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<SettingFlowState> {
         val promptModel = SendReportModel(
@@ -150,7 +150,7 @@ class SettingsFlow(
     }
 
     private fun cancelSendReportPrompt(
-        context: FlowCallbackContext<SettingFlowState>,
+        context: FlowContext<SettingFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<SettingFlowState> =
         context.cancelPrompt(

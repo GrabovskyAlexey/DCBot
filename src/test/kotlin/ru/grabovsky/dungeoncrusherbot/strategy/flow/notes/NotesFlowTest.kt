@@ -64,7 +64,7 @@ class NotesFlowTest : ShouldSpec({
             payload = NotesFlowState(),
             messageBindings = mapOf("notes_main_message" to 10)
         )
-        val callbackContext = FlowCallbackContext(
+        val callbackContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = stateHolder
@@ -75,7 +75,7 @@ class NotesFlowTest : ShouldSpec({
         promptResult!!.stepKey shouldBe NotesStep.MAIN.key
         promptResult.payload.pendingAction shouldBe NotesPendingAction.Add
 
-        val messageContext = FlowMessageContext(
+        val messageContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -100,7 +100,7 @@ class NotesFlowTest : ShouldSpec({
             payload = NotesFlowState(),
             messageBindings = mapOf("notes_main_message" to 10)
         )
-        val callbackContext = FlowCallbackContext(
+        val callbackContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = stateHolder
@@ -119,7 +119,7 @@ class NotesFlowTest : ShouldSpec({
             .first()
             .bindingKey!!
 
-        val messageContext = FlowMessageContext(
+        val messageContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(
@@ -144,7 +144,7 @@ class NotesFlowTest : ShouldSpec({
             payload = NotesFlowState(),
             messageBindings = mapOf("notes_main_message" to 10)
         )
-        val callbackContext = FlowCallbackContext(
+        val callbackContext = FlowContext(
             user = telegramUser,
             locale = locale,
             state = stateHolder

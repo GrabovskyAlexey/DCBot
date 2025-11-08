@@ -87,7 +87,7 @@ class SubscribeFlowTest : ShouldSpec({
             every { from } returns telegramUser
         }
 
-        val context = FlowCallbackContext(
+        val context = FlowContext(
             user = telegramUser,
             locale = locale,
             state = FlowStateHolder(

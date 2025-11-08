@@ -43,7 +43,7 @@ class MazeFlow(
         )
     }
 
-    override fun onMessage(context: FlowMessageContext<MazeFlowState>, message: Message): FlowResult<MazeFlowState>? {
+    override fun onMessage(context: FlowContext<MazeFlowState>, message: Message): FlowResult<MazeFlowState>? {
         val state = context.state.payload
         val direction = state.pendingDirection ?: return null
         val text = message.text?.trim().orEmpty()
@@ -59,7 +59,7 @@ class MazeFlow(
     }
 
     override fun onCallback(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<MazeFlowState>? {
@@ -73,7 +73,7 @@ class MazeFlow(
     }
 
     private fun handleMainAction(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         action: String
     ): FlowResult<MazeFlowState>? =
@@ -91,7 +91,7 @@ class MazeFlow(
         }
 
     private fun handlePromptAction(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         argument: String?
     ): FlowResult<MazeFlowState>? =
@@ -101,7 +101,7 @@ class MazeFlow(
         }
 
     private fun handleConfirmAction(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         action: String
     ): FlowResult<MazeFlowState>? =
@@ -112,7 +112,7 @@ class MazeFlow(
         }
 
     private fun processStep(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         direction: Direction
     ): FlowResult<MazeFlowState>? {
@@ -125,7 +125,7 @@ class MazeFlow(
     }
 
     private fun enterSameStepPrompt(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         direction: Direction
     ): FlowResult<MazeFlowState> {
@@ -149,7 +149,7 @@ class MazeFlow(
     }
 
     private fun toggleSameSteps(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState>? {
         val maze = ensureMaze(context) ?: return null
@@ -161,7 +161,7 @@ class MazeFlow(
     }
 
     private fun showMain(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery,
         showHistory: Boolean
     ): FlowResult<MazeFlowState> {
@@ -172,7 +172,7 @@ class MazeFlow(
     }
 
     private fun showConfirmReset(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState> {
         val state = context.state.payload
@@ -191,7 +191,7 @@ class MazeFlow(
     }
 
     private fun confirmReset(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState>? {
         val maze = ensureMaze(context) ?: return null
@@ -203,7 +203,7 @@ class MazeFlow(
     }
 
     private fun retryPrompt(
-        context: FlowMessageContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         prompt: MazePromptModel,
         message: Message
     ): FlowResult<MazeFlowState> {
@@ -223,7 +223,7 @@ class MazeFlow(
     }
 
     private fun finalizePrompt(
-        context: FlowMessageContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         userMessageId: Int?
     ): FlowResult<MazeFlowState> =
         context.finalizePrompt(
@@ -236,7 +236,7 @@ class MazeFlow(
         }
 
     private fun cancelPrompt(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         callbackQuery: CallbackQuery
     ): FlowResult<MazeFlowState> =
         context.cancelPrompt(
@@ -259,7 +259,7 @@ class MazeFlow(
         )
 
     private fun buildMainResult(
-        context: FlowCallbackContext<MazeFlowState>,
+        context: FlowContext<MazeFlowState>,
         state: MazeFlowState,
         showHistory: Boolean,
         callbackQuery: CallbackQuery,
@@ -304,10 +304,7 @@ class MazeFlow(
             )
         }
 
-    private fun ensureMaze(context: FlowCallbackContext<MazeFlowState>): Maze? =
-        viewService.ensureMaze(context.user)
-
-    private fun ensureMaze(context: FlowMessageContext<MazeFlowState>): Maze? =
+    private fun ensureMaze(context: FlowContext<MazeFlowState>): Maze? =
         viewService.ensureMaze(context.user)
 
     private fun parseCallback(data: String): Pair<String, String?> =
