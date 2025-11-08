@@ -37,7 +37,7 @@ class MazeFlow(
             listOf(
                 SendMessageAction(
                     bindingKey = MAIN_MESSAGE_KEY,
-                    message = buildMainMessage(view, context.locale)
+                    message = buildMainMessage(view)
                 )
             )
         )
@@ -232,7 +232,7 @@ class MazeFlow(
             updateState = { pendingDirection = null }
         ) {
             val view = viewService.buildMainView(context.user, context.locale, showHistory = false)
-            this += mainViewEditAction(view, context.locale)
+            this += mainViewEditAction(view)
         }
 
     private fun cancelPrompt(
@@ -245,17 +245,17 @@ class MazeFlow(
             updateState = { pendingDirection = null }
         )
 
-    private fun buildMainMessage(view: MazeMainView, locale: Locale): FlowMessage =
+    private fun buildMainMessage(view: MazeMainView): FlowMessage =
         key.buildMessage(
             step = MazeFlowStep.MAIN,
             model = view.overview,
             inlineButtons = view.buttons.inlineButtons()
         )
 
-    private fun mainViewEditAction(view: MazeMainView, locale: Locale): EditMessageAction =
+    private fun mainViewEditAction(view: MazeMainView): EditMessageAction =
         EditMessageAction(
             bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(view, locale)
+            message = buildMainMessage(view)
         )
 
     private fun buildMainResult(
@@ -266,7 +266,7 @@ class MazeFlow(
         actions: MutableList<FlowAction>
     ): FlowResult<MazeFlowState> {
         val view = viewService.buildMainView(context.user, context.locale, showHistory)
-        actions += mainViewEditAction(view, context.locale)
+        actions += mainViewEditAction(view)
         actions += AnswerCallbackAction(callbackQuery.id)
         return buildFlowResult(MazeFlowStep.MAIN, state, actions)
     }
