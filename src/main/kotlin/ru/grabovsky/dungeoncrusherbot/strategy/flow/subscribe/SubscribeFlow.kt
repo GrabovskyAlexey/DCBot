@@ -1,11 +1,11 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.subscribe
 
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import ru.grabovsky.dungeoncrusherbot.entity.Server
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
@@ -17,7 +17,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
 class SubscribeFlow(
     private val userService: UserService,
     private val serverService: ServerService,
-    private val messageSource: MessageSource,
+    private val i18nService: I18nService
 ) : FlowHandler<Unit> {
     override val key: FlowKey = FlowKeys.SUBSCRIBE
     override val payloadType: Class<Unit> = Unit::class.java
@@ -137,8 +137,7 @@ class SubscribeFlow(
         } else {
             "buttons.subscribe.available"
         }
-        return messageSource.getMessage(code, arrayOf<Any>(serverId), serverId.toString(), locale)
-            ?: serverId.toString()
+        return i18nService.i18n(code, locale, serverId.toString(), serverId)
     }
 
     private fun parseCallbackData(data: String): Pair<String, Int>? {

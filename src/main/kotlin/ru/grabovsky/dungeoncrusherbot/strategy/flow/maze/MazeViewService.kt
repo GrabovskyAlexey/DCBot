@@ -45,38 +45,20 @@ class MazeViewService(
     private fun buildButtons(sameSteps: Boolean, locale: Locale): List<MazeButton> {
         val buttons = mutableListOf<MazeButton>()
         if (sameSteps) {
-            buttons += directionalButton(locale, "buttons.maze.step.left", "\u2196\uFE0F", "MAIN:STEP_SAME_LEFT", 0, 0)
-            buttons += directionalButton(locale, "buttons.maze.step.center", "\u2B06\uFE0F", "MAIN:STEP_SAME_CENTER", 0, 1)
-            buttons += directionalButton(locale, "buttons.maze.step.right", "\u2197\uFE0F", "MAIN:STEP_SAME_RIGHT", 0, 2)
-            buttons += toggleButton(locale, "buttons.maze.same_steps.disable", "\uD83D\uDCF4 Один шаг", 1, 0, "MAIN:TOGGLE_SAME")
+            buttons += simpleButton(locale, "buttons.maze.step.left", "\u2196\uFE0F", 0, 0, "MAIN:STEP_SAME_LEFT")
+            buttons += simpleButton(locale, "buttons.maze.step.center", "\u2B06\uFE0F", 0, 1, "MAIN:STEP_SAME_CENTER")
+            buttons += simpleButton(locale, "buttons.maze.step.right", "\u2197\uFE0F", 0, 2, "MAIN:STEP_SAME_RIGHT")
+            buttons += simpleButton(locale, "buttons.maze.same_steps.disable", "\uD83D\uDCF4 Один шаг", 1, 0, "MAIN:TOGGLE_SAME")
         } else {
-            buttons += directionalButton(locale, "buttons.maze.step.left", "\u2196\uFE0F", "MAIN:STEP_LEFT", 0, 0)
-            buttons += directionalButton(locale, "buttons.maze.step.center", "\u2B06\uFE0F", "MAIN:STEP_CENTER", 0, 1)
-            buttons += directionalButton(locale, "buttons.maze.step.right", "\u2197\uFE0F", "MAIN:STEP_RIGHT", 0, 2)
-            buttons += toggleButton(locale, "buttons.maze.same_steps.enable", "\uD83D\uDCF4 Несколько шагов", 1, 0, "MAIN:TOGGLE_SAME")
+            buttons += simpleButton(locale, "buttons.maze.step.left", "\u2196\uFE0F", 0, 0, "MAIN:STEP_LEFT")
+            buttons += simpleButton(locale, "buttons.maze.step.center", "\u2B06\uFE0F", 0, 1, "MAIN:STEP_CENTER")
+            buttons += simpleButton(locale, "buttons.maze.step.right", "\u2197\uFE0F", 0, 2, "MAIN:STEP_RIGHT")
+            buttons += simpleButton(locale, "buttons.maze.same_steps.enable", "\uD83D\uDCF4 Несколько шагов", 1, 0, "MAIN:TOGGLE_SAME")
         }
         buttons += simpleButton(locale, "buttons.maze.history", "\uD83E\uDDB6 Последние 20 шагов", 2, 0, "MAIN:HISTORY")
         buttons += simpleButton(locale, "buttons.maze.reset", "\uD83D\uDDD1 Сбросить прогресс", 3, 0, "MAIN:RESET")
         return buttons
     }
-
-    private fun directionalButton(
-        locale: Locale,
-        code: String,
-        default: String,
-        payload: String,
-        row: Int,
-        col: Int
-    ) = simpleButton(locale, code, default, row, col, payload)
-
-    private fun toggleButton(
-        locale: Locale,
-        code: String,
-        default: String,
-        row: Int,
-        col: Int,
-        payload: String
-    ) = simpleButton(locale, code, default, row, col, payload)
 
     private fun simpleButton(
         locale: Locale,

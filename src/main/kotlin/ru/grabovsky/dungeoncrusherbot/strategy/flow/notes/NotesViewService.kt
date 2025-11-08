@@ -1,7 +1,7 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.notes
 
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import java.util.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
@@ -11,7 +11,7 @@ internal const val NOTES_LIMIT = 20
 @Component
 class NotesViewService(
     private val userService: UserService,
-    private val messageSource: MessageSource,
+    private val i18nService: I18nService
 ) {
 
     fun buildOverview(user: TgUser, locale: Locale): NotesOverviewModel {
@@ -57,7 +57,7 @@ class NotesViewService(
 
     private fun button(row: Int, col: Int, code: String, default: String, action: String, locale: Locale): NoteButton =
         NoteButton(
-            label = messageSource.getMessage(code, null, default, locale) ?: default,
+            label = i18nService.i18n(code, locale, default),
             action = action,
             row = row,
             col = col,

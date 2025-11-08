@@ -6,10 +6,10 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import org.springframework.context.MessageSource
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import ru.grabovsky.dungeoncrusherbot.entity.Server
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
@@ -20,11 +20,11 @@ class SubscribeFlowTest : ShouldSpec({
 
     val userService = mockk<UserService>(relaxed = true)
     val serverService = mockk<ServerService>()
-    val messageSource = mockk<MessageSource>()
+    val i18nService = mockk<I18nService>()
 
-    val flow = SubscribeFlow(userService, serverService, messageSource)
+    val flow = SubscribeFlow(userService, serverService, i18nService)
 
-    val locale = Locale("ru")
+    val locale = Locale.forLanguageTag("ru")
     val telegramUser = mockk<User>(relaxed = true) {
         every { id } returns 42L
         every { firstName } returns "Test"
@@ -34,8 +34,8 @@ class SubscribeFlowTest : ShouldSpec({
     val serverTwo = Server(id = 2, name = "Two")
 
     beforeTest {
-        clearMocks(userService, serverService, messageSource)
-        every { messageSource.getMessage(any(), any(), any(), any<Locale>()) } answers {
+        clearMocks(userService, serverService, i18nService)
+        every { i18nService.i18n(any(), any<Locale>(), any(), any()) } answers {
             thirdArg<String?>() ?: firstArg<String>()
         }
         justRun { userService.saveUser(any()) }

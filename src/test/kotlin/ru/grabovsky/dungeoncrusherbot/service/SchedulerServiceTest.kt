@@ -107,7 +107,6 @@ private fun createSiegeUser(id: Long, enabled: Boolean, notifyDisabled: Boolean 
     val subscribe = NotificationSubscribe(user = user, type = NotificationType.SIEGE, enabled = enabled)
     user.notificationSubscribe.add(subscribe)
     val resources = Resources(user = user)
-    resources.lastServerId = server.id
     resources.data.servers[server.id] = ServerResourceData().apply { this.notifyDisable = notifyDisabled }
     user.resources = resources
     return user

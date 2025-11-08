@@ -1,9 +1,9 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
-import org.springframework.context.MessageSource
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class ResourcesViewService(
     private val userService: UserService,
     private val serverService: ServerService,
-    private val messageSource: MessageSource,
+    private val i18nService: I18nService,
 ) {
 
     fun ensureResources(user: TgUser) {
@@ -112,8 +112,7 @@ class ResourcesViewService(
     private fun buildServerButtons(dto: ServerResourceDto, locale: Locale): List<Button> {
         val buttons = mutableListOf<Button>()
 
-        fun label(code: String, default: String): String =
-            messageSource.getMessage(code, null, default, locale) ?: default
+        fun label(code: String, default: String): String = i18nService.i18n(code, locale, default)
 
         fun button(row: Int, col: Int, code: String, default: String, action: String): Button =
             Button(
@@ -126,26 +125,25 @@ class ResourcesViewService(
         // Draador operations
         buttons += button(2, 1, "buttons.resources.draador.catch", "\uD83E\uDE86 Поймать", "PROMPT_ADD_DRAADOR")
         buttons += button(2, 3, "buttons.resources.draador.sell", "\uD83E\uDE86 Продать", "PROMPT_SELL_DRAADOR")
-        if (dto.quickResourceEnabled) {
-            buttons += button(2, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_DRAADOR")
-            buttons += button(2, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_DRAADOR")
-        }
-
         // Void operations
         buttons += button(4, 1, "buttons.resources.void.add", "\uD83D\uDFE3 Добавить", "PROMPT_ADD_VOID")
         buttons += button(4, 3, "buttons.resources.void.remove", "\uD83D\uDFE3 Удалить", "PROMPT_REMOVE_VOID")
-        if (dto.quickResourceEnabled) {
-            buttons += button(4, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_VOID")
-            buttons += button(4, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_VOID")
-        }
 
         if (!dto.main) {
             buttons += button(3, 1, "buttons.resources.draador.receive", "\uD83E\uDE86 Получить", "PROMPT_RECEIVE_DRAADOR")
             buttons += button(3, 3, "buttons.resources.draador.send", "\uD83E\uDE86 Передать", "PROMPT_SEND_DRAADOR")
-            if (dto.quickResourceEnabled) {
-                buttons += button(3, 2, "buttons.resources.increment", "+1", "QUICK_RECEIVE_DRAADOR")
-                buttons += button(3, 4, "buttons.resources.decrement", "-1", "QUICK_SEND_DRAADOR")
+            if (dto.exchange != null) {
+                buttons += button(1, 1, "buttons.resources.exchange.remove", "\uD83D\uDCB1 Удалить обменник", "REMOVE_EXCHANGE")
             }
+            val exchangeCode = if (dto.exchange != null) "buttons.resources.exchange.change" else "buttons.resources.exchange.set"
+            val exchangeDefault = if (dto.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник"
+            buttons += button(1, 2, exchangeCode, exchangeDefault, "PROMPT_ADD_EXCHANGE")
+        } else {
+            buttons += button(6, 1, "buttons.notes.add", "\u270d\uFE0F Добавить заметку", "PROMPT_ADD_NOTE")
+            if (dto.notes.isNotEmpty()) {
+                buttons += button(6, 2, "buttons.notes.remove", "\u274c Удалить заметку", "PROMPT_REMOVE_NOTE")
+            }
+            buttons += button(7, 1, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", "REMOVE_MAIN")
         }
 
         if (dto.cbEnabled) {
@@ -157,27 +155,24 @@ class ResourcesViewService(
             }
         }
 
-        if (!dto.main) {
-            if (dto.exchange != null) {
-                buttons += button(1, 1, "buttons.resources.exchange.remove", "\uD83D\uDCB1 Удалить обменник", "REMOVE_EXCHANGE")
-            }
-            val exchangeCode = if (dto.exchange != null) "buttons.resources.exchange.change" else "buttons.resources.exchange.set"
-            val exchangeDefault = if (dto.exchange != null) "\uD83D\uDCB1 Изменить обменник" else "\uD83D\uDCB1 Указать обменник"
-            buttons += button(1, 2, exchangeCode, exchangeDefault, "PROMPT_ADD_EXCHANGE")
-        }
-
-        if (dto.main) {
-            buttons += button(6, 1, "buttons.notes.add", "\u270d\uFE0F Добавить заметку", "PROMPT_ADD_NOTE")
-            if (dto.notes.isNotEmpty()) {
-                buttons += button(6, 2, "buttons.notes.remove", "\u274c Удалить заметку", "PROMPT_REMOVE_NOTE")
-            }
-            buttons += button(7, 1, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", "REMOVE_MAIN")
-        } else if (!dto.hasMain) {
+        if (!dto.hasMain) {
             buttons += button(6, 3, "buttons.resources.set_main", "\uD83D\uDC51 Сделать основным", "SET_MAIN")
         }
 
         if (dto.hasHistory) {
             buttons += button(98, 1, "buttons.resources.history", "\uD83D\uDDD2 Последние 20 операций", "SHOW_HISTORY")
+        }
+
+        if (dto.quickResourceEnabled) {
+            buttons += button(2, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_DRAADOR")
+            buttons += button(2, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_DRAADOR")
+            buttons += button(4, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_VOID")
+            buttons += button(4, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_VOID")
+        }
+
+        if (dto.quickResourceEnabled && !dto.main) {
+            buttons += button(3, 2, "buttons.resources.increment", "+1", "QUICK_RECEIVE_DRAADOR")
+            buttons += button(3, 4, "buttons.resources.decrement", "-1", "QUICK_SEND_DRAADOR")
         }
 
         val notifyCode = if (dto.notifyDisable) "buttons.resources.notify.resume" else "buttons.resources.notify.stop"
@@ -192,6 +187,6 @@ class ResourcesViewService(
     private fun buttonLabel(serverId: Int, isMain: Boolean, locale: Locale): String {
         val code = if (isMain) "buttons.resources.server.main" else "buttons.resources.server.regular"
         val default = if (isMain) "\uD83D\uDC51{0}" else "{0}"
-        return messageSource.getMessage(code, arrayOf(serverId), default, locale) ?: default.replace("{0}", serverId.toString())
+        return i18nService.i18n(code, locale, default, serverId)
     }
 }
