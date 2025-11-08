@@ -31,7 +31,7 @@ abstract class AbstractCommand(
         logger.info { "Process flow ${flowKey.value} for user ${user.userName ?: user.firstName} with id ${user.id}" }
         runCatching {
             prepare(user, chat, arguments)
-            val locale = LocaleUtils.resolve(userService.getUser(user.id)?.language ?: user.languageCode)
+            val locale = LocaleUtils.resolve(userService.getUser(user.id))
             if (!flowEngine.start(flowKey, user, locale)) {
                 logger.error { "Flow $flowKey not found, command processing aborted" }
             }

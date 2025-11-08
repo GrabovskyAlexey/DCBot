@@ -135,7 +135,7 @@ class UserServiceImpl(
             }
             .filter { it.profile?.isAdmin == true }
             .forEach { admin ->
-                val locale = LocaleUtils.resolve(admin.language)
+                val locale = LocaleUtils.resolve(admin)
                 val bindingKey = "admin_message_${entity.id}"
 
                 val snapshot = flowStateService.load(admin.userId, FlowKeys.ADMIN_MESSAGE)
@@ -192,7 +192,7 @@ class UserServiceImpl(
             runCatching {
                 telegramFlowActionExecutor.execute(
                     user = user,
-                    locale = LocaleUtils.resolve(user.languageCode),
+                    locale = LocaleUtils.defaultLocale,
                     currentBindings = emptyMap(),
                     actions = listOf(
                         SetReactionAction(
@@ -210,7 +210,7 @@ class UserServiceImpl(
 
     override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) {
         val userEntity = getUser(targetUserId) ?: return
-        val locale = LocaleUtils.resolve(userEntity.language)
+        val locale = LocaleUtils.resolve(userEntity)
         val targetUser = TgUser.builder()
             .id(userEntity.userId)
             .firstName(userEntity.firstName ?: "")

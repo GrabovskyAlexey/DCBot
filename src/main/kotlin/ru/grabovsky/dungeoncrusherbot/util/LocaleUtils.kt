@@ -1,11 +1,16 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.util
 
+import ru.grabovsky.dungeoncrusherbot.entity.User
 import java.util.*
 
 object LocaleUtils {
-    private val defaultLocale = Locale.forLanguageTag("ru")
+    val defaultLocale: Locale = Locale.forLanguageTag("ru")
 
-    fun resolve(language: String?): Locale {
+    fun resolve(user: User?): Locale {
+        return resolve(user?.profile?.locale ?: user?.language)
+    }
+
+    private fun resolve(language: String?): Locale {
         if (language.isNullOrBlank()) {
             return defaultLocale
         }

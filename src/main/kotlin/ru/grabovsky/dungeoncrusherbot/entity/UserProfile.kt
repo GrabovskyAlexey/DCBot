@@ -32,4 +32,7 @@ data class UserProfile(
 
     @Column(name = "main_server_id")
     var mainServerId: Int? = null,
+
+    @Column(name = "locale")
+    var locale: String? = null,
 )

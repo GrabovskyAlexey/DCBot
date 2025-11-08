@@ -53,3 +53,7 @@
       file: liquibase/changelog/26.cleanup_unused_resources.sql
   - include:
       file: liquibase/changelog/27.exchange_audit.sql
+  - include:
+      file: liquibase/changelog/28.add_locale_to_profile.sql
+  - include:
+      file: liquibase/changelog/29.release_notes_1_1_9.sql

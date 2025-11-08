@@ -84,7 +84,7 @@ class ReceiverServiceImpl(
 
     private fun resolveLocale(user: User): Locale {
         val stored = userService.getUser(user.id)
-        return LocaleUtils.resolve(stored?.language)
+        return LocaleUtils.resolve(stored)
     }
 
     companion object {
