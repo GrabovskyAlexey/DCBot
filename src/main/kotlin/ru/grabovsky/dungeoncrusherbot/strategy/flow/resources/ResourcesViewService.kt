@@ -146,14 +146,7 @@ class ResourcesViewService(
             buttons += button(7, 1, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", "REMOVE_MAIN")
         }
 
-        if (dto.cbEnabled) {
-            buttons += button(5, 1, "buttons.resources.cb.add", "\uD83D\uDE08 Добавить", "PROMPT_ADD_CB")
-            buttons += button(5, 3, "buttons.resources.cb.remove", "\uD83D\uDE08 Удалить", "PROMPT_REMOVE_CB")
-            if (dto.quickResourceEnabled) {
-                buttons += button(5, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_CB")
-                buttons += button(5, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_CB")
-            }
-        }
+
 
         if (!dto.hasMain) {
             buttons += button(6, 3, "buttons.resources.set_main", "\uD83D\uDC51 Сделать основным", "SET_MAIN")
@@ -163,17 +156,27 @@ class ResourcesViewService(
             buttons += button(98, 1, "buttons.resources.history", "\uD83D\uDDD2 Последние 20 операций", "SHOW_HISTORY")
         }
 
+        if (dto.cbEnabled) {
+            buttons += button(5, 1, "buttons.resources.cb.add", "\uD83D\uDE08 Добавить", "PROMPT_ADD_CB")
+            buttons += button(5, 3, "buttons.resources.cb.remove", "\uD83D\uDE08 Удалить", "PROMPT_REMOVE_CB")
+        }
+
         if (dto.quickResourceEnabled) {
             buttons += button(2, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_DRAADOR")
             buttons += button(2, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_DRAADOR")
             buttons += button(4, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_VOID")
             buttons += button(4, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_VOID")
+            if (!dto.main) {
+                buttons += button(3, 2, "buttons.resources.increment", "+1", "QUICK_RECEIVE_DRAADOR")
+                buttons += button(3, 4, "buttons.resources.decrement", "-1", "QUICK_SEND_DRAADOR")
+            }
+            if (dto.cbEnabled) {
+                buttons += button(5, 2, "buttons.resources.increment", "+1", "QUICK_INCREMENT_CB")
+                buttons += button(5, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_CB")
+            }
         }
 
-        if (dto.quickResourceEnabled && !dto.main) {
-            buttons += button(3, 2, "buttons.resources.increment", "+1", "QUICK_RECEIVE_DRAADOR")
-            buttons += button(3, 4, "buttons.resources.decrement", "-1", "QUICK_SEND_DRAADOR")
-        }
+
 
         val notifyCode = if (dto.notifyDisable) "buttons.resources.notify.resume" else "buttons.resources.notify.stop"
         val notifyDefault = if (dto.notifyDisable) "\u274C Продолжить ловлю" else "\u2705 Закончил ловить"
