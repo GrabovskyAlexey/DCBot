@@ -14,6 +14,14 @@ interface FlowHandler<TPayload : Any> {
     fun onMessage(context: FlowContext<TPayload>, message: Message): FlowResult<TPayload>?
 
     fun onCallback(context: FlowContext<TPayload>, callbackQuery: CallbackQuery, data: String): FlowResult<TPayload>?
+
+    fun parseCallback(data: String): Pair<String, String?> =
+        if (data.contains(':')) {
+            val split = data.split(':', limit = 2)
+            split[0] to split[1]
+        } else {
+            data to null
+        }
 }
 
 data class FlowStartContext(

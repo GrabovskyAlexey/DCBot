@@ -7,11 +7,10 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.EditMessageAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowHandler
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStartContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction
@@ -167,14 +166,6 @@ class AdminMessageFlow(
                 actions = actions
             )
         } ?: context.notFoundResult(callbackQuery)
-
-    private fun parseCallback(data: String): Pair<String, String?> =
-        if (data.contains(':')) {
-            val parts = data.split(':', limit = 2)
-            parts[0] to parts[1]
-        } else {
-            data to null
-        }
 
     private fun FlowContext<AdminMessageFlowState>.withMessage(
         messageId: Long,

@@ -38,7 +38,6 @@ class ExchangeFlow(
         val user = getUserEntity(context.user.id)
         val model = buildOverviewModel(user)
         return sendMainMessageResult(
-            step = ExchangeFlowStep.MAIN,
             payload = ExchangeFlowState(),
             message = exchangeMessage(
                 step = ExchangeFlowStep.MAIN,
@@ -528,9 +527,9 @@ class ExchangeFlow(
     }
 
 
-    private fun sendMainMessageResult(step: ExchangeFlowStep, payload: ExchangeFlowState, message: FlowMessage): FlowResult<ExchangeFlowState> =
+    private fun sendMainMessageResult(payload: ExchangeFlowState, message: FlowMessage): FlowResult<ExchangeFlowState> =
         FlowResult(
-            stepKey = step.key,
+            stepKey = ExchangeFlowStep.MAIN.key,
             payload = payload,
             actions = listOf(
                 SendMessageAction(
@@ -771,14 +770,6 @@ class ExchangeFlow(
         BUY_MAP -> if (locale.language == "ru") "карт" else "maps"
         else -> ""
     }
-
-    private fun parseCallback(data: String): Pair<String, String?> =
-        if (data.contains(':')) {
-            val split = data.split(':', limit = 2)
-            split[0] to split[1]
-        } else {
-            data to null
-        }
 
     private fun getUserEntity(id: Long): BotUser =
         userService.getUser(id) ?: error("User $id not found")

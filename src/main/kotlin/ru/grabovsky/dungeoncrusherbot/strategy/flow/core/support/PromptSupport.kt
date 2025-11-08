@@ -5,11 +5,10 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.AnswerCallbackAc
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.DeleteMessageAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.DeleteMessageIdAction
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowAction
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackContext
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowInlineButton
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessage
-import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowMessageContext
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowResult
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowStep
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.SendMessageAction

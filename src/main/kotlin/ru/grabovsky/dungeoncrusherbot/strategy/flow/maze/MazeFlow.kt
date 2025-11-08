@@ -307,13 +307,6 @@ class MazeFlow(
     private fun ensureMaze(context: FlowContext<MazeFlowState>): Maze? =
         viewService.ensureMaze(context.user)
 
-    private fun parseCallback(data: String): Pair<String, String?> =
-        if (data.contains(':')) {
-            val split = data.split(':', limit = 2)
-            split[0] to split[1]
-        } else {
-            data to null
-        }
 
     private fun buildFlowResult(
         step: MazeFlowStep,
