@@ -29,7 +29,6 @@ class NotesFlow(
     override fun start(context: FlowStartContext): FlowResult<NotesFlowState> {
         val overview = viewService.buildOverview(context.user, context.locale)
         return buildFlowResult(
-            NotesStep.MAIN,
             NotesFlowState(),
             listOf(
                 SendMessageAction(
@@ -130,12 +129,11 @@ class NotesFlow(
     private fun enterRemovePrompt(
         context: FlowContext<NotesFlowState>,
         callbackQuery: CallbackQuery
-    ): FlowResult<NotesFlowState>? {
+    ): FlowResult<NotesFlowState> {
         val user = userService.getUser(context.user.id)
         val notes = user?.profile?.notes?.toList().orEmpty()
         if (notes.isEmpty()) {
             return buildFlowResult(
-                NotesStep.MAIN,
                 context.state.payload,
                 listOf(
                     AnswerCallbackAction(
@@ -161,7 +159,6 @@ class NotesFlow(
         userService.clearNotes(context.user)
         val overview = viewService.buildOverview(context.user, context.locale)
         return buildFlowResult(
-            NotesStep.MAIN,
             context.state.payload.apply { pendingAction = null },
             listOf(
                 EditMessageAction(
@@ -260,11 +257,10 @@ class NotesFlow(
     }
 
     private fun buildFlowResult(
-        step: NotesStep,
         payload: NotesFlowState,
         actions: List<FlowAction>
     ) = FlowResult(
-        stepKey = step.key,
+        stepKey = NotesStep.MAIN.key,
         payload = payload,
         actions = actions
     )
