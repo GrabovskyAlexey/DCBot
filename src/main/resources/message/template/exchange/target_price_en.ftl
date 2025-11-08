@@ -1,1 +1,1 @@
-Specify how many ${data.resource} you want to receive.
+Specify how many *${data.resource}* you want to *receive*.

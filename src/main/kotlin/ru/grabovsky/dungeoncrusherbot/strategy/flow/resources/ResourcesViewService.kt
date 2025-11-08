@@ -146,8 +146,6 @@ class ResourcesViewService(
             buttons += button(7, 1, "buttons.resources.remove_main", "\uD83D\uDEAB Отменить назначение основным", "REMOVE_MAIN")
         }
 
-
-
         if (!dto.hasMain) {
             buttons += button(6, 3, "buttons.resources.set_main", "\uD83D\uDC51 Сделать основным", "SET_MAIN")
         }
@@ -175,8 +173,6 @@ class ResourcesViewService(
                 buttons += button(5, 4, "buttons.resources.decrement", "-1", "QUICK_DECREMENT_CB")
             }
         }
-
-
 
         val notifyCode = if (dto.notifyDisable) "buttons.resources.notify.resume" else "buttons.resources.notify.stop"
         val notifyDefault = if (dto.notifyDisable) "\u274C Продолжить ловлю" else "\u2705 Закончил ловить"

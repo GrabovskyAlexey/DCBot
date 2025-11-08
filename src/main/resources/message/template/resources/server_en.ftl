@@ -8,9 +8,9 @@
 </#if>
 *On hand:* ${server.draadorCount} 🪆
 <#if server.balance gt 0>
-*They owe me:* +${server.balance} 🪆
+*They owe me:* ${server.balance} 🪆
 <#elseif server.balance lt 0>
-*I owe:* ${server.balance} 🪆
+*I owe:* ${server.balance * -1} 🪆
 </#if>
 *Voids:* ${server.voidCount} 🟣
 <#if server.cbEnabled>

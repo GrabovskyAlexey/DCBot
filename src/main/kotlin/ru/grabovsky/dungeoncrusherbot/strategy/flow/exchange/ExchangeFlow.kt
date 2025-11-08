@@ -691,7 +691,7 @@ class ExchangeFlow(
         var col = 0
         detail.requests.forEach { request ->
             buttons += FlowInlineButton(
-                text = "№${request.pos}",
+                text = "❌ ${request.pos}",
                 payload = FlowCallbackPayload(key.value, "REMOVE:${request.id}"),
                 row = row,
                 col = col

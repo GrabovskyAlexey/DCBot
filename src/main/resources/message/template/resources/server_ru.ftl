@@ -8,9 +8,9 @@
 </#if>
 *На руках:* ${server.draadorCount} 🪆
 <#if server.balance gt 0>
-*Мне должны:* +${server.balance} 🪆
+*Мне должны:* ${server.balance} 🪆
 <#elseif server.balance lt 0>
-*Я должен:* ${server.balance} 🪆
+*Я должен:* ${server.balance * -1} 🪆
 </#if>
 *Пустоты:* ${server.voidCount} 🟣
 <#if server.cbEnabled>
