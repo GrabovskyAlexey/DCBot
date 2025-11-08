@@ -93,5 +93,6 @@ data class UserSettings(
     var resourcesCb: Boolean = false,
     var sendWatermelon: Boolean = false,
     var resourcesQuickChange: Boolean = false,
-    var discordUsername: String? = null
+    var discordUsername: String? = null,
+    var enableMainSend: Boolean = true,
 )

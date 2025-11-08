@@ -112,11 +112,13 @@ class ResourcesServiceImpl(
         addHistory(history, ResourceType.DRAADOR, DirectionType.INCOMING, amount)
 
         val profile = user.profile ?: return
-        val mainServerId = profile.mainServerId ?: return
-        val mainServer = resources.data.servers.computeIfAbsent(mainServerId) { ServerResourceData() }
-        val mainHistory = resources.history.computeIfAbsent(mainServerId) { mutableListOf() }
-        mainServer.draadorCount += amount
-        addHistory(mainHistory, ResourceType.DRAADOR, DirectionType.INCOMING, amount, serverId)
+        if(profile.settings.enableMainSend) {
+            val mainServerId = profile.mainServerId ?: return
+            val mainServer = resources.data.servers.computeIfAbsent(mainServerId) { ServerResourceData() }
+            val mainHistory = resources.history.computeIfAbsent(mainServerId) { mutableListOf() }
+            mainServer.draadorCount += amount
+            addHistory(mainHistory, ResourceType.DRAADOR, DirectionType.INCOMING, amount, serverId)
+        }
     }
 
     private fun addHistory(

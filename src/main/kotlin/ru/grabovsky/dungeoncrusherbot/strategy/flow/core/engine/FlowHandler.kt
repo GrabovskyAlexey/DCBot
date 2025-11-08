@@ -37,7 +37,7 @@ data class FlowStateHolder<TPayload : Any>(
 
 data class FlowContext<TPayload : Any>(
     val user: User,
-    val locale: Locale,
+    var locale: Locale,
     val state: FlowStateHolder<TPayload>,
 )
 

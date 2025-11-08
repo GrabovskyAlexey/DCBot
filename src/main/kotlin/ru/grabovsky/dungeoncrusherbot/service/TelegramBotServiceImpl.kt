@@ -95,7 +95,7 @@ class TelegramBotServiceImpl(
     }
 
     override fun sendReleaseNotes(user: BotUser, updateMessage: UpdateMessage) {
-        val locale = LocaleUtils.resolve(user.language)
+        val locale = LocaleUtils.resolve(user)
         val dto = ReleaseNoteDto(
             version = updateMessage.version,
             text = updateMessage.text,

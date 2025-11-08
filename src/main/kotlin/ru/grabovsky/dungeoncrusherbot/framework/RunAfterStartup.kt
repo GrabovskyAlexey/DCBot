@@ -26,6 +26,7 @@ class RunAfterStartup(
             return
         }
         val users = userRepository.findAllNotBlockedUser()
+        var blockedCount = 0
         for (message in updateMessages) {
             users.forEach { user ->
                 runCatching {
@@ -35,6 +36,7 @@ class RunAfterStartup(
                         user.profile?.let {
                             it.isBlocked = true
                             userRepository.save(user)
+                            blockedCount++
                         }
                     }
                     logger.warn { "Couldn't send update message version: ${message.version} for user: $user with error: ${error.message}" }
@@ -43,6 +45,7 @@ class RunAfterStartup(
             message.sent = true
         }
         updateMessageRepository.saveAll(updateMessages)
+        logger.info { "Finish process update messages. Users who blocked bot: $blockedCount" }
     }
 
     companion object {

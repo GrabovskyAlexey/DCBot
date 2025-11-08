@@ -28,6 +28,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cleanupPromptMe
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.cancelPrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.finalizePrompt
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.startPrompt
+import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
 
 @Component
 class SettingsFlow(
@@ -102,11 +103,18 @@ class SettingsFlow(
                 val settings = profile.settings
                 settings.resourcesQuickChange = !settings.resourcesQuickChange
             }
+            "SEND_TO_MAIN" -> {
+                val settings = profile.settings
+                settings.enableMainSend = !settings.enableMainSend
+            }
+            "SET_RU" -> user.profile?.locale = "ru"
+            "SET_EN" -> user.profile?.locale = "en"
             "SEND_REPORT" -> return startSendReportPrompt(context, callbackQuery)
             "SEND_REPORT_CANCEL" -> return cancelSendReportPrompt(context, callbackQuery)
         }
 
         userService.saveUser(user)
+        context.locale = LocaleUtils.resolve(user)
         return FlowResult(
             stepKey = SettingStepKey.MAIN.key,
             payload = SettingFlowState(),
@@ -183,7 +191,8 @@ class SettingsFlow(
                 ?.firstOrNull { it.type == NotificationType.MINE }
                 ?.enabled == true,
             cbEnabled = profile?.settings?.resourcesCb ?: false,
-            quickResourceEnabled = profile?.settings?.resourcesQuickChange ?: false
+            quickResourceEnabled = profile?.settings?.resourcesQuickChange ?: false,
+            enableMainSend = profile?.settings?.enableMainSend ?: true
         )
         return key.buildMessage(
             step = SettingStepKey.MAIN,
@@ -206,6 +215,20 @@ class SettingsFlow(
                 )
                 add(buildButton(text, definition.payload, definition.row))
             }
+            add(
+                buildButton(
+                    "\uD83C\uDDF7\uD83C\uDDFA",
+                    "SET_RU",
+                    98
+                )
+            )
+            add(
+                buildButton(
+                    "\uD83C\uDDFA\uD83C\uDDF8",
+                    "SET_EN",
+                    98
+                )
+            )
             add(
                 buildButton(
                     i18nService.i18n(
@@ -278,6 +301,15 @@ class SettingsFlow(
                 disabledCode = "buttons.settings.quick.enable",
                 enabledDefault = "\u274C Отключить быстрый учет",
                 disabledDefault = "\u2705 Включить быстрый учет"
+            ),
+            ToggleDefinition(
+                row = 5,
+                payload = "SEND_TO_MAIN",
+                isEnabled = { it.enableMainSend },
+                enabledCode = "buttons.settings.send.main.disable",
+                disabledCode = "buttons.settings.send.main.enable",
+                enabledDefault = "\u274C Отключить отправку на основной",
+                disabledDefault = "\u2705 Включить отправку на основной"
             )
         )
     }
@@ -288,6 +320,7 @@ data class SettingsViewModel(
     val mineEnabled: Boolean,
     val cbEnabled: Boolean,
     val quickResourceEnabled: Boolean,
+    val enableMainSend: Boolean,
 )
 
 data class SendReportModel(val text: String)
