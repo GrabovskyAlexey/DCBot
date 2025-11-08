@@ -25,7 +25,7 @@ class NotesViewService(
                 row = 0,
                 col = 0,
                 code = "buttons.notes.add",
-                default = "Add note",
+                default = "✍\uFE0F Добавить заметку",
                 action = "ADD",
                 locale = locale
             )
@@ -35,7 +35,7 @@ class NotesViewService(
                 row = 0,
                 col = 1,
                 code = "buttons.notes.remove",
-                default = "Remove note",
+                default = "❌ Удалить заметку",
                 action = "REMOVE",
                 locale = locale
             )
@@ -43,7 +43,7 @@ class NotesViewService(
                 row = 1,
                 col = 0,
                 code = "buttons.notes.clear",
-                default = "Clear notes",
+                default = "\uD83D\uDDD1 Удалить все заметки",
                 action = "CLEAR",
                 locale = locale
             )
