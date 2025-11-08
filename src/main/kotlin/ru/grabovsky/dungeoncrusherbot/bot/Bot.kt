@@ -9,7 +9,6 @@ import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.config.BotConfig
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService

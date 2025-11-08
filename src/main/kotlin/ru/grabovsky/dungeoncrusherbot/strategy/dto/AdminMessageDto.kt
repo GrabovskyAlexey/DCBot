@@ -6,4 +6,4 @@ data class AdminMessageDto(
     val userName: String?,
     val userId: Long,
     val text: String
-): DataModel
+)

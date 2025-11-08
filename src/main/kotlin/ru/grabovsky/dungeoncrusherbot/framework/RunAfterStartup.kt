@@ -27,15 +27,17 @@ class RunAfterStartup(
         }
         val users = userRepository.findAllNotBlockedUser()
         for (message in updateMessages) {
-            users.forEach {
+            users.forEach { user ->
                 runCatching {
-                    telegramBotService.sendReleaseNotes(it, message)
+                    telegramBotService.sendReleaseNotes(user, message)
                 }.onFailure { error ->
-                    if(error is TelegramApiRequestException && error.errorCode == 403) {
-                        it.isBlocked = true
-                        userRepository.save(it)
+                    if (error is TelegramApiRequestException && error.errorCode == 403) {
+                        user.profile?.let {
+                            it.isBlocked = true
+                            userRepository.save(user)
+                        }
                     }
-                    logger.warn { "Couldn't send update message version: ${message.version} for user: $it with error: ${error.message}" }
+                    logger.warn { "Couldn't send update message version: ${message.version} for user: $user with error: ${error.message}" }
                 }
             }
             message.sent = true
@@ -44,6 +46,6 @@ class RunAfterStartup(
     }
 
     companion object {
-        val logger = KotlinLogging.logger {}
+        private val logger = KotlinLogging.logger {}
     }
 }

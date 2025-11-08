@@ -1,13 +1,11 @@
-﻿package ru.grabovsky.dungeoncrusherbot.entity
+package ru.grabovsky.dungeoncrusherbot.entity
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UpdateTimestamp
-import org.hibernate.type.SqlTypes
 import ru.grabovsky.dungeoncrusherbot.util.DefaultInstantDeserializer
 import java.time.Instant
 
@@ -33,16 +31,6 @@ data class User(
     var maze: Maze? = null,
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
     var resources: Resources? = null,
-    @Column(name = "is_blocked")
-    var isBlocked: Boolean = false,
-    @Column(name = "is_admin")
-    var isAdmin: Boolean = false,
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "settings")
-    var settings: UserSettings = UserSettings(),
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "notes")
-    var notes: MutableList<String> = mutableListOf(),
     @CreationTimestamp
     @Column(name = "created_at")
     @JsonSerialize(using = InstantSerializer::class)
@@ -65,12 +53,12 @@ data class User(
     @JoinColumn(name = "user_id")
     val notificationSubscribe: MutableList<NotificationSubscribe> = mutableListOf()
 ) {
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.EAGER, orphanRemoval = true, optional = true)
+    var profile: UserProfile? = null
 
-    fun isActive() =
-        !isBlocked
+    fun isActive(): Boolean = !(profile?.isBlocked ?: false)
 
-    fun isActiveAndHasUsername() =
-        isActive() && userName != null
+    fun isActiveAndHasUsername(): Boolean = isActive() && userName != null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

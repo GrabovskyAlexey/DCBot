@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -7,11 +7,7 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import ru.grabovsky.dungeoncrusherbot.entity.Direction
-import ru.grabovsky.dungeoncrusherbot.entity.Location
-import ru.grabovsky.dungeoncrusherbot.entity.Maze
-import ru.grabovsky.dungeoncrusherbot.entity.Step
-import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
 
 class MazeServiceImplTest : ShouldSpec({
@@ -23,7 +19,9 @@ class MazeServiceImplTest : ShouldSpec({
 
     beforeTest {
         clearMocks(mazeRepository)
-        user = User(userId = 300L, firstName = "MazeRunner", lastName = null, userName = "runner")
+        user = User(userId = 300L, firstName = "MazeRunner", lastName = null, userName = "runner").apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         maze = Maze(user = user)
         user.maze = maze
         every { mazeRepository.saveAndFlush(any()) } answers { firstArg() }

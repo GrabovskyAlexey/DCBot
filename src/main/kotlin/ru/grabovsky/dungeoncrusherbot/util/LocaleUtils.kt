@@ -1,6 +1,6 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.util
 
-import java.util.Locale
+import java.util.*
 
 object LocaleUtils {
     private val defaultLocale = Locale.forLanguageTag("ru")

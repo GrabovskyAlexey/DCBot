@@ -3,10 +3,10 @@
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.springframework.context.ApplicationEventPublisher
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
@@ -16,24 +16,25 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.commands.AbstractCommand
 import ru.grabovsky.dungeoncrusherbot.strategy.commands.Command
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 
 class BotTest : ShouldSpec({
 
     val telegramClient = mockk<TelegramClient>(relaxed = true)
     val receiverService = mockk<ReceiverService>(relaxed = true)
-    val publisher = mockk<ApplicationEventPublisher>(relaxed = true)
     val userService = mockk<UserService>(relaxed = true)
+    val flowEngine = mockk<FlowEngine>(relaxed = true)
 
-    val firstCommand = object : AbstractCommand(Command.HELP, publisher, userService) {}
-    val secondCommand = object : AbstractCommand(Command.START, publisher, userService) {}
+    val firstCommand = object : AbstractCommand(Command.HELP, FlowKeys.HELP, userService, flowEngine) {}
+    val secondCommand = object : AbstractCommand(Command.START, FlowKeys.START, userService, flowEngine) {}
 
     should("set bot commands sorted by order and expose token") {
         val commandSlot = slot<SetMyCommands>()
         val config = BotConfig(token = "token", name = "botName")
         val commands = listOf(firstCommand, secondCommand)
 
-        io.mockk.every { telegramClient.execute(capture(commandSlot)) } returns true
+        every { telegramClient.execute(capture(commandSlot)) } returns true
 
         val bot = Bot(config, telegramClient, receiverService, commands)
 
@@ -52,7 +53,7 @@ class BotTest : ShouldSpec({
         val update = mockk<Update>()
         val commands = listOf(secondCommand)
 
-        io.mockk.every { telegramClient.execute(any<SetMyCommands>()) } returns true
+        every { telegramClient.execute(any<SetMyCommands>()) } returns true
 
         val bot = Bot(config, telegramClient, receiverService, commands)
         bot.processNonCommandUpdate(update)

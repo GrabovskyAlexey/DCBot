@@ -1,11 +1,12 @@
-package ru.grabovsky.dungeoncrusherbot.strategy.commands
+﻿package ru.grabovsky.dungeoncrusherbot.strategy.commands
 
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKeys
 
 @Component
 class SubscribeCommand(
     userService: UserService,
-    eventPublisher: ApplicationEventPublisher,
-): AbstractCommand(Command.SUBSCRIBE, eventPublisher, userService)
+    flowEngine: FlowEngine,
+) : AbstractCommand(Command.SUBSCRIBE, FlowKeys.SUBSCRIBE, userService, flowEngine)

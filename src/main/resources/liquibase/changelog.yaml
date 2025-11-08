@@ -39,3 +39,17 @@
       file: liquibase/changelog/19.create_tables_exchange.sql
   - include:
       file: liquibase/changelog/20.release_notes_1_1_8.sql
+  - include:
+      file: liquibase/changelog/21.create_flow_state_table.sql
+  - include:
+      file: liquibase/changelog/22.update_user_profile.sql
+  - include:
+      file: liquibase/changelog/23.cleanup_verification.sql
+  - include:
+      file: liquibase/changelog/24.drop_user_state_table.sql
+  - include:
+      file: liquibase/changelog/25.add_admin_message_source_id.sql
+  - include:
+      file: liquibase/changelog/26.cleanup_unused_resources.sql
+  - include:
+      file: liquibase/changelog/27.exchange_audit.sql

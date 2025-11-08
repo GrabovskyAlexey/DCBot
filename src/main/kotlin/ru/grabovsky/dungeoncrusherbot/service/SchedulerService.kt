@@ -113,8 +113,10 @@ class SchedulerService(
 
     private fun processBlockedUser(user: User) {
         logger.warn { "User: ${user.userName ?: user.firstName} block bot" }
-        user.isBlocked = true
-        userRepository.save(user)
+        user.profile?.let {
+            it.isBlocked = true
+            userRepository.save(user)
+        }
     }
 
     companion object {

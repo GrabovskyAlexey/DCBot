@@ -1,4 +1,4 @@
-﻿package ru.grabovsky.dungeoncrusherbot.mapper
+package ru.grabovsky.dungeoncrusherbot.mapper
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -22,5 +22,6 @@ class UserMapperTest : ShouldSpec({
         entity.lastName shouldBe "Doe"
         entity.userName shouldBe "jdoe"
         entity.language shouldBe "ru"
+        entity.profile shouldBe null
     }
 })

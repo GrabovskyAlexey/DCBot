@@ -1,8 +1,7 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service.interfaces
+package ru.grabovsky.dungeoncrusherbot.service.interfaces
 
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import java.util.Locale
+import java.util.*
 
 interface MessageGenerateService {
-    fun process(state: StateCode, freemarkerData: Any? = null, locale: Locale = Locale.forLanguageTag("ru")): String
+    fun processTemplate(template: String, freemarkerData: Any? = null, locale: Locale = Locale.forLanguageTag("ru")): String
 }

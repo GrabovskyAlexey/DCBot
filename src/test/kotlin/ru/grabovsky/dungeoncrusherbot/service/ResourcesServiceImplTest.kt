@@ -1,225 +1,236 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import io.mockk.justRun
-import jakarta.persistence.EntityNotFoundException
-import java.time.LocalDate
-import ru.grabovsky.dungeoncrusherbot.entity.Resources
-import ru.grabovsky.dungeoncrusherbot.entity.ResourcesHistory
-import ru.grabovsky.dungeoncrusherbot.entity.ServerResourceData
-import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.UserSettings
-import ru.grabovsky.dungeoncrusherbot.entity.DirectionType
-import ru.grabovsky.dungeoncrusherbot.entity.ResourceType
+import ru.grabovsky.dungeoncrusherbot.entity.*
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
-import ru.grabovsky.dungeoncrusherbot.service.interfaces.StateService
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import java.time.LocalDate
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class ResourcesServiceImplTest : ShouldSpec({
 
-    val userService = mockk<UserService>()
-    val stateService = mockk<StateService>()
-    val googleFormService = mockk<GoogleFormService>(relaxed = true)
-    val service = ResourcesServiceImpl(userService, stateService, googleFormService)
-    val telegramUser = mockk<TgUser>(relaxed = true) {
-        every { id } returns 77L
-        every { userName } returns "tg"
-        every { firstName } returns "TG"
-    }
-
+    lateinit var userService: FakeUserService
+    lateinit var googleFormService: FakeGoogleFormService
+    lateinit var service: ResourcesServiceImpl
+    lateinit var telegramUser: TgUser
     lateinit var entityUser: User
     lateinit var resources: Resources
     lateinit var serverData: ServerResourceData
 
-    fun prepareUser(lastServerId: Int = 5) {
-        entityUser = User(userId = 77L, firstName = "Tester", lastName = null, userName = "tester")
+    fun prepareUser(serverId: Int = 5) {
+        entityUser = User(userId = 77L, firstName = "Tester", lastName = null, userName = "tester").apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         resources = Resources(user = entityUser)
         entityUser.resources = resources
-        resources.lastServerId = lastServerId
-        serverData = ServerResourceData()
-        resources.data.servers[lastServerId] = serverData
-        resources.history[lastServerId] = mutableListOf()
-        every { userService.getUser(any()) } returns entityUser
-        justRun { userService.saveUser(any()) }
+        resources.data.servers[serverId] = ServerResourceData().also { serverData = it }
+        resources.history[serverId] = mutableListOf()
+        userService.users[entityUser.userId] = entityUser
     }
 
     beforeTest {
-        clearMocks(userService, googleFormService, answers = true)
+        userService = FakeUserService()
+        googleFormService = FakeGoogleFormService()
+        service = ResourcesServiceImpl(userService, googleFormService)
+        telegramUser = TgUser.builder()
+            .id(77L)
+            .firstName("TG")
+            .isBot(false)
+            .build()
         prepareUser()
-        justRun { googleFormService.sendDraadorCount(any(), any()) }
     }
 
     should("throw when user is not found") {
-        every { userService.getUser(any()) } returns null
+        userService.users.clear()
 
-        shouldThrow<EntityNotFoundException> {
-            service.processResources(telegramUser, "1", StateCode.ADD_VOID)
+        shouldThrow<jakarta.persistence.EntityNotFoundException> {
+            service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_VOID, 1))
         }
     }
 
-    should("throw when last server id missing") {
-        prepareUser(lastServerId = 5)
-        resources.lastServerId = null
+    should("throw when resources are missing") {
+        entityUser.resources = null
 
         shouldThrow<IllegalStateException> {
-            service.processResources(telegramUser, "1", StateCode.ADD_VOID)
+            service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_VOID, 1))
         }
     }
 
-    should("increase void count and record history when adding void") {
-        service.processResources(telegramUser, "3", StateCode.ADD_VOID)
+    should("increase and decrease void count with history") {
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_VOID, 3))
 
         serverData.voidCount shouldBe 3
-        val history = resources.history[5]!!
-        history shouldHaveSize 1
-        history.last().apply {
-            quantity shouldBe 3
-            resource shouldBe ResourceType.VOID
-            type shouldBe DirectionType.ADD
-        }
-        verify { userService.saveUser(entityUser) }
-        verify(exactly = 0) { googleFormService.sendDraadorCount(any(), any()) }
-    }
-
-    should("decrease void count and record removal") {
-        serverData.voidCount = 10
-
-        service.processResources(telegramUser, "4", StateCode.REMOVE_VOID)
-
-        serverData.voidCount shouldBe 6
-        resources.history[5]!!.last().type shouldBe DirectionType.REMOVE
-    }
-
-    should("increase cb count and track history") {
-        service.processResources(telegramUser, "5", StateCode.ADD_CB)
-
-        serverData.cbCount shouldBe 5
         resources.history[5]!!.last().apply {
-            resource shouldBe ResourceType.CB
+            quantity shouldBe 3
             type shouldBe DirectionType.ADD
         }
-    }
 
-    should("decrease cb count and track removal") {
-        serverData.cbCount = 7
-
-        service.processResources(telegramUser, "2", StateCode.REMOVE_CB)
-
-        serverData.cbCount shouldBe 5
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.REMOVE_VOID, 2))
+        serverData.voidCount shouldBe 1
         resources.history[5]!!.last().type shouldBe DirectionType.REMOVE
     }
 
-    should("manage draador counts for add, sell and send") {
-        service.processResources(telegramUser, "4", StateCode.ADD_DRAADOR)
+    should("increase and decrease CB count with history") {
+        entityUser.profile!!.settings = entityUser.profile!!.settings.copy(resourcesCb = true)
+
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_CB, 4))
+        serverData.cbCount shouldBe 4
+
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.REMOVE_CB, 1))
+        serverData.cbCount shouldBe 3
+    }
+
+    should("process draador operations") {
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_DRAADOR, 4))
         serverData.draadorCount shouldBe 4
         resources.history[5]!!.last().type shouldBe DirectionType.CATCH
 
-        service.processResources(telegramUser, "3", StateCode.SELL_DRAADOR)
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.SELL_DRAADOR, 3))
         serverData.draadorCount shouldBe 1
         resources.history[5]!!.last().type shouldBe DirectionType.TRADE
 
-        service.processResources(telegramUser, "5", StateCode.SEND_DRAADOR)
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.SEND_DRAADOR, 5))
         serverData.draadorCount shouldBe 0
         serverData.balance shouldBe 5
         resources.history[5]!!.last().type shouldBe DirectionType.OUTGOING
     }
 
-    should("avoid negative draador count when selling more than available") {
+    should("prevent negative draador count") {
         serverData.draadorCount = 2
 
-        service.processResources(telegramUser, "5", StateCode.SELL_DRAADOR)
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.SELL_DRAADOR, 5))
 
         serverData.draadorCount shouldBe 0
     }
 
-    should("sell draador with explicit void reward") {
-        serverData.draadorCount = 12
-        serverData.voidCount = 1
-
-        service.processResources(telegramUser, "5:3", StateCode.SET_SOURCE_PRICE)
-
-        serverData.draadorCount shouldBe 7
-        serverData.voidCount shouldBe 4
-        val history = resources.history[5]!!
-        history shouldHaveSize 2
-        history.first().apply {
-            resource shouldBe ResourceType.DRAADOR
-            type shouldBe DirectionType.TRADE
-            quantity shouldBe 5
-        }
-        history.last().apply {
-            resource shouldBe ResourceType.VOID
-            type shouldBe DirectionType.ADD
-            quantity shouldBe 3
-        }
-    }
-
-    should("populate exchange value") {
-        service.processResources(telegramUser, "some", StateCode.ADD_EXCHANGE)
-
-        serverData.exchange shouldBe "some"
-    }
-
-    should("decrease balance and transfer to main server when receiving draador") {
-        resources.data.mainServerId = 1
+    should("handle receive operation and transfer to main server") {
+        entityUser.profile!!.mainServerId = 1
         resources.data.servers[1] = ServerResourceData()
         resources.history[1] = mutableListOf()
-        serverData.balance = 10
 
-        service.processResources(telegramUser, "4", StateCode.RECEIVE_DRAADOR)
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.RECEIVE_DRAADOR, 4))
 
-        serverData.balance shouldBe 6
+        serverData.balance shouldBe -4
         resources.history[5]!!.last().type shouldBe DirectionType.INCOMING
-        val mainData = resources.data.servers[1]!!
-        mainData.draadorCount shouldBe 4
-        resources.history[1]!!.last().run {
-            resource shouldBe ResourceType.DRAADOR
+        resources.data.servers[1]!!.draadorCount shouldBe 4
+        resources.history[1]!!.last().apply {
             type shouldBe DirectionType.INCOMING
             fromServer shouldBe 5
         }
     }
 
+    should("update exchange value") {
+        service.applyOperation(telegramUser, 5, ResourceOperation.SetExchange("some"))
+        serverData.exchange shouldBe "some"
+
+        service.applyOperation(telegramUser, 5, ResourceOperation.ClearExchange)
+        serverData.exchange shouldBe null
+    }
+
+    should("toggle notify flag") {
+        serverData.notifyDisable shouldBe false
+        service.applyOperation(telegramUser, 5, ResourceOperation.ToggleNotify)
+        serverData.notifyDisable shouldBe true
+    }
+
+    should("set and remove main server") {
+        service.applyOperation(telegramUser, 5, ResourceOperation.MarkMain)
+        entityUser.profile!!.mainServerId shouldBe 5
+
+        service.applyOperation(telegramUser, 5, ResourceOperation.UnmarkMain)
+        entityUser.profile!!.mainServerId shouldBe null
+    }
+
     should("limit history to 20 records") {
         val history = resources.history[5]!!
         repeat(20) { index ->
-            history.add(ResourcesHistory(LocalDate.now(), ResourceType.VOID, DirectionType.ADD, index + 1))
+            history.add(
+                ResourcesHistory(
+                    LocalDate.now(),
+                    ru.grabovsky.dungeoncrusherbot.entity.ResourceType.VOID,
+                    DirectionType.ADD,
+                    index + 1
+                )
+            )
         }
 
-        service.processResources(telegramUser, "1", StateCode.ADD_VOID)
+        service.applyOperation(telegramUser, 5, ResourceOperation.Adjust(AdjustType.ADD_VOID, 1))
 
-        history shouldHaveSize 20
+        history.shouldHaveSize(20)
     }
 
     should("send watermelon report when criteria are met") {
-        prepareUser(lastServerId = 8)
-        entityUser.settings = UserSettings(sendWatermelon = true, discordUsername = "discord", resourcesCb = false, resourcesQuickChange = false)
+        prepareUser(serverId = 8)
+        entityUser.profile!!.settings = UserSettings(
+            sendWatermelon = true,
+            discordUsername = "discord",
+            resourcesCb = false,
+            resourcesQuickChange = false
+        )
 
-        service.processResources(telegramUser, "9", StateCode.ADD_DRAADOR)
+        service.applyOperation(telegramUser, 8, ResourceOperation.Adjust(AdjustType.ADD_DRAADOR, 9))
 
-        verify { googleFormService.sendDraadorCount("9", "discord") }
+        googleFormService.calls shouldBe listOf("9" to "discord")
     }
 
     should("skip watermelon report when criteria are not met") {
-        prepareUser(lastServerId = 8)
-        entityUser.settings = UserSettings(sendWatermelon = false, discordUsername = "discord")
+        prepareUser(serverId = 8)
+        entityUser.profile!!.settings = UserSettings(sendWatermelon = false, discordUsername = "discord")
 
-        service.processResources(telegramUser, "2", StateCode.ADD_DRAADOR)
+        service.applyOperation(telegramUser, 8, ResourceOperation.Adjust(AdjustType.ADD_DRAADOR, 2))
 
-        verify(exactly = 0) { googleFormService.sendDraadorCount(any(), any()) }
+        googleFormService.calls shouldBe emptyList()
     }
 })
 
+private class FakeUserService : UserService {
+    val users: MutableMap<Long, User> = mutableMapOf()
 
+    override fun createOrUpdateUser(user: TgUser): User =
+        throw UnsupportedOperationException("Not used in tests")
 
+    override fun saveUser(user: User) {
+        users[user.userId] = user
+    }
 
+    override fun getUser(userId: Long): User? = users[userId]
 
+    override fun addNote(userId: Long, note: String): Boolean {
+        val user = users[userId] ?: return false
+        user.profile?.notes?.add(note)
+        return true
+    }
 
+    override fun removeNote(userId: Long, index: Int): Boolean {
+        val user = users[userId] ?: return false
+        val position = index - 1
+        val notes = user.profile?.notes ?: return false
+        if (position !in notes.indices) {
+            return false
+        }
+        notes.removeAt(position)
+        return true
+    }
+
+    override fun clearNotes(user: TgUser) =
+        throw UnsupportedOperationException("Not used in tests")
+
+    override fun sendAdminMessage(user: TgUser, message: String, sourceMessageId: Int, sourceChatId: Long) =
+        throw UnsupportedOperationException("Not used in tests")
+
+    override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) =
+        throw UnsupportedOperationException("Not used in tests")
+}
+
+private class FakeGoogleFormService : GoogleFormService {
+    val calls: MutableList<Pair<String, String>> = mutableListOf()
+
+    override fun sendDraadorCount(count: String, discordName: String) {
+        calls += count to discordName
+    }
+}

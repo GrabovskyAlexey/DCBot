@@ -9,6 +9,6 @@ import ru.grabovsky.dungeoncrusherbot.entity.User
 interface UserRepository: JpaRepository<User, Long> {
     fun findUserByUserId(userId: Long): User?
 
-    @Query("select u from User u where u.isBlocked=false")
+    @Query("select u from User u left join fetch u.profile p where p is null or p.isBlocked=false")
     fun findAllNotBlockedUser(): List<User>
 }

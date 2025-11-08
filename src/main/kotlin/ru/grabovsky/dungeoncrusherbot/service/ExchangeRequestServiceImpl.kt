@@ -1,23 +1,18 @@
 ﻿package ru.grabovsky.dungeoncrusherbot.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.*
-import ru.grabovsky.dungeoncrusherbot.repository.CallbackDataRepository
 import ru.grabovsky.dungeoncrusherbot.repository.ExchangeRequestRepository
+import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeSearchPerformedEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.SET_SOURCE_PRICE
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode.SET_TARGET_PRICE
-import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 @Service
 class ExchangeRequestServiceImpl(
     private val exchangeRequestRepository: ExchangeRequestRepository,
-    private val callbackDataRepository: CallbackDataRepository,
-    private val objectMapper: ObjectMapper
+    private val eventPublisher: ApplicationEventPublisher,
 ) : ExchangeRequestService {
 
     override fun getActiveExchangeRequestsByServer(
@@ -45,7 +40,9 @@ class ExchangeRequestServiceImpl(
             .filterNot { it.user == user }
             .filter {it.user.isActiveAndHasUsername()}
         val self = getActiveExchangeRequestsByServer(user, serverId, ExchangeDirectionType.SOURCE).filter { it.isActive }
-        return filterRequests(all, self)
+        val filtered = filterRequests(all, self)
+        publishSearchEvent(user, serverId, serverType, filtered)
+        return filtered
     }
 
     override fun createOrUpdateExchangeRequest(
@@ -99,19 +96,6 @@ class ExchangeRequestServiceImpl(
         return exchangeRequestRepository.findAllBySourceServerIdAndType(serverId, type)
     }
 
-    override fun processPrice(user: TgUser, value: String, state: StateCode) {
-        val data = callbackDataRepository.findByTypeAndUserId(CallbackDataType.EXCHANGE, user.id)
-            ?: throw IllegalStateException("User ${user.userName ?: user.firstName} not found EXCHANGE callback data")
-        val request = objectMapper.readValue(data.data, CallbackExchangeRequest::class.java)
-        when (state) {
-            SET_SOURCE_PRICE -> request.sourceResourcePrice = value.toInt()
-            SET_TARGET_PRICE -> request.targetResourcePrice = value.toInt()
-            else -> null
-        }
-        data.data = objectMapper.writeValueAsString(request)
-        callbackDataRepository.save(data)
-    }
-
     override fun setRequestInactiveById(requestId: Long) {
         val request = exchangeRequestRepository.findRequestById(requestId) ?: return
         request.isActive = false
@@ -144,5 +128,23 @@ class ExchangeRequestServiceImpl(
         val exchangeVoidRequest = all.filter { it.type == EXCHANGE_VOID }.filter {voidRequest.any { req -> req.targetServerId == it.sourceServerId } }
 
         return buyRequests + sellRequests + exchangeMapRequest + exchangeVoidRequest
+    }
+
+    private fun publishSearchEvent(
+        user: User,
+        serverId: Int,
+        direction: ExchangeDirectionType,
+        matches: List<ExchangeRequest>,
+    ) {
+        val typeCounts = matches.groupingBy { it.type }.eachCount()
+        eventPublisher.publishEvent(
+            ExchangeSearchPerformedEvent(
+                userId = user.userId,
+                serverId = serverId,
+                direction = direction,
+                matchesCount = matches.size,
+                matchTypeCounts = typeCounts,
+            )
+        )
     }
 }

@@ -1,26 +1,35 @@
-﻿package ru.grabovsky.dungeoncrusherbot.service
+package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
-import org.springframework.context.ApplicationEventPublisher
+import io.mockk.*
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
-import ru.grabovsky.dungeoncrusherbot.strategy.state.StateCode
+import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageViewBuilder
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowActionExecutor
+import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowPayloadSerializer
 import java.time.Instant
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
 class UserServiceImplTest : ShouldSpec({
     val userRepository = mockk<UserRepository>()
     val adminMessageRepository = mockk<AdminMessageRepository>(relaxed = true)
-    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    val service = UserServiceImpl(userRepository, adminMessageRepository, eventPublisher)
+    val flowStateService = mockk<FlowStateService>(relaxed = true)
+    val payloadSerializer = mockk<FlowPayloadSerializer>(relaxed = true)
+    val adminMessageViewBuilder = mockk<AdminMessageViewBuilder>(relaxed = true)
+    val actionExecutor = mockk<FlowActionExecutor>(relaxed = true)
+    val service = UserServiceImpl(
+        userRepository,
+        adminMessageRepository,
+        flowStateService,
+        payloadSerializer,
+        adminMessageViewBuilder,
+        actionExecutor
+    )
 
     beforeTest {
         clearMocks(userRepository)
@@ -44,7 +53,7 @@ class UserServiceImplTest : ShouldSpec({
         saved.language shouldBe "en"
         saved.lastActionAt.shouldNotBeNull()
         saved.lastActionAt!!.isAfter(Instant.now().minusSeconds(5)) shouldBe true
-        saved.isBlocked shouldBe false
+        saved.profile!!.isBlocked shouldBe false
         result shouldBe saved
         verify(exactly = 1) { userRepository.saveAndFlush(any()) }
     }
@@ -56,9 +65,11 @@ class UserServiceImplTest : ShouldSpec({
             lastName = "Name",
             userName = "old",
             language = "ru"
-        )
+        ).apply {
+            profile = UserProfile(userId = userId, user = this)
+        }
         existingUser.lastActionAt = null
-        existingUser.isBlocked = true
+        existingUser.profile!!.isBlocked = true
 
         val tgUser = mockk<TgUser>()
         every { tgUser.id } returns 88L
@@ -76,19 +87,10 @@ class UserServiceImplTest : ShouldSpec({
         existingUser.lastName shouldBe "Name"
         existingUser.userName shouldBe "new"
         existingUser.language shouldBe "en"
-        existingUser.isBlocked shouldBe false
+        existingUser.profile!!.isBlocked shouldBe false
         existingUser.lastActionAt.shouldNotBeNull()
         result shouldBe existingUser
         verify(exactly = 1) { userRepository.saveAndFlush(existingUser) }
     }
 
-    should("keep notes logic untouched") {
-        val user = User(1L, "A", "B", "ab")
-        user.notes.addAll(listOf("1", "2"))
-        every { userRepository.saveAndFlush(user) } returns user
-
-        service.processNote(user, "3", StateCode.ADD_NOTE)
-        user.notes.last() shouldBe "3"
-        verify { userRepository.saveAndFlush(user) }
-    }
 })
