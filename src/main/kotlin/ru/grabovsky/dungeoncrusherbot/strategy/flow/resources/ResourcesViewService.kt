@@ -7,6 +7,7 @@ import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
 import ru.grabovsky.dungeoncrusherbot.strategy.dto.ServerResourceDto
+import ru.grabovsky.dungeoncrusherbot.util.escapeMarkdown
 import java.util.*
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -92,7 +93,7 @@ class ResourcesViewService(
             draadorCount = serverData.draadorCount,
             voidCount = serverData.voidCount,
             balance = serverData.balance,
-            exchange = serverData.exchange,
+            exchange = serverData.exchange.escapeMarkdown(),
             history = if (includeHistory) history else null,
             hasHistory = resources.history[serverId]?.isNotEmpty() == true,
             notifyDisable = serverData.notifyDisable,

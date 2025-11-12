@@ -18,6 +18,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.dto.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.support.buildMessage
 import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeContactsSharedEvent
+import ru.grabovsky.dungeoncrusherbot.util.escapeMarkdown
 import java.util.*
 import org.telegram.telegrambots.meta.api.objects.message.Message as TgMessage
 import ru.grabovsky.dungeoncrusherbot.entity.User as BotUser
@@ -519,7 +520,7 @@ class ExchangeFlow(
             )
         )
         return ExchangeResultDto(
-            username = escapeMarkdown(request.user.userName),
+            username = request.user.userName.escapeMarkdown(),
             firstName = request.user.firstName ?: "",
             active = request.isActive,
             request = request.toDto(pos = 1)
@@ -774,11 +775,6 @@ class ExchangeFlow(
     private fun getUserEntity(id: Long): BotUser =
         userService.getUser(id) ?: error("User $id not found")
 
-    private fun escapeMarkdown(source: String?): String? {
-        source ?: return null
-        val regex = Regex("""([_*\[\]()~`>#+\-=|{}!])""")
-        return source.replace(regex, """\\$1""")
-    }
 
     private fun FlowAction.asResult(
         state: ExchangeFlowState,
