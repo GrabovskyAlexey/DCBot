@@ -179,7 +179,7 @@ class DebtFlow(
                 )
             }
         ) {
-            buildAmountPrompt(context.locale, creation)
+            buildAmountPrompt(context.locale, creation.view(context.locale))
         }
     }
 
@@ -195,7 +195,7 @@ class DebtFlow(
                 bindingPrefix = PROMPT_BINDING_PREFIX,
                 userMessageId = message.messageId
             ) {
-                buildAmountPrompt(context.locale, creation, invalid = true)
+                buildAmountPrompt(context.locale, creation.view(context.locale), invalid = true)
             }
         }
         creation.amount = amount
@@ -237,21 +237,8 @@ class DebtFlow(
             }
         }
         creation.counterpartyName = name
-        val cleanup = context.state.payload.cleanupPromptMessages()
         val overview = createDebt(context, creation)
-        val newState = DebtFlowState()
-        val actions = mutableListOf<FlowAction>()
-        actions += cleanup
-        actions += DeleteMessageIdAction(message.messageId)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(context.locale, overview)
-        )
-        return FlowResult(
-            stepKey = DebtStep.MAIN.key,
-            payload = newState,
-            actions = actions
-        )
+        return resultWithMain(context, overview, deleteUserMessageId = message.messageId)
     }
 
     private fun handleEditAmountInput(
@@ -262,19 +249,7 @@ class DebtFlow(
         val overview = buildOverview(context.user.id, context.locale)
         val debt = (overview.oweMe + overview.iOwe).firstOrNull { it.id == debtId }
         if (debt == null) {
-            val cleanup = context.state.payload.cleanupPromptMessages()
-            val actions = mutableListOf<FlowAction>()
-            actions += cleanup
-            actions += DeleteMessageIdAction(message.messageId)
-            actions += EditMessageAction(
-                bindingKey = MAIN_MESSAGE_KEY,
-                message = buildMainMessage(context.locale, overview)
-            )
-            return FlowResult(
-                stepKey = DebtStep.MAIN.key,
-                payload = DebtFlowState(),
-                actions = actions
-            )
+            return resultWithMain(context, overview, deleteUserMessageId = message.messageId)
         }
 
         val amount = message.text?.trim()?.toIntOrNull()
@@ -284,25 +259,13 @@ class DebtFlow(
                 bindingPrefix = EDIT_PROMPT_BINDING_PREFIX,
                 userMessageId = message.messageId
             ) {
-                buildEditAmountPrompt(context.locale, debt, invalid = true)
+                buildAmountPrompt(context.locale, debt.toCreationView(), invalid = true)
             }
         }
 
         debtService.updateAmount(context.user.id, debtId, amount)
         val updatedOverview = buildOverview(context.user.id, context.locale)
-        val cleanup = context.state.payload.cleanupPromptMessages()
-        val actions = mutableListOf<FlowAction>()
-        actions += cleanup
-        actions += DeleteMessageIdAction(message.messageId)
-        actions += EditMessageAction(
-            bindingKey = MAIN_MESSAGE_KEY,
-            message = buildMainMessage(context.locale, updatedOverview)
-        )
-        return FlowResult(
-            stepKey = DebtStep.MAIN.key,
-            payload = DebtFlowState(),
-            actions = actions
-        )
+        return resultWithMain(context, updatedOverview, deleteUserMessageId = message.messageId)
     }
 
     private fun removeDebt(
@@ -428,81 +391,32 @@ class DebtFlow(
             },
             appendActions = { addAll(cleanup) }
         ) {
-            buildEditAmountPrompt(context.locale, debt)
+            buildAmountPrompt(context.locale, debt.toCreationView())
         }
     }
 
     private fun showEditMenu(
         context: FlowContext<DebtFlowState>,
         callbackQuery: CallbackQuery
-    ): FlowResult<DebtFlowState>? {
-        val overview = buildOverview(context.user.id, context.locale)
-        val debts = overview.oweMe + overview.iOwe
-        if (debts.isEmpty()) {
-            return FlowResult(
-                stepKey = DebtStep.MAIN.key,
-                payload = context.state.payload,
-                actions = listOf(
-                    AnswerCallbackAction(
-                        callbackQueryId = callbackQuery.id,
-                        text = i18nService.i18n("flow.debt.error.not_found", context.locale, "Записей нет"),
-                        showAlert = true
-                    )
-                )
-            )
-        }
-        return FlowResult(
-            stepKey = DebtStep.MAIN.key,
-            payload = context.state.payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = key.buildMessage(
-                        step = DebtStep.MAIN,
-                        model = overview,
-                        inlineButtons = buildEditButtons(context.locale, overview)
-                    )
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+    ): FlowResult<DebtFlowState> =
+        showMenu(
+            context = context,
+            callbackQuery = callbackQuery,
+            buttonsBuilder = { overview -> buildItemButtons(context.locale, overview, "✏\uFE0F", "EDIT") },
+            emptyFallback = "Записей нет"
         )
-    }
 
     private fun showRemoveMenu(
         context: FlowContext<DebtFlowState>,
         callbackQuery: CallbackQuery
-    ): FlowResult<DebtFlowState> {
-        val overview = buildOverview(context.user.id, context.locale)
-        val debts = overview.oweMe + overview.iOwe
-        if (debts.isEmpty()) {
-            return FlowResult(
-                stepKey = context.state.stepKey,
-                payload = context.state.payload,
-                actions = listOf(
-                    AnswerCallbackAction(
-                        callbackQueryId = callbackQuery.id,
-                        text = i18nService.i18n("flow.debt.error.not_found", context.locale, "Запись не найдена"),
-                        showAlert = true
-                    )
-                )
-            )
-        }
-        return FlowResult(
-            stepKey = DebtStep.MAIN.key,
-            payload = context.state.payload,
-            actions = listOf(
-                EditMessageAction(
-                    bindingKey = MAIN_MESSAGE_KEY,
-                    message = key.buildMessage(
-                        step = DebtStep.MAIN,
-                        model = overview,
-                        inlineButtons = buildRemoveButtons(context.locale, overview)
-                    )
-                ),
-                AnswerCallbackAction(callbackQuery.id)
-            )
+    ): FlowResult<DebtFlowState> =
+        showMenu(
+            context = context,
+            callbackQuery = callbackQuery,
+            buttonsBuilder = { overview -> buildItemButtons(context.locale, overview, "❌", "REMOVE") },
+            emptyFallback = "Запись не найдена",
+            emptyStepKey = context.state.stepKey
         )
-    }
 
     private fun handlePromptCallback(
         context: FlowContext<DebtFlowState>,
@@ -536,9 +450,68 @@ class DebtFlow(
         )
     }
 
+    private fun resultWithMain(
+        context: FlowContext<DebtFlowState>,
+        overview: DebtOverviewModel,
+        deleteUserMessageId: Int? = null
+    ): FlowResult<DebtFlowState> {
+        val actions = mutableListOf<FlowAction>()
+        actions += context.state.payload.cleanupPromptMessages()
+        if (deleteUserMessageId != null) {
+            actions += DeleteMessageIdAction(deleteUserMessageId)
+        }
+        actions += EditMessageAction(
+            bindingKey = MAIN_MESSAGE_KEY,
+            message = buildMainMessage(context.locale, overview)
+        )
+        return FlowResult(
+            stepKey = DebtStep.MAIN.key,
+            payload = DebtFlowState(),
+            actions = actions
+        )
+    }
+
+    private fun showMenu(
+        context: FlowContext<DebtFlowState>,
+        callbackQuery: CallbackQuery,
+        buttonsBuilder: (DebtOverviewModel) -> List<FlowInlineButton>,
+        emptyFallback: String,
+        emptyStepKey: String = DebtStep.MAIN.key
+    ): FlowResult<DebtFlowState> {
+        val overview = buildOverview(context.user.id, context.locale)
+        val debts = overview.oweMe + overview.iOwe
+        if (debts.isEmpty()) {
+            return FlowResult(
+                stepKey = emptyStepKey,
+                payload = context.state.payload,
+                actions = listOf(
+                    AnswerCallbackAction(
+                        callbackQueryId = callbackQuery.id,
+                        text = i18nService.i18n("flow.debt.error.not_found", context.locale, emptyFallback),
+                        showAlert = true
+                    )
+                )
+            )
+        }
+        return FlowResult(
+            stepKey = DebtStep.MAIN.key,
+            payload = context.state.payload,
+            actions = listOf(
+                EditMessageAction(
+                    bindingKey = MAIN_MESSAGE_KEY,
+                    message = key.buildMessage(
+                        step = DebtStep.MAIN,
+                        model = overview,
+                        inlineButtons = buttonsBuilder(overview)
+                    )
+                ),
+                AnswerCallbackAction(callbackQuery.id)
+            )
+        )
+    }
+
     private fun buildOverview(userId: Long, locale: Locale): DebtOverviewModel {
         val debts = debtService.getDebts(userId)
-        val servers = serverService.getAllServers().associateBy { it.id }
 
         val oweMeOrdered = debts
             .filter { it.direction == DebtDirection.OWE_ME }
@@ -551,10 +524,10 @@ class DebtFlow(
             .toMap()
 
         val oweMe = oweMeOrdered.map { (debt, number) ->
-            debt.toView(locale, servers[debt.serverId], number)
+            debt.toView(locale, number)
         }
         val iOwe = iOweOrdered.map { (debt, number) ->
-            debt.toView(locale, servers[debt.serverId], number)
+            debt.toView(locale, number)
         }
 
         return DebtOverviewModel(
@@ -576,10 +549,10 @@ class DebtFlow(
         return buildOverview(context.user.id, context.locale)
     }
 
-    private fun Debt.toView(locale: Locale, server: Server?, displayNumber: Int): DebtItemModel =
+    private fun Debt.toView(locale: Locale, number: Int): DebtItemModel =
         DebtItemModel(
             id = id ?: 0,
-            displayNumber = displayNumber,
+            displayNumber = number,
             directionLabel = directionLabel(direction, locale),
             resourceLabel = resourceLabel(resourceType, locale),
             amount = amount,
@@ -646,38 +619,31 @@ class DebtFlow(
             )
         )
 
-    private fun buildRemoveButtons(locale: Locale, overview: DebtOverviewModel): List<FlowInlineButton> {
-        val debts = (overview.oweMe + overview.iOwe)
-        val items = debts.mapIndexed { index, debt ->
-            FlowInlineButton(
-                text = "❌ ${debt.displayNumber}",
-                payload = FlowCallbackPayload(key.value, "REMOVE:${debt.id}"),
-                row = index / REMOVE_COLUMNS,
-                col = index % REMOVE_COLUMNS
-            )
-        }
-        val back = FlowInlineButton(
-            text = i18nService.i18n("flow.button.back", locale, "⬅️ Назад"),
-            payload = FlowCallbackPayload(key.value, "ACTION:BACK"),
-            row = (items.lastOrNull()?.row ?: 0) + 1,
-            col = 0
+    private fun buildItemButtons(locale: Locale, overview: DebtOverviewModel, prefix: String, action: String): List<FlowInlineButton> =
+        buildActionButtons(
+            locale = locale,
+            overview = overview,
+            textBuilder = { debt -> "$prefix ${debt.displayNumber}" },
+            action = action
         )
-        return items + back
-    }
 
-
-    private fun buildEditButtons(locale: Locale, overview: DebtOverviewModel): List<FlowInlineButton> {
+    private fun buildActionButtons(
+        locale: Locale,
+        overview: DebtOverviewModel,
+        textBuilder: (DebtItemModel) -> String,
+        action: String
+    ): List<FlowInlineButton> {
         val debts = (overview.oweMe + overview.iOwe)
         val items = debts.mapIndexed { index, debt ->
             FlowInlineButton(
-                text = "✏\uFE0F ${debt.displayNumber}",
-                payload = FlowCallbackPayload(key.value, "EDIT:${debt.id}"),
+                text = textBuilder(debt),
+                payload = FlowCallbackPayload(key.value, "$action:${debt.id}"),
                 row = index / REMOVE_COLUMNS,
                 col = index % REMOVE_COLUMNS
             )
         }
         val back = FlowInlineButton(
-            text = i18nService.i18n("flow.button.back", locale, "⬅️ Назад"),
+            text = i18nService.i18n("flow.button.back", locale, "⬅\uFE0F Назад"),
             payload = FlowCallbackPayload(key.value, "ACTION:BACK"),
             row = (items.lastOrNull()?.row ?: 0) + 1,
             col = 0
@@ -754,13 +720,17 @@ class DebtFlow(
             )
         }
 
-    private fun buildAmountPrompt(locale: Locale, creation: DebtCreationState, invalid: Boolean = false): FlowMessage =
+    private fun buildAmountPrompt(
+        locale: Locale,
+        creation: DebtCreationViewModel,
+        invalid: Boolean = false
+    ): FlowMessage =
         key.buildMessage(
             step = DebtStep.PROMPT_AMOUNT,
             model = DebtPromptModel(
                 title = i18nService.i18n("flow.debt.prompt.amount", locale, "Введите количество"),
                 invalid = invalid,
-                creation = creation.view(locale)
+                creation = creation
             ),
             inlineButtons = listOf(
                 key.cancelPromptButton(
@@ -776,25 +746,6 @@ class DebtFlow(
                 title = i18nService.i18n("flow.debt.prompt.name", locale, "Введите имя должника/кредитора"),
                 invalid = invalid,
                 creation = creation.view(locale)
-            ),
-            inlineButtons = listOf(
-                key.cancelPromptButton(
-                    text = i18nService.i18n("flow.button.cancel", locale, "❌ Отмена")
-                )
-            )
-        )
-
-    private fun buildEditAmountPrompt(
-        locale: Locale,
-        debt: DebtItemModel,
-        invalid: Boolean = false
-    ): FlowMessage =
-        key.buildMessage(
-            step = DebtStep.PROMPT_AMOUNT,
-            model = DebtPromptModel(
-                title = i18nService.i18n("flow.debt.prompt.amount", locale, "Введите количество"),
-                invalid = invalid,
-                creation = debt.toCreationView()
             ),
             inlineButtons = listOf(
                 key.cancelPromptButton(
@@ -858,11 +809,3 @@ data class DebtPromptModel(
     val invalid: Boolean,
     val creation: DebtCreationViewModel,
 )
-
-
-
-
-
-
-
-
