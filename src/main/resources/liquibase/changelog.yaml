@@ -57,3 +57,7 @@
       file: liquibase/changelog/28.add_locale_to_profile.sql
   - include:
       file: liquibase/changelog/29.release_notes_1_1_9.sql
+  - include:
+      file: liquibase/changelog/30.create_debts_table.sql
+  - include:
+      file: liquibase/changelog/31.release_notes_1_2_0.sql
