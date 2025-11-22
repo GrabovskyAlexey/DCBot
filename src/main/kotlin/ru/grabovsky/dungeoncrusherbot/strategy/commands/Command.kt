@@ -11,6 +11,7 @@ enum class Command(
     RESOURCES("resources", "\uD83D\uDCCA Учет ресурсов", 4),
     NOTES("notes", "\uD83D\uDDD2 Заметки", 5),
     EXCHANGE("exchange", "\uD83D\uDCB1 Поиск обменников", 6),
-    SETTINGS("settings", "⚙\uFE0F Настройки", 7),
-    HELP("help", "❓ Помощь", 99);
+    DEBT("debt", "\uD83D\uDCB3 Учёт долгов", 7),
+    SETTINGS("settings", "\u2699\uFE0F Настройки", 8),
+    HELP("help", "\u2753 Помощь", 99);
 }
