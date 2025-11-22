@@ -61,3 +61,5 @@
       file: liquibase/changelog/30.create_debts_table.sql
   - include:
       file: liquibase/changelog/31.release_notes_1_2_0.sql
+  - include:
+      file: liquibase/changelog/32.migrate_resources_state.sql

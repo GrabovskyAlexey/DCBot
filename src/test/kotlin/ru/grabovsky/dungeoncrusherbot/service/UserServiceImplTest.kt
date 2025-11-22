@@ -7,6 +7,8 @@ import io.mockk.*
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
+import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
+import ru.grabovsky.dungeoncrusherbot.repository.ResourceServerStateRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.admin.AdminMessageViewBuilder
@@ -18,6 +20,8 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImplTest : ShouldSpec({
     val userRepository = mockk<UserRepository>()
     val adminMessageRepository = mockk<AdminMessageRepository>(relaxed = true)
+    val mazeRepository = mockk<MazeRepository>(relaxed = true)
+    val resourceServerStateRepository = mockk<ResourceServerStateRepository>(relaxed = true)
     val flowStateService = mockk<FlowStateService>(relaxed = true)
     val payloadSerializer = mockk<FlowPayloadSerializer>(relaxed = true)
     val adminMessageViewBuilder = mockk<AdminMessageViewBuilder>(relaxed = true)
@@ -25,6 +29,8 @@ class UserServiceImplTest : ShouldSpec({
     val service = UserServiceImpl(
         userRepository,
         adminMessageRepository,
+        mazeRepository,
+        resourceServerStateRepository,
         flowStateService,
         payloadSerializer,
         adminMessageViewBuilder,

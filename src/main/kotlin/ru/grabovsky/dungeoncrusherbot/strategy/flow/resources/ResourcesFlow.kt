@@ -50,6 +50,7 @@ class ResourcesFlow(
             is Exchange -> handleExchangeInput(context, message, pending)
             is AddNote -> handleAddNoteInput(context, message, pending)
             is RemoveNote -> handleRemoveNoteInput(context, message, pending)
+            is ExchangeUsername -> handleExchangeUsernameInput(context, message, pending)
         }
     }
 
@@ -129,8 +130,12 @@ class ResourcesFlow(
             "REMOVE_EXCHANGE" -> applyOperation(context, state, callbackQuery) {
                 resourcesService.applyOperation(context.user, serverId, ClearExchange)
             }
+            "REMOVE_EXCHANGE_USERNAME" -> applyOperation(context, state, callbackQuery) {
+                resourcesService.applyOperation(context.user, serverId, ClearExchangeUsername)
+            }
             "SHOW_HISTORY" -> showHistory(context, state, callbackQuery)
             "PROMPT_ADD_EXCHANGE" -> enterExchangePrompt(context, serverId, callbackQuery)
+            "PROMPT_SET_USERNAME" -> enterExchangeUsernamePrompt(context, serverId, callbackQuery)
             "PROMPT_ADD_NOTE" -> enterAddNotePrompt(context, serverId, callbackQuery)
             "PROMPT_REMOVE_NOTE" -> enterRemoveNotePrompt(context, serverId, callbackQuery)
             else -> null
@@ -166,6 +171,21 @@ class ResourcesFlow(
             prompt = prompt
         ) {
             resourcesPendingAction = Exchange(serverId)
+        }
+    }
+
+    private fun enterExchangeUsernamePrompt(
+        context: FlowContext<ResourcesFlowState>,
+        serverId: Int,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState> {
+        val prompt = promptBuilder.exchangeUsernamePrompt(context.locale, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = ExchangeUsername(serverId)
         }
     }
 
@@ -314,6 +334,23 @@ class ResourcesFlow(
         }
 
         userService.removeNote(context.user.id, index)
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
+    }
+
+    private fun handleExchangeUsernameInput(
+        context: FlowContext<ResourcesFlowState>,
+        message: Message,
+        pending: ExchangeUsername
+    ): FlowResult<ResourcesFlowState> {
+        val raw = message.text?.trim().orEmpty()
+        val value = raw.removePrefix("@").trim()
+        val isValid = raw.startsWith("@") && value.isNotEmpty()
+        if (!isValid) {
+            val prompt = promptBuilder.exchangeUsernamePrompt(context.locale, invalid = true)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_TEXT, prompt, message.messageId)
+        }
+
+        resourcesService.applyOperation(context.user, pending.serverId, SetExchangeUsername(value))
         return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
     private fun cancelPrompt(

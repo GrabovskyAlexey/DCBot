@@ -4,11 +4,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.mockk.mockk
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.AdjustType
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.GoogleFormService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ResourceOperation
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
+import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import java.time.LocalDate
 import org.telegram.telegrambots.meta.api.objects.User as TgUser
 
@@ -17,6 +19,8 @@ class ResourcesServiceImplTest : ShouldSpec({
     lateinit var userService: FakeUserService
     lateinit var googleFormService: FakeGoogleFormService
     lateinit var service: ResourcesServiceImpl
+    lateinit var userRepository: UserRepository
+    lateinit var resourceStateSyncService: ResourceStateSyncService
     lateinit var telegramUser: TgUser
     lateinit var entityUser: User
     lateinit var resources: Resources
@@ -36,7 +40,14 @@ class ResourcesServiceImplTest : ShouldSpec({
     beforeTest {
         userService = FakeUserService()
         googleFormService = FakeGoogleFormService()
-        service = ResourcesServiceImpl(userService, googleFormService)
+        userRepository = mockk(relaxed = true)
+        resourceStateSyncService = mockk(relaxed = true)
+        service = ResourcesServiceImpl(
+            userService = userService,
+            googleFormService = googleFormService,
+            resourceStateSyncService = resourceStateSyncService,
+            userRepository = userRepository
+        )
         telegramUser = TgUser.builder()
             .id(77L)
             .firstName("TG")
@@ -225,6 +236,9 @@ private class FakeUserService : UserService {
 
     override fun sendAdminReply(admin: TgUser, targetUserId: Long, message: String, replyToMessageId: Int?) =
         throw UnsupportedOperationException("Not used in tests")
+
+    override fun findByUsername(username: String): User? =
+        users.values.firstOrNull { it.userName?.equals(username, ignoreCase = true) == true }
 }
 
 private class FakeGoogleFormService : GoogleFormService {

@@ -4,7 +4,7 @@
 <#if server.main>
 *👑 Основной сервер*
 <#else>
-*Обменник:* <#if server.exchange?has_content>${server.exchange}<#else>Отсутствует</#if>
+*Обменник:* <#if server.exchange?has_content>${server.exchange}<#else>Отсутствует</#if><#if server.exchangeUsername?has_content> (*@${server.exchangeUsername}*)</#if>
 </#if>
 *На руках:* ${server.draadorCount} 🪆
 <#if server.balance gt 0>
@@ -16,6 +16,14 @@
 <#if server.cbEnabled>
 *КБ:* ${server.cbCount} 😈
 </#if>
+
+<#if server.partners?has_content>
+*У обменников:*
+<#list server.partners as partner>
+<#if partner.username?has_content>*@${partner.username}*<#if partner.mainServerId?? && partner.mainServerId?has_content> *(${partner.mainServerId}s*)</#if>: ${partner.draadorCount} 🪆</#if>
+</#list>
+</#if>
+
 <#if server.main && server.notes?size gt 0>
 *Заметки:*
 <#list server.notes as note>
