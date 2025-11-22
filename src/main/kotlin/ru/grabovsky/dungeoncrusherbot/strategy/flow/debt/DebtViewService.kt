@@ -25,7 +25,6 @@ class DebtViewService(
 
     fun buildOverview(userId: Long, locale: Locale): DebtOverviewModel {
         val debts = debtService.getDebts(userId)
-        val servers = serverService.getAllServers().associateBy { it.id }
 
         val oweMeOrdered = debts
             .filter { it.direction == DebtDirection.OWE_ME }
@@ -38,10 +37,10 @@ class DebtViewService(
             .toMap()
 
         val oweMe = oweMeOrdered.map { (debt, number) ->
-            debt.toView(locale, servers[debt.serverId], number)
+            debt.toView(locale, number)
         }
         val iOwe = iOweOrdered.map { (debt, number) ->
-            debt.toView(locale, servers[debt.serverId], number)
+            debt.toView(locale, number)
         }
 
         return DebtOverviewModel(
@@ -151,7 +150,7 @@ class DebtViewService(
         counterparty = counterparty
     )
 
-    private fun Debt.toView(locale: Locale, server: Server?, displayNumber: Int): DebtItemModel =
+    private fun Debt.toView(locale: Locale, displayNumber: Int): DebtItemModel =
         DebtItemModel(
             id = id ?: 0,
             displayNumber = displayNumber,
