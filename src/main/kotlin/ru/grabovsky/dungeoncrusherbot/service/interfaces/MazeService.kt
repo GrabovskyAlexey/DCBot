@@ -8,4 +8,5 @@ interface MazeService {
     fun processSameStep(maze: Maze, direction: Direction, steps: Int)
     fun refreshMaze(maze: Maze)
     fun revertSameSteps(maze: Maze)
+    fun undoLastStep(maze: Maze): Boolean
 }

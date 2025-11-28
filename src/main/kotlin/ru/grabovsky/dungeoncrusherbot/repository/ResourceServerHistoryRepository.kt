@@ -5,4 +5,5 @@ import ru.grabovsky.dungeoncrusherbot.entity.ResourceServerHistory
 
 interface ResourceServerHistoryRepository : JpaRepository<ResourceServerHistory, Long> {
     fun findAllByServerStateIdOrderByIdAsc(id: Long): List<ResourceServerHistory>
+    fun deleteAllByServerStateId(id: Long)
 }

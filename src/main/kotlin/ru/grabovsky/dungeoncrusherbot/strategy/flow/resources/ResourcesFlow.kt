@@ -133,6 +133,7 @@ class ResourcesFlow(
             "REMOVE_EXCHANGE_USERNAME" -> applyOperation(context, state, callbackQuery) {
                 resourcesService.applyOperation(context.user, serverId, ClearExchangeUsername)
             }
+            "UNDO_LAST" -> undoLast(context, state, callbackQuery)
             "SHOW_HISTORY" -> showHistory(context, state, callbackQuery)
             "PROMPT_ADD_EXCHANGE" -> enterExchangePrompt(context, serverId, callbackQuery)
             "PROMPT_SET_USERNAME" -> enterExchangeUsernamePrompt(context, serverId, callbackQuery)
@@ -432,6 +433,39 @@ class ResourcesFlow(
         val serverId = state.selectedServerId ?: return null
         state.showHistory = true
         return result(context, serverId, state, callbackQuery)
+    }
+
+    private fun undoLast(
+        context: FlowContext<ResourcesFlowState>,
+        state: ResourcesFlowState,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState>? {
+        val serverId = state.selectedServerId ?: return null
+        val success = resourcesService.undoLastOperation(context.user, serverId)
+        val detail = viewService.buildServer(
+            context.user,
+            serverId,
+            includeHistory = state.showHistory,
+            locale = context.locale
+        )
+        val actions = mutableListOf<FlowAction>(
+            EditMessageAction(
+                bindingKey = MAIN_MESSAGE_KEY,
+                message = buildServerMessage(detail)
+            ),
+            AnswerCallbackAction(callbackQuery.id)
+        )
+        if (!success) {
+            actions += AnswerCallbackAction(
+                callbackQueryId = callbackQuery.id,
+                text = i18nService.i18n("flow.resources.undo.empty", context.locale, "Отменять нечего")
+            )
+        }
+        return FlowResult(
+            stepKey = ResourcesStep.SERVER.key,
+            payload = state,
+            actions = actions
+        )
     }
 
     private fun result(

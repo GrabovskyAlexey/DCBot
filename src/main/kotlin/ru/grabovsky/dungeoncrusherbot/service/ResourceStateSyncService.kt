@@ -148,6 +148,18 @@ class ResourceStateSyncService(
     fun findByExchangeUsername(serverId: Int, exchangeUsername: String): List<ResourceServerState> =
         resourceServerStateRepository.findAllByServerIdAndExchangeUsernameIgnoreCase(serverId, exchangeUsername)
 
+    fun removeHistoryEntry(user: User, serverId: Int, legacyEntry: ResourcesHistory) {
+        val state = resourceServerStateRepository.findByUserUserIdAndServerId(user.userId, serverId) ?: return
+        val history = resourceServerHistoryRepository.findAllByServerStateIdOrderByIdAsc(state.id!!)
+        val target = history.lastOrNull {
+            it.resource == legacyEntry.resource &&
+                it.direction == legacyEntry.type &&
+                it.quantity == legacyEntry.quantity &&
+                it.fromServer == legacyEntry.fromServer
+        } ?: return
+        resourceServerHistoryRepository.delete(target)
+    }
+
     @Deprecated("Legacy JSON resources storage")
     private fun legacyServerData(user: User): Map<Int, ServerResourceData> =
         user.resources?.data?.servers ?: emptyMap()

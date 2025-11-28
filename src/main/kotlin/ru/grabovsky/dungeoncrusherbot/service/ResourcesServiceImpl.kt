@@ -16,6 +16,36 @@ class ResourcesServiceImpl(
     private val resourceStateSyncService: ResourceStateSyncService,
     private val userRepository: UserRepository,
 ) : ResourcesService {
+    override fun undoLastOperation(user: TgUser, serverId: Int): Boolean {
+        val userFromDb = userService.getUser(user.id) ?: return false
+        val resources = userFromDb.resources ?: return false
+        val history = resources.history[serverId] ?: return false
+        val profile = userFromDb.profile
+        val mainId = profile?.mainServerId
+        val idx = history.indexOfLast { entry ->
+            !(mainId != null &&
+                mainId == serverId &&
+                entry.resource == ResourceType.DRAADOR &&
+                entry.type == DirectionType.INCOMING &&
+                entry.fromServer != null)
+        }
+        if (idx == -1) {
+            return false
+        }
+        val entry = history.removeAt(idx)
+        val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
+
+        when (entry.resource) {
+            ResourceType.DRAADOR -> undoDraador(entry, serverData, resources, userFromDb, serverId)
+            ResourceType.VOID -> undoVoid(entry, serverData)
+            ResourceType.CB -> undoCb(entry, serverData)
+        }
+
+        resourceStateSyncService.syncStateFromLegacy(userFromDb, serverId, serverData)
+        resourceStateSyncService.removeHistoryEntry(userFromDb, serverId, entry)
+        userService.saveUser(userFromDb)
+        return true
+    }
     override fun applyOperation(user: TgUser, serverId: Int, operation: ResourceOperation) {
         val userFromDb = userService.getUser(user.id)
             ?: throw EntityNotFoundException("User with id: ${user.id} not found")
@@ -163,6 +193,67 @@ class ResourcesServiceImpl(
         )
         history.add(entry)
         resourceStateSyncService.appendHistoryFromLegacy(user, serverId, serverData, entry)
+    }
+
+    private fun undoDraador(
+        entry: ResourcesHistory,
+        serverData: ServerResourceData,
+        resources: Resources,
+        user: User,
+        serverId: Int
+    ) {
+        when (entry.type) {
+            DirectionType.ADD, DirectionType.CATCH -> {
+                serverData.draadorCount -= entry.quantity
+                if (serverData.draadorCount < 0) serverData.draadorCount = 0
+            }
+            DirectionType.TRADE -> serverData.draadorCount += entry.quantity
+            DirectionType.OUTGOING -> {
+                serverData.draadorCount += entry.quantity
+                serverData.balance -= entry.quantity
+            }
+            DirectionType.INCOMING -> {
+                serverData.balance += entry.quantity
+            }
+            DirectionType.REMOVE -> serverData.draadorCount += entry.quantity
+        }
+
+        val mainId = user.profile?.mainServerId
+        if (entry.type == DirectionType.INCOMING && mainId != null && mainId != serverId) {
+            val mainData = resources.data.servers.computeIfAbsent(mainId) { ServerResourceData() }
+            val mainHistory = resources.history.computeIfAbsent(mainId) { mutableListOf() }
+            val idx = mainHistory.indexOfLast {
+                it.resource == ResourceType.DRAADOR &&
+                    it.type == DirectionType.INCOMING &&
+                    it.fromServer == serverId &&
+                    it.quantity == entry.quantity
+            }
+            if (idx >= 0) {
+                val removedEntry = mainHistory.removeAt(idx)
+                mainData.draadorCount -= removedEntry.quantity
+                if (mainData.draadorCount < 0) mainData.draadorCount = 0
+                resourceStateSyncService.syncStateFromLegacy(user, mainId, mainData)
+                resourceStateSyncService.removeHistoryEntry(user, mainId, removedEntry)
+            }
+        }
+    }
+
+    private fun undoVoid(entry: ResourcesHistory, serverData: ServerResourceData) {
+        when (entry.type) {
+            DirectionType.ADD -> serverData.voidCount -= entry.quantity
+            DirectionType.REMOVE -> serverData.voidCount += entry.quantity
+            else -> {}
+        }
+        if (serverData.voidCount < 0) serverData.voidCount = 0
+    }
+
+    private fun undoCb(entry: ResourcesHistory, serverData: ServerResourceData) {
+        when (entry.type) {
+            DirectionType.ADD -> serverData.cbCount -= entry.quantity
+            DirectionType.REMOVE -> serverData.cbCount += entry.quantity
+            else -> {}
+        }
+        if (serverData.cbCount < 0) serverData.cbCount = 0
     }
 
     private fun shouldNotifyWatermelon(operation: ResourceOperation, serverId: Int, user: User): Boolean {

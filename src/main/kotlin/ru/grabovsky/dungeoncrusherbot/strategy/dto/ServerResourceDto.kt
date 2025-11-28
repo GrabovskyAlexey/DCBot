@@ -17,6 +17,7 @@ data class ServerResourceDto(
     val notes: List<String> = emptyList(),
     val hasMain: Boolean,
     val partners: List<ExchangePartnerDto> = emptyList(),
+    val hasHistoryEntries: Boolean = false,
 )
 
 data class ExchangePartnerDto(

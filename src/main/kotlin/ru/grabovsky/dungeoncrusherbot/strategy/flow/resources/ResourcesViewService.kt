@@ -102,6 +102,7 @@ class ResourcesViewService(
             notes = if (serverId == profile.mainServerId) userNotes else emptyList(),
             hasMain = profile.mainServerId != null,
             partners = partners,
+            hasHistoryEntries = historyList.isNotEmpty(),
         )
 
         val buttons = buildServerButtons(dto, locale)
@@ -161,6 +162,9 @@ class ResourcesViewService(
         if (dto.hasHistory) {
             buttons += button(98, 1, "buttons.resources.history", "\uD83D\uDDD2 Последние 20 операций", "SHOW_HISTORY")
         }
+        if (dto.hasHistoryEntries) {
+            buttons += button(97, 1, "buttons.resources.undo", "\u21A9 Отменить действие", "UNDO_LAST")
+        }
 
         if (dto.cbEnabled) {
             buttons += button(6, 1, "buttons.resources.cb.add", "\uD83D\uDE08 Добавить", "PROMPT_ADD_CB")
@@ -184,7 +188,7 @@ class ResourcesViewService(
 
         val notifyCode = if (dto.notifyDisable) "buttons.resources.notify.resume" else "buttons.resources.notify.stop"
         val notifyDefault = if (dto.notifyDisable) "\u274C Продолжить ловлю" else "\u2705 Закончил ловить"
-        buttons += button(97, 1, notifyCode, notifyDefault, "TOGGLE_NOTIFY")
+        buttons += button(96, 1, notifyCode, notifyDefault, "TOGGLE_NOTIFY")
 
         buttons += button(99, 1, "buttons.notes.back", "\uD83D\uDD19 Вернуться", "BACK")
 

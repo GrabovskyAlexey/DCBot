@@ -65,6 +65,13 @@ class MazeServiceImpl(
         mazeRepository.saveAndFlush(maze)
     }
 
+    override fun undoLastStep(maze: Maze): Boolean {
+        val last = maze.steps.removeLastOrNull() ?: return false
+        maze.currentLocation = last.startLocation
+        mazeRepository.saveAndFlush(maze)
+        return true
+    }
+
     private fun walkLeft(startLocation: Location): Location {
         val nextLevel = startLocation.level + 1
         var offset = when (startLocation.direction) {

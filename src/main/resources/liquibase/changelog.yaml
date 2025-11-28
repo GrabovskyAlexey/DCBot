@@ -63,3 +63,5 @@
       file: liquibase/changelog/31.release_notes_1_2_0.sql
   - include:
       file: liquibase/changelog/32.migrate_resources_state.sql
+  - include:
+      file: liquibase/changelog/33.release_notes_1_1_11.sql
