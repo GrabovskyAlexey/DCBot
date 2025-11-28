@@ -25,6 +25,9 @@ class ResourcesPromptBuilder(
     fun exchangePrompt(locale: Locale, invalid: Boolean): ResourcesPromptModel =
         buildResourcePromptModel("flow.resources.prompt.text.exchange", "flow.resources.prompt.error.not_blank", invalid, locale)
 
+    fun exchangeUsernamePrompt(locale: Locale, invalid: Boolean): ResourcesPromptModel =
+        buildResourcePromptModel("flow.resources.prompt.text.exchange_username", "flow.resources.prompt.error.not_blank", invalid, locale)
+
     fun addNotePrompt(locale: Locale, invalid: Boolean): ResourcesPromptModel =
         buildResourcePromptModel("flow.resources.prompt.text.note_add", "flow.resources.prompt.error.not_blank", invalid, locale)
 

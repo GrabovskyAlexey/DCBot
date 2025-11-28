@@ -6,6 +6,7 @@ data class ServerResourceDto(
     val voidCount: Int = 0,
     val balance: Int = 0,
     val exchange: String? = null,
+    val exchangeUsername: String? = null,
     val history: List<String>? = null,
     val hasHistory: Boolean = false,
     val notifyDisable: Boolean = false,
@@ -15,4 +16,13 @@ data class ServerResourceDto(
     val cbCount: Int,
     val notes: List<String> = emptyList(),
     val hasMain: Boolean,
+    val partners: List<ExchangePartnerDto> = emptyList(),
+    val hasHistoryEntries: Boolean = false,
+)
+
+data class ExchangePartnerDto(
+    val username: String?,
+    val exchangeLabel: String?,
+    val mainServerId: Int?,
+    val draadorCount: Int,
 )

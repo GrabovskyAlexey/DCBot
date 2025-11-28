@@ -33,7 +33,7 @@ class MazeViewService(
             showHistory = showHistory,
         )
 
-        val buttons = buildButtons(sameSteps, locale)
+        val buttons = buildButtons(sameSteps, maze?.steps?.isNotEmpty() == true, locale)
         return MazeMainView(overview, buttons)
     }
 
@@ -42,7 +42,7 @@ class MazeViewService(
         return entity.maze ?: Maze(user = entity).also { entity.maze = it }
     }
 
-    private fun buildButtons(sameSteps: Boolean, locale: Locale): List<MazeButton> {
+    private fun buildButtons(sameSteps: Boolean, hasHistory: Boolean, locale: Locale): List<MazeButton> {
         val buttons = mutableListOf<MazeButton>()
         if (sameSteps) {
             buttons += simpleButton(locale, "buttons.maze.step.left", "\u2196\uFE0F", 0, 0, "MAIN:STEP_SAME_LEFT")
@@ -55,8 +55,11 @@ class MazeViewService(
             buttons += simpleButton(locale, "buttons.maze.step.right", "\u2197\uFE0F", 0, 2, "MAIN:STEP_RIGHT")
             buttons += simpleButton(locale, "buttons.maze.same_steps.enable", "\uD83D\uDCF4 Несколько шагов", 1, 0, "MAIN:TOGGLE_SAME")
         }
-        buttons += simpleButton(locale, "buttons.maze.history", "\uD83E\uDDB6 Последние 20 шагов", 2, 0, "MAIN:HISTORY")
-        buttons += simpleButton(locale, "buttons.maze.reset", "\uD83D\uDDD1 Сбросить прогресс", 3, 0, "MAIN:RESET")
+        if (hasHistory) {
+            buttons += simpleButton(locale, "buttons.maze.undo", "\u21A9 Отменить шаг", 2, 0, "MAIN:UNDO")
+        }
+        buttons += simpleButton(locale, "buttons.maze.history", "\uD83E\uDDB6 Последние 20 шагов", 3, 0, "MAIN:HISTORY")
+        buttons += simpleButton(locale, "buttons.maze.reset", "\uD83D\uDDD1 Сбросить прогресс", 4, 0, "MAIN:RESET")
         return buttons
     }
 

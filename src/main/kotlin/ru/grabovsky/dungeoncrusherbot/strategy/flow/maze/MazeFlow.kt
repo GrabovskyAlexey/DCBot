@@ -85,6 +85,7 @@ class MazeFlow(
             "STEP_SAME_CENTER" -> enterSameStepPrompt(context, callbackQuery, Direction.CENTER)
             "STEP_SAME_RIGHT" -> enterSameStepPrompt(context, callbackQuery, Direction.RIGHT)
             "TOGGLE_SAME" -> toggleSameSteps(context, callbackQuery)
+            "UNDO" -> undoStep(context, callbackQuery)
             "HISTORY" -> showMain(context, callbackQuery, showHistory = true)
             "RESET" -> showConfirmReset(context, callbackQuery)
             else -> null
@@ -188,6 +189,21 @@ class MazeFlow(
         )
         actions += AnswerCallbackAction(callbackQuery.id)
         return buildFlowResult(MazeFlowStep.CONFIRM_RESET, state, actions)
+    }
+
+    private fun undoStep(
+        context: FlowContext<MazeFlowState>,
+        callbackQuery: CallbackQuery
+    ): FlowResult<MazeFlowState>? {
+        val maze = ensureMaze(context) ?: return null
+        val undone = mazeService.undoLastStep(maze)
+        if (!undone) {
+            return null
+        }
+        val state = context.state.payload
+        val actions = state.cleanupPromptMessages()
+        state.pendingDirection = null
+        return buildMainResult(context, state, showHistory = false, callbackQuery = callbackQuery, actions = actions)
     }
 
     private fun confirmReset(

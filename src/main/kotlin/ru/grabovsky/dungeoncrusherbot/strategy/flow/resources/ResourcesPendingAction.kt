@@ -13,6 +13,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.resources.ResourcesPendingAc
     Type(Exchange::class, name = "exchange"),
     Type(AddNote::class, name = "add_note"),
     Type(RemoveNote::class, name = "remove_note"),
+    Type(ExchangeUsername::class, name = "exchange_username"),
 )
 sealed class ResourcesPendingAction {
     data class Amount(
@@ -26,4 +27,5 @@ sealed class ResourcesPendingAction {
     data class Exchange(val serverId: Int) : ResourcesPendingAction()
     data class AddNote(val serverId: Int) : ResourcesPendingAction()
     data class RemoveNote(val serverId: Int) : ResourcesPendingAction()
+    data class ExchangeUsername(val serverId: Int) : ResourcesPendingAction()
 }

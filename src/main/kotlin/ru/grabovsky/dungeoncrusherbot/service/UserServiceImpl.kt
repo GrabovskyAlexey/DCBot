@@ -1,4 +1,4 @@
-package ru.grabovsky.dungeoncrusherbot.service
+﻿package ru.grabovsky.dungeoncrusherbot.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
@@ -6,6 +6,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.mapper.UserMapper
 import ru.grabovsky.dungeoncrusherbot.repository.AdminMessageRepository
+import ru.grabovsky.dungeoncrusherbot.repository.MazeRepository
+import ru.grabovsky.dungeoncrusherbot.repository.ResourceServerStateRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -24,6 +26,8 @@ import org.telegram.telegrambots.meta.api.objects.User as TgUser
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val adminMessageRepository: AdminMessageRepository,
+    private val mazeRepository: MazeRepository,
+    private val resourceServerStateRepository: ResourceServerStateRepository,
     private val flowStateService: FlowStateService,
     private val payloadSerializer: FlowPayloadSerializer,
     private val adminMessageViewBuilder: AdminMessageViewBuilder,
@@ -36,8 +40,10 @@ class UserServiceImpl(
 
     override fun createOrUpdateUser(user: TgUser): User {
         val entity = userRepository.findUserByUserId(user.id)
-        return entity?.let { updateUser(it, user) }
+        val updated = entity?.let { updateUser(it, user) }
             ?: createNewUser(UserMapper.fromTelegramToEntity(user))
+        refreshExchangeBindings(updated)
+        return updated
     }
 
     private fun updateUser(entity: User, user: TgUser): User {
@@ -47,6 +53,7 @@ class UserServiceImpl(
                 entity.userName != user.userName ||
                 entity.language != user.languageCode ||
                 profile.isBlocked
+        val usernameChanged = entity.userName != user.userName
         if (hasProfileChanges) {
             logger.info { "Update user: $user, entity: $entity" }
         }
@@ -56,11 +63,16 @@ class UserServiceImpl(
         entity.userName = user.userName
         entity.language = user.languageCode
         entity.lastActionAt = Instant.now()
-        return userRepository.saveAndFlush(entity)
+        val saved = userRepository.saveAndFlush(entity)
+        if (usernameChanged && saved.userName != null) {
+            updateExchangeUsernames(saved)
+        }
+        return saved
     }
 
     private fun createNewUser(userFromTelegram: User): User {
         logger.info { "Save new user: $userFromTelegram" }
+        cleanOldMaze(userFromTelegram.userId)
         userFromTelegram.apply {
             lastActionAt = Instant.now()
             maze = Maze(user = this)
@@ -262,6 +274,16 @@ class UserServiceImpl(
         }
     }
 
+    override fun findByUsername(username: String): User? =
+        userRepository.findByUserNameIgnoreCase(username)
+
+    private fun cleanOldMaze(userId: Long) {
+        val removed = runCatching { mazeRepository.deleteAllByUserId(userId) }.getOrDefault(0)
+        if (removed > 0) {
+            logger.info { "Removed $removed orphan maze records for user $userId" }
+        }
+    }
+
     private fun TelegramApiRequestException.isReplyTargetMissing(): Boolean {
         if (errorCode != 400) {
             return false
@@ -269,4 +291,34 @@ class UserServiceImpl(
         val details = (apiResponse ?: message ?: "").lowercase()
         return details.contains("message to be replied not found")
     }
+
+    private fun refreshExchangeBindings(user: User) {
+        val username = user.userName ?: return
+        val states = resourceServerStateRepository.findAllByExchangeUsernameIgnoreCase(username)
+        if (states.isEmpty()) return
+        states.forEach { state ->
+            if (state.exchangeUserId != user.userId) {
+                state.exchangeUserId = user.userId
+            }
+        }
+        resourceServerStateRepository.saveAll(states)
+    }
+
+    private fun updateExchangeUsernames(user: User) {
+        val username = user.userName ?: return
+        val states = resourceServerStateRepository.findAllByExchangeUserId(user.userId)
+        if (states.isEmpty()) return
+        val ownersToSave = mutableSetOf<User>()
+        states.forEach { state ->
+            state.exchangeUsername = username
+            val owner = state.user
+            owner.resources?.data?.servers?.get(state.server.id)?.let { serverData ->
+                serverData.exchangeUsername = username
+            }
+            ownersToSave += owner
+        }
+        resourceServerStateRepository.saveAll(states)
+        ownersToSave.forEach { userRepository.saveAndFlush(it) }
+    }
 }
+

@@ -50,6 +50,7 @@ class ResourcesFlow(
             is Exchange -> handleExchangeInput(context, message, pending)
             is AddNote -> handleAddNoteInput(context, message, pending)
             is RemoveNote -> handleRemoveNoteInput(context, message, pending)
+            is ExchangeUsername -> handleExchangeUsernameInput(context, message, pending)
         }
     }
 
@@ -129,8 +130,13 @@ class ResourcesFlow(
             "REMOVE_EXCHANGE" -> applyOperation(context, state, callbackQuery) {
                 resourcesService.applyOperation(context.user, serverId, ClearExchange)
             }
+            "REMOVE_EXCHANGE_USERNAME" -> applyOperation(context, state, callbackQuery) {
+                resourcesService.applyOperation(context.user, serverId, ClearExchangeUsername)
+            }
+            "UNDO_LAST" -> undoLast(context, state, callbackQuery)
             "SHOW_HISTORY" -> showHistory(context, state, callbackQuery)
             "PROMPT_ADD_EXCHANGE" -> enterExchangePrompt(context, serverId, callbackQuery)
+            "PROMPT_SET_USERNAME" -> enterExchangeUsernamePrompt(context, serverId, callbackQuery)
             "PROMPT_ADD_NOTE" -> enterAddNotePrompt(context, serverId, callbackQuery)
             "PROMPT_REMOVE_NOTE" -> enterRemoveNotePrompt(context, serverId, callbackQuery)
             else -> null
@@ -166,6 +172,21 @@ class ResourcesFlow(
             prompt = prompt
         ) {
             resourcesPendingAction = Exchange(serverId)
+        }
+    }
+
+    private fun enterExchangeUsernamePrompt(
+        context: FlowContext<ResourcesFlowState>,
+        serverId: Int,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState> {
+        val prompt = promptBuilder.exchangeUsernamePrompt(context.locale, invalid = false)
+        return context.startServerPrompt(
+            serverId = serverId,
+            callbackQuery = callbackQuery,
+            prompt = prompt
+        ) {
+            resourcesPendingAction = ExchangeUsername(serverId)
         }
     }
 
@@ -316,6 +337,23 @@ class ResourcesFlow(
         userService.removeNote(context.user.id, index)
         return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
     }
+
+    private fun handleExchangeUsernameInput(
+        context: FlowContext<ResourcesFlowState>,
+        message: Message,
+        pending: ExchangeUsername
+    ): FlowResult<ResourcesFlowState> {
+        val raw = message.text?.trim().orEmpty()
+        val value = raw.removePrefix("@").trim()
+        val isValid = raw.startsWith("@") && value.isNotEmpty()
+        if (!isValid) {
+            val prompt = promptBuilder.exchangeUsernamePrompt(context.locale, invalid = true)
+            return context.retryServerPrompt(ResourcesStep.PROMPT_TEXT, prompt, message.messageId)
+        }
+
+        resourcesService.applyOperation(context.user, pending.serverId, SetExchangeUsername(value))
+        return rebuildServerAfterPrompt(context, pending.serverId, message.messageId)
+    }
     private fun cancelPrompt(
         context: FlowContext<ResourcesFlowState>,
         callbackQuery: CallbackQuery
@@ -395,6 +433,39 @@ class ResourcesFlow(
         val serverId = state.selectedServerId ?: return null
         state.showHistory = true
         return result(context, serverId, state, callbackQuery)
+    }
+
+    private fun undoLast(
+        context: FlowContext<ResourcesFlowState>,
+        state: ResourcesFlowState,
+        callbackQuery: CallbackQuery
+    ): FlowResult<ResourcesFlowState>? {
+        val serverId = state.selectedServerId ?: return null
+        val success = resourcesService.undoLastOperation(context.user, serverId)
+        val detail = viewService.buildServer(
+            context.user,
+            serverId,
+            includeHistory = state.showHistory,
+            locale = context.locale
+        )
+        val actions = mutableListOf<FlowAction>(
+            EditMessageAction(
+                bindingKey = MAIN_MESSAGE_KEY,
+                message = buildServerMessage(detail)
+            ),
+            AnswerCallbackAction(callbackQuery.id)
+        )
+        if (!success) {
+            actions += AnswerCallbackAction(
+                callbackQueryId = callbackQuery.id,
+                text = i18nService.i18n("flow.resources.undo.empty", context.locale, "Отменять нечего")
+            )
+        }
+        return FlowResult(
+            stepKey = ResourcesStep.SERVER.key,
+            payload = state,
+            actions = actions
+        )
     }
 
     private fun result(
