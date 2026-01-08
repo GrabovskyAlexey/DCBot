@@ -29,8 +29,6 @@ data class User(
     var lastActionAt: Instant? = null,
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
     var maze: Maze? = null,
-    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
-    var resources: Resources? = null,
     @CreationTimestamp
     @Column(name = "created_at")
     @JsonSerialize(using = InstantSerializer::class)

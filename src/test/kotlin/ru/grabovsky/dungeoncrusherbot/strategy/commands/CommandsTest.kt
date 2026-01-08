@@ -2,15 +2,12 @@
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import jakarta.persistence.EntityNotFoundException
 import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -54,7 +51,7 @@ class CommandsTest : ShouldSpec({
         verify { engine.start(FlowKeys.MAZE, tgUser, any()) }
     }
 
-    should("create resources when none exist for ResourcesCommand") {
+    should("skip legacy resources initialization for ResourcesCommand") {
         val userService = mockk<UserService>()
         val flowEngine = mockk<FlowEngine>(relaxed = true)
         val command = ResourcesCommand(userService, flowEngine)
@@ -66,15 +63,13 @@ class CommandsTest : ShouldSpec({
         val entityUser = User(200L, "Tester", null, "tester").apply { profile = UserProfile(userId = userId, user = this) }
         every { userService.createOrUpdateUser(tgUser) } returns entityUser
         every { userService.getUser(200L) } returns entityUser
-        justRun { userService.saveUser(entityUser) }
 
         command.prepare(tgUser, chat, emptyArray())
 
-        entityUser.resources shouldNotBe null
-        verify { userService.saveUser(entityUser) }
+        verify(exactly = 0) { userService.saveUser(any()) }
     }
 
-    should("skip creation if resources already present") {
+    should("avoid persistence in ResourcesCommand prepare") {
         val userService = mockk<UserService>()
         val flowEngine = mockk<FlowEngine>(relaxed = true)
         val command = ResourcesCommand(userService, flowEngine)
@@ -85,7 +80,6 @@ class CommandsTest : ShouldSpec({
         }
         val entityUser = User(201L, "Tester", null, "tester").apply {
             profile = UserProfile(userId = userId, user = this)
-            resources = Resources(user = this)
         }
         every { userService.createOrUpdateUser(tgUser) } returns entityUser
         every { userService.getUser(201L) } returns entityUser

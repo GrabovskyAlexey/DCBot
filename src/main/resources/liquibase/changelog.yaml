@@ -65,3 +65,11 @@
       file: liquibase/changelog/32.migrate_resources_state.sql
   - include:
       file: liquibase/changelog/33.release_notes_1_1_11.sql
+  - include:
+      file: liquibase/changelog/34.drop_resources_table.sql
+  - include:
+      file: liquibase/changelog/35.add_deleted_flag_to_resource_history.sql
+  - include:
+      file: liquibase/changelog/36.add_resource_history_prev_values.sql
+  - include:
+      file: liquibase/changelog/37.release_notes_1_1_12.sql

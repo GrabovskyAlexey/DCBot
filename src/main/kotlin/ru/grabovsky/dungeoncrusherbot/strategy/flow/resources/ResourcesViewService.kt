@@ -2,7 +2,6 @@ package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
 import org.springframework.stereotype.Component
 import ru.grabovsky.dungeoncrusherbot.entity.User
-import ru.grabovsky.dungeoncrusherbot.entity.Resources
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.I18nService
 import ru.grabovsky.dungeoncrusherbot.service.ResourceStateSyncService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ServerService
@@ -22,11 +21,7 @@ class ResourcesViewService(
 ) {
 
     fun ensureResources(user: TgUser) {
-        val entity = userService.getUser(user.id) ?: return
-        if (entity.resources == null) {
-            entity.resources = Resources(user = entity)
-            userService.saveUser(entity)
-        }
+        userService.getUser(user.id)
     }
 
     fun buildOverview(user: TgUser, locale: Locale): ResourcesOverviewModel {

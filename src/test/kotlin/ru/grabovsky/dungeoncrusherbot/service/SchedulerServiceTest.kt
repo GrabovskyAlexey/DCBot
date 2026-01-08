@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
 import ru.grabovsky.dungeoncrusherbot.entity.*
+import ru.grabovsky.dungeoncrusherbot.repository.ResourceServerStateRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -16,10 +17,11 @@ class SchedulerServiceTest : ShouldSpec({
     val userRepository = mockk<UserRepository>()
     val telegramBotService = mockk<TelegramBotService>()
     val notifyHistoryService = mockk<NotifyHistoryService>()
-    val scheduler = SchedulerService(userRepository, telegramBotService, notifyHistoryService)
+    val resourceServerStateRepository = mockk<ResourceServerStateRepository>()
+    val scheduler = SchedulerService(userRepository, telegramBotService, notifyHistoryService, resourceServerStateRepository)
 
     beforeTest {
-        clearMocks(userRepository, telegramBotService, notifyHistoryService, answers = true)
+        clearMocks(userRepository, telegramBotService, notifyHistoryService, resourceServerStateRepository, answers = true)
     }
 
     should("send siege notifications and block users when delivery fails") {
@@ -30,6 +32,8 @@ class SchedulerServiceTest : ShouldSpec({
         val successfulUser = createSiegeUser(1L, enabled = false)
         val failedUser = createSiegeUser(2L, enabled = false)
         every { userRepository.findAllNotBlockedUser() } returns listOf(successfulUser, failedUser)
+        every { resourceServerStateRepository.findAllByUserUserIdAndNotifyDisableTrue(1L) } returns emptyList()
+        every { resourceServerStateRepository.findAllByUserUserIdAndNotifyDisableTrue(2L) } returns emptyList()
         every { telegramBotService.sendNotification(1L, NotificationType.SIEGE, any(), false) } returns true
         every { telegramBotService.sendNotification(2L, NotificationType.SIEGE, any(), false) } returns false
         every { userRepository.save(failedUser) } returns failedUser
@@ -51,6 +55,7 @@ class SchedulerServiceTest : ShouldSpec({
 
         val user = createSiegeUser(3L, enabled = true)
         every { userRepository.findAllNotBlockedUser() } returns listOf(user)
+        every { resourceServerStateRepository.findAllByUserUserIdAndNotifyDisableTrue(3L) } returns emptyList()
         every { telegramBotService.sendNotification(3L, NotificationType.SIEGE, any(), true) } returns true
 
         scheduler.scheduleBeforeSiege()
@@ -71,14 +76,20 @@ class SchedulerServiceTest : ShouldSpec({
     }
 
     should("clear disabled siege notifications and persist users") {
-        val user = createSiegeUser(5L, enabled = false, notifyDisabled = true)
-        every { userRepository.findAll() } returns listOf(user)
-        every { userRepository.saveAllAndFlush(listOf(user)) } returns listOf(user)
+        val user = createSiegeUser(5L, enabled = false)
+        val state = ResourceServerState(
+            id = 77L,
+            user = user,
+            server = Server(5, "server5"),
+            notifyDisable = true
+        )
+        every { resourceServerStateRepository.findAllByNotifyDisableTrue() } returns listOf(state)
+        every { resourceServerStateRepository.saveAllAndFlush(listOf(state)) } returns listOf(state)
 
         scheduler.clearDisableNotify()
 
-        user.resources!!.data.servers.values.first().notifyDisable shouldBe false
-        verify { userRepository.saveAllAndFlush(listOf(user)) }
+        state.notifyDisable shouldBe false
+        verify { resourceServerStateRepository.saveAllAndFlush(listOf(state)) }
     }
 
     should("send clan mine notifications and block failures") {
@@ -98,7 +109,7 @@ class SchedulerServiceTest : ShouldSpec({
     }
 })
 
-private fun createSiegeUser(id: Long, enabled: Boolean, notifyDisabled: Boolean = false): User {
+private fun createSiegeUser(id: Long, enabled: Boolean): User {
     val user = User(id, "User$id", null, "user$id").apply {
         profile = UserProfile(userId = id, user = this)
     }
@@ -106,9 +117,6 @@ private fun createSiegeUser(id: Long, enabled: Boolean, notifyDisabled: Boolean 
     user.servers.add(server)
     val subscribe = NotificationSubscribe(user = user, type = NotificationType.SIEGE, enabled = enabled)
     user.notificationSubscribe.add(subscribe)
-    val resources = Resources(user = user)
-    resources.data.servers[server.id] = ServerResourceData().apply { this.notifyDisable = notifyDisabled }
-    user.resources = resources
     return user
 }
 

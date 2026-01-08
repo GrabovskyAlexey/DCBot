@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMemberUpdated
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.FlowStateService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ReceiverService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.UserService
@@ -28,6 +29,7 @@ class ReceiverServiceImpl(
         when {
             update.hasCallbackQuery() -> processCallback(update.callbackQuery)
             update.hasMessage() -> processMessage(update.message)
+            update.hasMyChatMember() -> processMyChatMember(update.myChatMember)
         }
     }
 
@@ -53,6 +55,9 @@ class ReceiverServiceImpl(
 
     private fun processCallback(callbackQuery: CallbackQuery) {
         logger.debug {"Start process callback: $callbackQuery"}
+        if (callbackQuery.data?.contains("ADMIN_MESSAGE") == true) {
+            logger.info { "Admin callback raw data: ${callbackQuery.data}" }
+        }
         val user = callbackQuery.from
         userService.createOrUpdateUser(user)
         val payload = parseFlowPayload(callbackQuery.data)
@@ -77,9 +82,29 @@ class ReceiverServiceImpl(
         }
     }
 
+    private fun processMyChatMember(chatMemberUpdated: ChatMemberUpdated) {
+        val chat = chatMemberUpdated.chat
+        if (!chat.isUserChat) {
+            return
+        }
+        val status = chatMemberUpdated.newChatMember.status
+        val isBlocked = status == "kicked"
+        userService.updateBlockedStatus(chat.id, isBlocked)
+        logger.info { "MyChatMember update for user ${chat.id} with status $status" }
+    }
+
     private fun parseFlowPayload(data: String): FlowCallbackPayload? =
         runCatching {
             objectMapper.readValue(data, FlowCallbackPayload::class.java)
+        }.getOrNull() ?: runCatching {
+            val node = objectMapper.readTree(data) ?: return@runCatching null
+            val flow = node.get("flow")?.asText()
+                ?: node.get("flowKey")?.asText()
+            val payload = node.get("data")?.asText()
+            if (flow.isNullOrBlank() || payload.isNullOrBlank()) {
+                return@runCatching null
+            }
+            FlowCallbackPayload(flow, payload)
         }.getOrNull()
 
     private fun resolveLocale(user: User): Locale {

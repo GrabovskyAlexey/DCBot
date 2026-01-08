@@ -30,4 +30,19 @@ data class ResourceServerHistory(
 
     @Column(name = "from_server")
     val fromServer: Int? = null,
+
+    @Column(name = "is_deleted", nullable = false)
+    var isDeleted: Boolean = false,
+
+    @Column(name = "prev_draador_count")
+    val prevDraadorCount: Int? = null,
+
+    @Column(name = "prev_void_count")
+    val prevVoidCount: Int? = null,
+
+    @Column(name = "prev_cb_count")
+    val prevCbCount: Int? = null,
+
+    @Column(name = "prev_balance")
+    val prevBalance: Int? = null,
 )
