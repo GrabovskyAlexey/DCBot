@@ -18,10 +18,17 @@ class ResourcesServiceImpl(
 ) : ResourcesService {
     override fun undoLastOperation(user: TgUser, serverId: Int): Boolean {
         val userFromDb = userService.getUser(user.id) ?: return false
-        val resources = userFromDb.resources ?: return false
-        val history = resources.history[serverId] ?: return false
         val profile = userFromDb.profile
-        val mainId = profile?.mainServerId
+            ?: return false
+        val state = resourceStateSyncService.findState(userFromDb.userId, serverId)
+            ?: return false
+        val history = resourceStateSyncService.getHistoryEntries(state.id!!)
+            .map { it.toDomain() }
+            .toMutableList()
+        if (history.isEmpty()) {
+            return false
+        }
+        val mainId = profile.mainServerId
         val idx = history.indexOfLast { entry ->
             !(mainId != null &&
                 mainId == serverId &&
@@ -32,17 +39,16 @@ class ResourcesServiceImpl(
         if (idx == -1) {
             return false
         }
-        val entry = history.removeAt(idx)
-        val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
+        val entry = history[idx]
 
         when (entry.resource) {
-            ResourceType.DRAADOR -> undoDraador(entry, serverData, resources, userFromDb, serverId)
-            ResourceType.VOID -> undoVoid(entry, serverData)
-            ResourceType.CB -> undoCb(entry, serverData)
+            ResourceType.DRAADOR -> undoDraador(entry, state, userFromDb, serverId)
+            ResourceType.VOID -> undoVoid(entry, state)
+            ResourceType.CB -> undoCb(entry, state)
         }
 
-        resourceStateSyncService.syncStateFromLegacy(userFromDb, serverId, serverData)
-        resourceStateSyncService.removeHistoryEntry(userFromDb, serverId, entry)
+        resourceStateSyncService.saveState(state)
+        resourceStateSyncService.removeHistoryEntry(state, entry)
         userService.saveUser(userFromDb)
         return true
     }
@@ -51,41 +57,35 @@ class ResourcesServiceImpl(
             ?: throw EntityNotFoundException("User with id: ${user.id} not found")
         val profile = userFromDb.profile
             ?: throw IllegalStateException("Profile not initialized for user: ${user.id}")
-        val resources = userFromDb.resources
-            ?: throw IllegalStateException("Resources not initialized for user: ${user.userName ?: user.firstName}")
-
-        val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
-        val history = resources.history.computeIfAbsent(serverId) { mutableListOf() }
+        val state = resourceStateSyncService.getOrCreateState(userFromDb, serverId)
 
         when (operation) {
             is ResourceOperation.Adjust -> handleAdjustOperation(
                 user = userFromDb,
-                resources = resources,
-                serverData = serverData,
-                history = history,
+                state = state,
                 type = operation.type,
                 amount = operation.amount,
                 serverId = serverId,
             )
 
-            is ResourceOperation.SetExchange -> serverData.exchange = operation.value.trim().takeIf { it.isNotEmpty() }
+            is ResourceOperation.SetExchange -> state.exchangeLabel = operation.value.trim().takeIf { it.isNotEmpty() }
             ResourceOperation.ClearExchange -> {
-                serverData.exchange = null
-                serverData.exchangeUsername = null
-                serverData.exchangeUserId = null
+                state.exchangeLabel = null
+                state.exchangeUsername = null
+                state.exchangeUserId = null
             }
             is ResourceOperation.SetExchangeUsername -> {
                 val normalized = operation.value.trim().removePrefix("@").trim()
-                serverData.exchangeUsername = normalized.takeIf { it.isNotEmpty() }
-                serverData.exchangeUserId = serverData.exchangeUsername
+                state.exchangeUsername = normalized.takeIf { it.isNotEmpty() }
+                state.exchangeUserId = state.exchangeUsername
                     ?.let { userRepository.findByUserNameIgnoreCase(it) }
                     ?.userId
             }
             ResourceOperation.ClearExchangeUsername -> {
-                serverData.exchangeUsername = null
-                serverData.exchangeUserId = null
+                state.exchangeUsername = null
+                state.exchangeUserId = null
             }
-            ResourceOperation.ToggleNotify -> serverData.notifyDisable = !serverData.notifyDisable
+            ResourceOperation.ToggleNotify -> state.notifyDisable = !state.notifyDisable
             ResourceOperation.MarkMain -> profile.mainServerId = serverId
             ResourceOperation.UnmarkMain -> profile.mainServerId = null
         }
@@ -95,15 +95,15 @@ class ResourcesServiceImpl(
             googleFormService.sendDraadorCount(operationAmount(operation).toString(), profile.settings.discordUsername!!)
         }
 
-        resourceStateSyncService.syncStateFromLegacy(userFromDb, serverId, serverData)
+        if (operation !is ResourceOperation.Adjust) {
+            resourceStateSyncService.saveState(state)
+        }
         userService.saveUser(userFromDb)
     }
 
     private fun handleAdjustOperation(
         user: User,
-        resources: Resources,
-        serverData: ServerResourceData,
-        history: MutableList<ResourcesHistory>,
+        state: ResourceServerState,
         type: AdjustType,
         amount: Int,
         serverId: Int,
@@ -111,149 +111,242 @@ class ResourcesServiceImpl(
         require(amount > 0) { "Amount must be positive" }
         when (type) {
             AdjustType.ADD_VOID -> {
-                serverData.voidCount += amount
-                addHistory(user, serverId, serverData, history, ResourceType.VOID, DirectionType.ADD, amount)
+                val prevVoid = state.voidCount
+                state.voidCount += amount
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.VOID,
+                    directionType = DirectionType.ADD,
+                    amount = amount,
+                    prevVoidCount = prevVoid
+                )
             }
 
             AdjustType.REMOVE_VOID -> {
-                serverData.voidCount -= amount
-                addHistory(user, serverId, serverData, history, ResourceType.VOID, DirectionType.REMOVE, amount)
+                val prevVoid = state.voidCount
+                state.voidCount -= amount
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.VOID,
+                    directionType = DirectionType.REMOVE,
+                    amount = amount,
+                    prevVoidCount = prevVoid
+                )
             }
 
             AdjustType.ADD_CB -> {
-                serverData.cbCount += amount
-                addHistory(user, serverId, serverData, history, ResourceType.CB, DirectionType.ADD, amount)
+                val prevCb = state.cbCount
+                state.cbCount += amount
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.CB,
+                    directionType = DirectionType.ADD,
+                    amount = amount,
+                    prevCbCount = prevCb
+                )
             }
 
             AdjustType.REMOVE_CB -> {
-                serverData.cbCount -= amount
-                addHistory(user, serverId, serverData, history, ResourceType.CB, DirectionType.REMOVE, amount)
+                val prevCb = state.cbCount
+                state.cbCount -= amount
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.CB,
+                    directionType = DirectionType.REMOVE,
+                    amount = amount,
+                    prevCbCount = prevCb
+                )
             }
 
             AdjustType.ADD_DRAADOR -> {
-                serverData.draadorCount += amount
-                addHistory(user, serverId, serverData, history, ResourceType.DRAADOR, DirectionType.CATCH, amount)
+                val prevDraador = state.draadorCount
+                state.draadorCount += amount
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.DRAADOR,
+                    directionType = DirectionType.CATCH,
+                    amount = amount,
+                    prevDraadorCount = prevDraador
+                )
             }
 
             AdjustType.SELL_DRAADOR -> {
-                serverData.draadorCount -= amount
-                if (serverData.draadorCount < 0) serverData.draadorCount = 0
-                addHistory(user, serverId, serverData, history, ResourceType.DRAADOR, DirectionType.TRADE, amount)
+                val prevDraador = state.draadorCount
+                state.draadorCount -= amount
+                if (state.draadorCount < 0) state.draadorCount = 0
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.DRAADOR,
+                    directionType = DirectionType.TRADE,
+                    amount = amount,
+                    prevDraadorCount = prevDraador
+                )
             }
 
             AdjustType.SEND_DRAADOR -> {
-                serverData.draadorCount -= amount
-                serverData.balance += amount
-                if (serverData.draadorCount < 0) serverData.draadorCount = 0
-                addHistory(user, serverId, serverData, history, ResourceType.DRAADOR, DirectionType.OUTGOING, amount)
+                val prevDraador = state.draadorCount
+                val prevBalance = state.balance
+                state.draadorCount -= amount
+                state.balance += amount
+                if (state.draadorCount < 0) state.draadorCount = 0
+                addHistory(
+                    state = state,
+                    resourceType = ResourceType.DRAADOR,
+                    directionType = DirectionType.OUTGOING,
+                    amount = amount,
+                    prevDraadorCount = prevDraador,
+                    prevBalance = prevBalance
+                )
             }
 
             AdjustType.RECEIVE_DRAADOR -> {
-                receiveDraador(user, resources, serverId, amount)
+                val prevBalance = state.balance
+                receiveDraador(user, state, serverId, amount, prevBalance)
             }
         }
+        resourceStateSyncService.saveState(state)
     }
 
-    private fun receiveDraador(user: User, resources: Resources, serverId: Int, amount: Int) {
-        val serverData = resources.data.servers.computeIfAbsent(serverId) { ServerResourceData() }
-        val history = resources.history.computeIfAbsent(serverId) { mutableListOf() }
-        serverData.balance -= amount
-        addHistory(user, serverId, serverData, history, ResourceType.DRAADOR, DirectionType.INCOMING, amount)
+    private fun receiveDraador(
+        user: User,
+        state: ResourceServerState,
+        serverId: Int,
+        amount: Int,
+        prevBalance: Int
+    ) {
+        state.balance -= amount
+        addHistory(
+            state = state,
+            resourceType = ResourceType.DRAADOR,
+            directionType = DirectionType.INCOMING,
+            amount = amount,
+            prevBalance = prevBalance
+        )
+        resourceStateSyncService.saveState(state)
 
         val profile = user.profile ?: return
         if(profile.settings.enableMainSend) {
             val mainServerId = profile.mainServerId ?: return
-            val mainServer = resources.data.servers.computeIfAbsent(mainServerId) { ServerResourceData() }
-            val mainHistory = resources.history.computeIfAbsent(mainServerId) { mutableListOf() }
-            mainServer.draadorCount += amount
-            addHistory(user, mainServerId, mainServer, mainHistory, ResourceType.DRAADOR, DirectionType.INCOMING, amount, serverId)
-            resourceStateSyncService.syncStateFromLegacy(user, mainServerId, mainServer)
+            val mainState = resourceStateSyncService.getOrCreateState(user, mainServerId)
+            val prevDraador = mainState.draadorCount
+            mainState.draadorCount += amount
+            addHistory(
+                state = mainState,
+                resourceType = ResourceType.DRAADOR,
+                directionType = DirectionType.INCOMING,
+                amount = amount,
+                fromServer = serverId,
+                prevDraadorCount = prevDraador
+            )
+            resourceStateSyncService.saveState(mainState)
         }
     }
 
     private fun addHistory(
-        user: User,
-        serverId: Int,
-        serverData: ServerResourceData,
-        history: MutableList<ResourcesHistory>,
+        state: ResourceServerState,
         resourceType: ResourceType,
         directionType: DirectionType,
         amount: Int,
         fromServer: Int? = null,
+        prevDraadorCount: Int? = null,
+        prevVoidCount: Int? = null,
+        prevCbCount: Int? = null,
+        prevBalance: Int? = null,
     ) {
-        if (history.size >= 20) {
-            history.removeFirst()
-        }
         val entry = ResourcesHistory(
             date = LocalDate.now(),
             resource = resourceType,
             type = directionType,
             quantity = amount,
-            fromServer = fromServer
+            fromServer = fromServer,
+            prevDraadorCount = prevDraadorCount,
+            prevVoidCount = prevVoidCount,
+            prevCbCount = prevCbCount,
+            prevBalance = prevBalance,
         )
-        history.add(entry)
-        resourceStateSyncService.appendHistoryFromLegacy(user, serverId, serverData, entry)
+        resourceStateSyncService.appendHistory(state, entry)
     }
 
     private fun undoDraador(
         entry: ResourcesHistory,
-        serverData: ServerResourceData,
-        resources: Resources,
+        state: ResourceServerState,
         user: User,
         serverId: Int
     ) {
-        when (entry.type) {
-            DirectionType.ADD, DirectionType.CATCH -> {
-                serverData.draadorCount -= entry.quantity
-                if (serverData.draadorCount < 0) serverData.draadorCount = 0
+        val hasPrevDraador = entry.prevDraadorCount != null
+        val hasPrevBalance = entry.prevBalance != null
+        if (hasPrevDraador) {
+            state.draadorCount = entry.prevDraadorCount!!
+        }
+        if (hasPrevBalance) {
+            state.balance = entry.prevBalance!!
+        }
+        if (!hasPrevDraador && !hasPrevBalance) {
+            when (entry.type) {
+                DirectionType.ADD, DirectionType.CATCH -> {
+                    state.draadorCount -= entry.quantity
+                    if (state.draadorCount < 0) state.draadorCount = 0
+                }
+                DirectionType.TRADE -> state.draadorCount += entry.quantity
+                DirectionType.OUTGOING -> {
+                    state.draadorCount += entry.quantity
+                    state.balance -= entry.quantity
+                }
+                DirectionType.INCOMING -> {
+                    state.balance += entry.quantity
+                }
+                DirectionType.REMOVE -> state.draadorCount += entry.quantity
             }
-            DirectionType.TRADE -> serverData.draadorCount += entry.quantity
-            DirectionType.OUTGOING -> {
-                serverData.draadorCount += entry.quantity
-                serverData.balance -= entry.quantity
-            }
-            DirectionType.INCOMING -> {
-                serverData.balance += entry.quantity
-            }
-            DirectionType.REMOVE -> serverData.draadorCount += entry.quantity
         }
 
         val mainId = user.profile?.mainServerId
         if (entry.type == DirectionType.INCOMING && mainId != null && mainId != serverId) {
-            val mainData = resources.data.servers.computeIfAbsent(mainId) { ServerResourceData() }
-            val mainHistory = resources.history.computeIfAbsent(mainId) { mutableListOf() }
-            val idx = mainHistory.indexOfLast {
+            val mainState = resourceStateSyncService.getOrCreateState(user, mainId)
+            val mainHistory = resourceStateSyncService.getHistoryEntries(mainState.id!!)
+                .map { it.toDomain() }
+            val removedEntry = mainHistory.lastOrNull {
                 it.resource == ResourceType.DRAADOR &&
                     it.type == DirectionType.INCOMING &&
                     it.fromServer == serverId &&
                     it.quantity == entry.quantity
             }
-            if (idx >= 0) {
-                val removedEntry = mainHistory.removeAt(idx)
-                mainData.draadorCount -= removedEntry.quantity
-                if (mainData.draadorCount < 0) mainData.draadorCount = 0
-                resourceStateSyncService.syncStateFromLegacy(user, mainId, mainData)
-                resourceStateSyncService.removeHistoryEntry(user, mainId, removedEntry)
+            if (removedEntry != null) {
+                if (removedEntry.prevDraadorCount != null) {
+                    mainState.draadorCount = removedEntry.prevDraadorCount
+                } else {
+                    mainState.draadorCount -= removedEntry.quantity
+                    if (mainState.draadorCount < 0) mainState.draadorCount = 0
+                }
+                resourceStateSyncService.saveState(mainState)
+                resourceStateSyncService.removeHistoryEntry(mainState, removedEntry)
             }
         }
     }
 
-    private fun undoVoid(entry: ResourcesHistory, serverData: ServerResourceData) {
+    private fun undoVoid(entry: ResourcesHistory, state: ResourceServerState) {
+        if (entry.prevVoidCount != null) {
+            state.voidCount = entry.prevVoidCount
+            return
+        }
         when (entry.type) {
-            DirectionType.ADD -> serverData.voidCount -= entry.quantity
-            DirectionType.REMOVE -> serverData.voidCount += entry.quantity
+            DirectionType.ADD -> state.voidCount -= entry.quantity
+            DirectionType.REMOVE -> state.voidCount += entry.quantity
             else -> {}
         }
-        if (serverData.voidCount < 0) serverData.voidCount = 0
+        if (state.voidCount < 0) state.voidCount = 0
     }
 
-    private fun undoCb(entry: ResourcesHistory, serverData: ServerResourceData) {
+    private fun undoCb(entry: ResourcesHistory, state: ResourceServerState) {
+        if (entry.prevCbCount != null) {
+            state.cbCount = entry.prevCbCount
+            return
+        }
         when (entry.type) {
-            DirectionType.ADD -> serverData.cbCount -= entry.quantity
-            DirectionType.REMOVE -> serverData.cbCount += entry.quantity
+            DirectionType.ADD -> state.cbCount -= entry.quantity
+            DirectionType.REMOVE -> state.cbCount += entry.quantity
             else -> {}
         }
-        if (serverData.cbCount < 0) serverData.cbCount = 0
+        if (state.cbCount < 0) state.cbCount = 0
     }
 
     private fun shouldNotifyWatermelon(operation: ResourceOperation, serverId: Int, user: User): Boolean {
@@ -273,4 +366,16 @@ class ResourcesServiceImpl(
     companion object {
         private val logger = KotlinLogging.logger {}
     }
+
+    private fun ResourceServerHistory.toDomain(): ResourcesHistory = ResourcesHistory(
+        date = eventDate,
+        resource = resource,
+        type = direction,
+        quantity = quantity,
+        fromServer = fromServer,
+        prevDraadorCount = prevDraadorCount,
+        prevVoidCount = prevVoidCount,
+        prevCbCount = prevCbCount,
+        prevBalance = prevBalance,
+    )
 }

@@ -7,6 +7,7 @@ interface UserService {
     fun createOrUpdateUser(user: TgUser): User
     fun saveUser(user: User)
     fun getUser(userId: Long): User?
+    fun updateBlockedStatus(userId: Long, isBlocked: Boolean)
     fun clearNotes(user: TgUser)
     fun addNote(userId: Long, note: String): Boolean
     fun removeNote(userId: Long, index: Int): Boolean

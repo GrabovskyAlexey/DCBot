@@ -100,6 +100,21 @@ class UserServiceImpl(
         return user
     }
 
+    override fun updateBlockedStatus(userId: Long, isBlocked: Boolean) {
+        val user = userRepository.findUserByUserId(userId)
+        if (user == null) {
+            logger.info { "Skip update blocked status for unknown user $userId" }
+            return
+        }
+        val profile = user.profile ?: UserProfile(user = user).also { user.profile = it }
+        if (profile.isBlocked == isBlocked) {
+            return
+        }
+        profile.isBlocked = isBlocked
+        userRepository.saveAndFlush(user)
+        logger.info { "User $userId blocked status updated to $isBlocked" }
+    }
+
     override fun clearNotes(user: TgUser) {
         val userFromDb = getUser(user.id) ?: return
         val profile = userFromDb.profile ?: return
@@ -308,17 +323,10 @@ class UserServiceImpl(
         val username = user.userName ?: return
         val states = resourceServerStateRepository.findAllByExchangeUserId(user.userId)
         if (states.isEmpty()) return
-        val ownersToSave = mutableSetOf<User>()
         states.forEach { state ->
             state.exchangeUsername = username
-            val owner = state.user
-            owner.resources?.data?.servers?.get(state.server.id)?.let { serverData ->
-                serverData.exchangeUsername = username
-            }
-            ownersToSave += owner
         }
         resourceServerStateRepository.saveAll(states)
-        ownersToSave.forEach { userRepository.saveAndFlush(it) }
     }
 }
 

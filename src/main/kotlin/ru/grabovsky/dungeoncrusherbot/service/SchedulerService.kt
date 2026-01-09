@@ -5,6 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import ru.grabovsky.dungeoncrusherbot.entity.NotificationType
 import ru.grabovsky.dungeoncrusherbot.entity.User
+import ru.grabovsky.dungeoncrusherbot.repository.ResourceServerStateRepository
 import ru.grabovsky.dungeoncrusherbot.repository.UserRepository
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.NotifyHistoryService
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.TelegramBotService
@@ -15,7 +16,8 @@ import kotlin.math.absoluteValue
 class SchedulerService(
     private val userRepository: UserRepository,
     private val telegramBotService: TelegramBotService,
-    private val notifyHistoryService: NotifyHistoryService
+    private val notifyHistoryService: NotifyHistoryService,
+    private val resourceServerStateRepository: ResourceServerStateRepository
 ) {
 
     @Scheduled(cron = "\${scheduler.cron.siege}")
@@ -67,7 +69,9 @@ class SchedulerService(
     }
 
     private fun getDisabledNotificationServer(user: User): Set<Int> {
-        return user.resources?.data?.servers?.filter { it.value.notifyDisable }?.keys ?: emptySet()
+        return resourceServerStateRepository.findAllByUserUserIdAndNotifyDisableTrue(user.userId)
+            .map { it.server.id }
+            .toSet()
     }
 
     private fun LocalTime.equalsWithGap(time: LocalTime, minutes: Int) =
@@ -86,13 +90,14 @@ class SchedulerService(
     @Scheduled(cron = "\${scheduler.cron.clear-disable-notify}")
     fun clearDisableNotify() {
         logger.info { "Start enable all server siege notification" }
-        val users = userRepository.findAll()
-        users.onEach { user ->
-            user.resources?.data?.servers?.onEach { server ->
-                server.value.notifyDisable = false
-            }
+        val states = resourceServerStateRepository.findAllByNotifyDisableTrue()
+        if (states.isEmpty()) {
+            return
         }
-        userRepository.saveAllAndFlush(users)
+        states.onEach { state ->
+            state.notifyDisable = false
+        }
+        resourceServerStateRepository.saveAllAndFlush(states)
     }
 
     @Scheduled(cron = "\${scheduler.cron.clan-mine}")

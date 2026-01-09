@@ -1,31 +1,7 @@
 package ru.grabovsky.dungeoncrusherbot.entity
 
-import jakarta.persistence.*
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
-@Entity
-@Table(name = "resources", schema = "dc_bot")
-data class Resources(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    val user: User,
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "data")
-    var data: ResourcesData = ResourcesData(),
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "history")
-    val history: MutableMap<Int, MutableList<ResourcesHistory>> = mutableMapOf()
-)
-
-data class ResourcesData(
-    val servers: MutableMap<Int, ServerResourceData> = mutableMapOf()
-)
 
 data class ServerResourceData(
     var exchange: String? = null,
@@ -45,7 +21,11 @@ data class ResourcesHistory(
     val resource: ResourceType,
     val type: DirectionType,
     val quantity: Int,
-    val fromServer: Int? = null
+    val fromServer: Int? = null,
+    val prevDraadorCount: Int? = null,
+    val prevVoidCount: Int? = null,
+    val prevCbCount: Int? = null,
+    val prevBalance: Int? = null,
 ) {
     override fun toString(): String {
         val postfix = if(fromServer != null) "c $fromServer сервера" else ""
