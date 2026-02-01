@@ -107,6 +107,10 @@ class SettingsFlow(
                 val settings = profile.settings
                 settings.enableMainSend = !settings.enableMainSend
             }
+            "SHOW_EXCHANGE_USERNAME" -> {
+                val settings = profile.settings
+                settings.showExchangeUsername = !settings.showExchangeUsername
+            }
             "SET_RU" -> user.profile?.locale = "ru"
             "SET_EN" -> user.profile?.locale = "en"
             "SEND_REPORT" -> return startSendReportPrompt(context, callbackQuery)
@@ -192,7 +196,8 @@ class SettingsFlow(
                 ?.enabled == true,
             cbEnabled = profile?.settings?.resourcesCb ?: false,
             quickResourceEnabled = profile?.settings?.resourcesQuickChange ?: false,
-            enableMainSend = profile?.settings?.enableMainSend ?: true
+            enableMainSend = profile?.settings?.enableMainSend ?: true,
+            showExchangeUsername = profile?.settings?.showExchangeUsername ?: false
         )
         return key.buildMessage(
             step = SettingStepKey.MAIN,
@@ -310,6 +315,15 @@ class SettingsFlow(
                 disabledCode = "buttons.settings.send.main.enable",
                 enabledDefault = "\u274C Отключить отправку на основной",
                 disabledDefault = "\u2705 Включить отправку на основной"
+            ),
+            ToggleDefinition(
+                row = 6,
+                payload = "SHOW_EXCHANGE_USERNAME",
+                isEnabled = { it.showExchangeUsername },
+                enabledCode = "buttons.settings.exchange.show_label",
+                disabledCode = "buttons.settings.exchange.show_username",
+                enabledDefault = "👤 Показывать имя обменника",
+                disabledDefault = "🔑 Показывать @username обменника"
             )
         )
     }
@@ -321,6 +335,7 @@ data class SettingsViewModel(
     val cbEnabled: Boolean,
     val quickResourceEnabled: Boolean,
     val enableMainSend: Boolean,
+    val showExchangeUsername: Boolean,
 )
 
 data class SendReportModel(val text: String)

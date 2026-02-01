@@ -6,5 +6,6 @@ Here you can edit bot settings
 *DH:* <#if data.cbEnabled>✅<#else>❌</#if>
 *Quick tracking:* <#if data.quickResourceEnabled>✅<#else>❌</#if>
 *Send resources to main server:* <#if data.enableMainSend>✅<#else>❌</#if>
+*Display in summary:* <#if data.showExchangeUsername>@username<#else>Exchange name</#if>
 *Language:* 🇺🇸
 </#if>
