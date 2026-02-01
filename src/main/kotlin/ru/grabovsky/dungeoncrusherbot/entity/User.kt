@@ -93,4 +93,5 @@ data class UserSettings(
     var resourcesQuickChange: Boolean = false,
     var discordUsername: String? = null,
     var enableMainSend: Boolean = true,
+    var showExchangeUsername: Boolean = false,
 )

@@ -73,3 +73,5 @@
       file: liquibase/changelog/36.add_resource_history_prev_values.sql
   - include:
       file: liquibase/changelog/37.release_notes_1_1_12.sql
+  - include:
+      file: liquibase/changelog/38.release_notes_1_1_13.sql

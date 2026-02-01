@@ -42,7 +42,11 @@ class ResourcesViewService(
                     id = serverId,
                     statusIcon = if (value.notifyDisable) "\u2705" else "\u274C",
                     main = serverId == mainServerId,
-                    exchange = value.exchange,
+                    exchange = if (settings.showExchangeUsername) {
+                        value.exchangeUsername?.let { "@$it" } ?: value.exchange
+                    } else {
+                        value.exchange
+                    },
                     draadorCount = value.draadorCount,
                     balanceLabel = when {
                         value.balance > 0 -> " (+${value.balance})"
