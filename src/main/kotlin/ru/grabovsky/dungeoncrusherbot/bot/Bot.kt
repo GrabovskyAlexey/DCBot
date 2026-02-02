@@ -3,6 +3,7 @@ package ru.grabovsky.dungeoncrusherbot.bot
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.CommandLongPollingTelegramBot
+import ru.grabovsky.dungeoncrusherbot.util.TelegramLogUtils
 import org.telegram.telegrambots.longpolling.BotSession
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
@@ -33,7 +34,7 @@ class Bot(
     override fun getUpdatesConsumer() = this
 
     override fun processNonCommandUpdate(update: Update) {
-        logger.debug { "Get update: $update" }
+        logger.debug { "Received: ${TelegramLogUtils.formatUpdate(update)}" }
         receiverService.execute(update)
     }
 

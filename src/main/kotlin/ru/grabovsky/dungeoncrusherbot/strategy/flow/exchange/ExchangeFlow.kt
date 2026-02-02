@@ -68,6 +68,7 @@ class ExchangeFlow(
             "REMOVE" -> argument?.let { handleRemove(context, callbackQuery, it) }
             "SEARCH" -> argument?.let { handleSearch(context, callbackQuery, it) }
             "SEARCH_RESULT" -> argument?.let { handleSearchResult(context, callbackQuery, it) }
+            "GLOBAL_SEARCH" -> handleGlobalSearch(context, callbackQuery, argument)
             "MAIN" -> showMain(context, callbackQuery)
             else -> null
         }
@@ -455,10 +456,14 @@ class ExchangeFlow(
 
     private fun buildOverviewModel(user: BotUser): ExchangeDto {
         val mainServerId = user.profile?.mainServerId
-        val requestServers = exchangeRequestService.getActiveExchangeRequestsByUser(user)
+
+        val allUserRequests = exchangeRequestService.getActiveExchangeRequestsByUser(user)
             .filter { it.isActive }
+
+        val requestServers = allUserRequests
             .map { it.sourceServerId }
             .toSet()
+
         val servers = serverService.getAllServers()
             .sortedBy { it.id }
             .map { server ->
@@ -468,9 +473,14 @@ class ExchangeFlow(
                     hasRequests = requestServers.contains(server.id),
                 )
             }
+
+        val requestDtos = allUserRequests
+            .mapIndexed { index, request -> request.toDto(index + 1) }
+
         return ExchangeDto(
             servers = servers,
-            username = user.userName
+            username = user.userName,
+            allActiveRequests = requestDtos
         )
     }
 
@@ -581,6 +591,17 @@ class ExchangeFlow(
                 row++
             }
         }
+
+        if (model.hasActiveRequests) {
+            row++
+            buttons += FlowInlineButton(
+                text = "🔍 Глобальный поиск",
+                payload = FlowCallbackPayload(key.value, "GLOBAL_SEARCH:"),
+                row = row,
+                col = 0
+            )
+        }
+
         return buttons
     }
 
@@ -770,6 +791,147 @@ class ExchangeFlow(
         SELL_MAP -> if (locale.language == "ru") "пустот" else "voids"
         BUY_MAP -> if (locale.language == "ru") "карт" else "maps"
         else -> ""
+    }
+
+    private fun handleGlobalSearch(
+        context: FlowContext<ExchangeFlowState>,
+        callbackQuery: CallbackQuery,
+        argument: String?
+    ): FlowResult<ExchangeFlowState> {
+        val state = context.state.payload
+
+        if (argument == "BACK") {
+            return showMain(context, callbackQuery)
+        }
+
+        if (argument != "BACK_TO_LIST") {
+            argument?.toLongOrNull()?.let { requestId ->
+                return handleGlobalSearchResult(context, callbackQuery, requestId)
+            }
+        }
+
+        val user = getUserEntity(context.user.id)
+        val model = buildGlobalSearchModel(user)
+
+        return editMainMessageResult(
+            step = ExchangeFlowStep.GLOBAL_SEARCH,
+            payload = state,
+            message = exchangeMessage(
+                step = ExchangeFlowStep.GLOBAL_SEARCH,
+                model = model,
+                inlineButtons = buildGlobalSearchButtons(model, context.locale)
+            ),
+            callbackQueryId = callbackQuery.id
+        )
+    }
+
+    private fun handleGlobalSearchResult(
+        context: FlowContext<ExchangeFlowState>,
+        callbackQuery: CallbackQuery,
+        requestId: Long
+    ): FlowResult<ExchangeFlowState> {
+        val state = context.state.payload
+        val result = runCatching { buildSearchResultModel(context.user.id, requestId) }
+
+        return result.fold(
+            onSuccess = { model ->
+                editMainMessageResult(
+                    step = ExchangeFlowStep.SEARCH_RESULT,
+                    payload = state,
+                    message = exchangeMessage(
+                        step = ExchangeFlowStep.SEARCH_RESULT,
+                        model = model,
+                        inlineButtons = listOf(
+                            FlowInlineButton(
+                                text = i18nService.i18n("buttons.exchange.back", context.locale, "↩ Назад"),
+                                payload = FlowCallbackPayload(key.value, "GLOBAL_SEARCH:BACK_TO_LIST"),
+                                row = 0,
+                                col = 0
+                            )
+                        )
+                    ),
+                    callbackQueryId = callbackQuery.id
+                )
+            },
+            onFailure = {
+                logger.warn(it) { "Failed to load search result $requestId for user ${context.user.id}" }
+                FlowResult(
+                    stepKey = context.state.stepKey,
+                    payload = state,
+                    actions = listOf(
+                        AnswerCallbackAction(
+                            callbackQueryId = callbackQuery.id,
+                            text = i18nService.i18n(
+                                "flow.exchange.error.search",
+                                context.locale,
+                                "Не удалось загрузить заявку."
+                            ),
+                            showAlert = true
+                        )
+                    )
+                )
+            }
+        )
+    }
+
+    private fun buildGlobalSearchModel(user: BotUser): GlobalExchangeSearchDto {
+        val matchesMap = exchangeRequestService.getGlobalExchangeMatches(user)
+
+        val matchGroups = matchesMap.map { (userRequest, matches) ->
+            val matchDtos = matches.mapIndexed { index, match ->
+                GlobalExchangeSearchDto.MatchDto(
+                    request = match.toDto(index + 1),
+                    ownerUsername = match.user.userName,
+                    ownerFirstName = match.user.firstName ?: ""
+                )
+            }
+
+            GlobalExchangeSearchDto.MatchGroup(
+                userRequest = userRequest.toDto(0),
+                matches = matchDtos
+            )
+        }
+
+        return GlobalExchangeSearchDto(
+            username = user.userName,
+            matchGroups = matchGroups
+        )
+    }
+
+    private fun buildGlobalSearchButtons(
+        model: GlobalExchangeSearchDto,
+        locale: Locale
+    ): List<FlowInlineButton> {
+        val buttons = mutableListOf<FlowInlineButton>()
+        var row = 0
+        var col = 0
+        var globalIndex = 1 // Сквозная нумерация
+
+        model.matchGroups.forEach { group ->
+            group.matches.forEach { match ->
+                buttons += FlowInlineButton(
+                    text = "$globalIndex",
+                    payload = FlowCallbackPayload(key.value, "GLOBAL_SEARCH:${match.request.id}"),
+                    row = row,
+                    col = col
+                )
+                globalIndex++
+                col++
+                if (col >= 5) {
+                    col = 0
+                    row++
+                }
+            }
+        }
+
+        buttons += FlowInlineButton(
+            text = i18nService.i18n("buttons.exchange.back", locale, "↩ Назад"),
+            payload = FlowCallbackPayload(key.value, "GLOBAL_SEARCH:BACK"),
+            row = row + 1,
+            col = 0
+        )
+
+        return buttons
     }
 
     private fun getUserEntity(id: Long): BotUser =

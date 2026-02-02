@@ -20,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.*
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.templating.FlowTemplateRenderer
+import ru.grabovsky.dungeoncrusherbot.util.TelegramLogUtils
 import java.util.*
 
 @Component
@@ -44,9 +45,14 @@ class TelegramFlowActionExecutor(
             when (action) {
                 is SendMessageAction -> {
                     val rendered = renderMessage(action.message, locale)
-                    val result = telegramClient.execute(
-                        buildSendMessage(user.id, rendered, action.message)
-                    )
+                    val sendMessage = buildSendMessage(user.id, rendered, action.message)
+                    logger.debug {
+                        "Sending message: userId=${user.id}, flow=${action.message.flowKey}, " +
+                        "step=${action.message.stepKey}, bindingKey=${action.bindingKey}, " +
+                        TelegramLogUtils.formatSendMessage(sendMessage, objectMapper)
+                    }
+                    val result = telegramClient.execute(sendMessage)
+                    logger.debug { "Message sent: messageId=${result.messageId}, userId=${user.id}" }
                     action.bindingKey?.let { replacements[it] = result.messageId }
                 }
 
@@ -54,14 +60,19 @@ class TelegramFlowActionExecutor(
                     val messageId = currentBindings[action.bindingKey]
                         ?: error("Message binding ${action.bindingKey} not found for user ${user.id}")
                     val rendered = renderMessage(action.message, locale)
-                    telegramClient.execute(
-                        buildEditMessage(user.id, messageId, rendered, action.message)
-                    )
+                    val editMessage = buildEditMessage(user.id, messageId, rendered, action.message)
+                    logger.debug {
+                        "Editing message: userId=${user.id}, flow=${action.message.flowKey}, " +
+                        "step=${action.message.stepKey}, bindingKey=${action.bindingKey}, " +
+                        TelegramLogUtils.formatEditMessage(editMessage, objectMapper)
+                    }
+                    telegramClient.execute(editMessage)
                 }
 
                 is DeleteMessageAction -> {
                     val messageId = currentBindings[action.bindingKey]
                         ?: return@forEach
+                    logger.debug { "Deleting message: userId=${user.id}, messageId=$messageId, bindingKey=${action.bindingKey}" }
                     telegramClient.execute(
                         DeleteMessages.builder()
                             .chatId(user.id)
@@ -71,20 +82,29 @@ class TelegramFlowActionExecutor(
                     removed += action.bindingKey
                 }
 
-                is DeleteMessageIdAction -> telegramClient.execute(
-                    DeleteMessages.builder()
-                        .chatId(user.id)
-                        .messageIds(listOf(action.messageId))
-                        .build()
-                )
+                is DeleteMessageIdAction -> {
+                    logger.debug { "Deleting message by ID: userId=${user.id}, messageId=${action.messageId}" }
+                    telegramClient.execute(
+                        DeleteMessages.builder()
+                            .chatId(user.id)
+                            .messageIds(listOf(action.messageId))
+                            .build()
+                    )
+                }
 
-                is AnswerCallbackAction -> telegramClient.execute(
-                    AnswerCallbackQuery.builder()
-                        .callbackQueryId(action.callbackQueryId)
-                        .text(action.text)
-                        .showAlert(action.showAlert)
-                        .build()
-                )
+                is AnswerCallbackAction -> {
+                    logger.debug {
+                        "Answering callback: callbackId=${action.callbackQueryId}, " +
+                        "text='${action.text}', showAlert=${action.showAlert}"
+                    }
+                    telegramClient.execute(
+                        AnswerCallbackQuery.builder()
+                            .callbackQueryId(action.callbackQueryId)
+                            .text(action.text)
+                            .showAlert(action.showAlert)
+                            .build()
+                    )
+                }
 
                 is SetReactionAction -> {
                     if (action.messageId > 0) {
@@ -177,6 +197,7 @@ class TelegramFlowActionExecutor(
         }
         return InlineKeyboardMarkup(rows)
     }
+
 
     companion object {
         private val logger = KotlinLogging.logger {}

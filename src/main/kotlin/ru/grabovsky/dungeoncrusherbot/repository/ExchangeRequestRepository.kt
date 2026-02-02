@@ -14,6 +14,8 @@ interface ExchangeRequestRepository: JpaRepository<ExchangeRequest, Long> {
     fun findAllByUser(user: User): List<ExchangeRequest>
     fun findAllBySourceServerId(serviceId: Int): List<ExchangeRequest>
     fun findAllByTargetServerId(serviceId: Int): List<ExchangeRequest>
+    fun findAllBySourceServerIdIn(serviceIds: List<Int>): List<ExchangeRequest>
+    fun findAllByTargetServerIdIn(serviceIds: List<Int>): List<ExchangeRequest>
     fun findAllBySourceServerIdAndType(sourceServerId: Int, type: ExchangeRequestType): List<ExchangeRequest>
     fun findByUserAndSourceServerIdAndTargetServerIdAndType(user: User, sourceServerId: Int, targetServerId: Int?, type: ExchangeRequestType): ExchangeRequest?
 }

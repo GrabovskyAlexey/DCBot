@@ -21,6 +21,10 @@ server:
 logging:
   file:
     name: ./logs/bot.log
+  level:
+    ru:
+      grabovsky:
+        dungeoncrusherbot: debug
 
 scheduler:
   cron:

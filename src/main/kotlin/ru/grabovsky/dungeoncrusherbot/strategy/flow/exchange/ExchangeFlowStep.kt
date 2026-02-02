@@ -11,4 +11,5 @@ enum class ExchangeFlowStep(override val key: String) : FlowStep {
     REMOVE("remove"),
     SEARCH("search"),
     SEARCH_RESULT("search_result"),
+    GLOBAL_SEARCH("global_search"),
 }

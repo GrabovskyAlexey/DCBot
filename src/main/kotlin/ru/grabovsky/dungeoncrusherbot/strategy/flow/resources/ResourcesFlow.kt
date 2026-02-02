@@ -1,5 +1,6 @@
 package ru.grabovsky.dungeoncrusherbot.strategy.flow.resources
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -59,6 +60,7 @@ class ResourcesFlow(
         callbackQuery: CallbackQuery,
         data: String
     ): FlowResult<ResourcesFlowState>? {
+        logger.debug { "ResourcesFlow.onCallback: userId=${context.user.id}, data='$data', state=${context.state.payload}" }
         val payload = context.state.payload
         val (command, argument) = parseCallback(data)
         return when (command) {
@@ -66,7 +68,10 @@ class ResourcesFlow(
             "SERVER" -> argument?.toIntOrNull()?.let { showServer(context, it, callbackQuery) }
             "ACTION" -> argument?.let { handleAction(context, payload, it, callbackQuery) }
             "PROMPT" -> handlePromptCallback(context, argument, callbackQuery)
-            else -> null
+            else -> {
+                logger.warn { "Unknown callback command: command='$command', argument='$argument', userId=${context.user.id}" }
+                null
+            }
         }
     }
 
@@ -106,7 +111,11 @@ class ResourcesFlow(
         actionName: String,
         callbackQuery: CallbackQuery
     ): FlowResult<ResourcesFlowState>? {
-        val serverId = state.selectedServerId ?: return null
+        val serverId = state.selectedServerId
+        if (serverId == null) {
+            logger.warn { "handleAction: selectedServerId is null! actionName='$actionName', userId=${context.user.id}" }
+            return null
+        }
         state.showHistory = false
         AMOUNT_PROMPT_ACTIONS[actionName]?.let { type ->
             return enterAmountPrompt(context, serverId, type, callbackQuery)
@@ -634,6 +643,7 @@ class ResourcesFlow(
 
         private const val MAIN_MESSAGE_KEY = "resources_main_message"
         private const val PROMPT_MESSAGE_KEY = "resources_prompt_message"
+        private val logger = KotlinLogging.logger {}
     }
 }
 

@@ -75,3 +75,5 @@
       file: liquibase/changelog/37.release_notes_1_1_12.sql
   - include:
       file: liquibase/changelog/38.release_notes_1_1_13.sql
+  - include:
+      file: liquibase/changelog/39.release_notes_1_1_14.sql

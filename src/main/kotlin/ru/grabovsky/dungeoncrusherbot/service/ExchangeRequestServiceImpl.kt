@@ -7,6 +7,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.entity.ExchangeRequestType.*
 import ru.grabovsky.dungeoncrusherbot.repository.ExchangeRequestRepository
 import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeSearchPerformedEvent
+import ru.grabovsky.dungeoncrusherbot.service.events.GlobalExchangeSearchPerformedEvent
 import ru.grabovsky.dungeoncrusherbot.service.interfaces.ExchangeRequestService
 
 @Service
@@ -109,25 +110,126 @@ class ExchangeRequestServiceImpl(
         return exchangeRequestRepository.findAllByUser(user).filter { it.isActive }
     }
 
+    @Transactional
+    override fun getGlobalExchangeMatches(user: User): Map<ExchangeRequest, List<ExchangeRequest>> {
+        val userRequests = getActiveExchangeRequestsByUser(user)
+            .filter { it.isActive }
+
+        if (userRequests.isEmpty()) {
+            return emptyMap()
+        }
+
+        // Собрать все уникальные серверы из заявок пользователя
+        val sourceServerIds = userRequests.map { it.sourceServerId }.toSet()
+        val targetServerIds = userRequests.mapNotNull { it.targetServerId }.toSet()
+        val allServerIds = sourceServerIds + targetServerIds
+
+        // Получить ВСЕ активные заявки для этих серверов ОДНИМ запросом
+        val allPotentialMatches = exchangeRequestRepository.findAllBySourceServerIdIn(allServerIds.toList())
+            .filter { it.isActive }
+            .filterNot { it.user == user }
+            .filter { it.user.isActiveAndHasUsername() }
+
+        // Также получить заявки где наши серверы в target
+        val allPotentialMatchesTarget = if (allServerIds.isNotEmpty()) {
+            exchangeRequestRepository.findAllByTargetServerIdIn(allServerIds.toList())
+                .filter { it.isActive }
+                .filterNot { it.user == user }
+                .filter { it.user.isActiveAndHasUsername() }
+        } else {
+            emptyList()
+        }
+
+        val allMatches = (allPotentialMatches + allPotentialMatchesTarget).distinctBy { it.id }
+
+        // Теперь фильтруем в памяти для каждой заявки пользователя
+        val results = mutableMapOf<ExchangeRequest, List<ExchangeRequest>>()
+
+        userRequests.forEach { request ->
+            // Для каждой заявки пользователя фильтруем все совпадения
+            // используя существующую логику filterRequests
+            val filtered = filterRequests(allMatches, listOf(request))
+            if (filtered.isNotEmpty()) {
+                results[request] = filtered
+            }
+        }
+
+        publishGlobalSearchEvent(user, results)
+
+        return results
+    }
+
+    private fun publishGlobalSearchEvent(
+        user: User,
+        results: Map<ExchangeRequest, List<ExchangeRequest>>
+    ) {
+        val totalMatches = results.values.sumOf { it.size }
+        val userRequestsCount = results.keys.size
+
+        eventPublisher.publishEvent(
+            GlobalExchangeSearchPerformedEvent(
+                userId = user.userId,
+                userRequestsCount = userRequestsCount,
+                totalMatchesCount = totalMatches,
+                matchesPerRequest = results.mapKeys { it.key.id!! }.mapValues { it.value.size }
+            )
+        )
+    }
+
     private fun filterRequests(all: List<ExchangeRequest>, self: List<ExchangeRequest>): List<ExchangeRequest> {
-        val buyRequests = if (self.any{it.type == SELL_MAP }) {
-            all.filter{ it.type == BUY_MAP }
-        } else {
-            emptyList()
+        val results = mutableListOf<ExchangeRequest>()
+
+        self.forEach { userRequest ->
+            when (userRequest.type) {
+                SELL_MAP -> {
+                    // Пользователь продает карты на сервере X по курсу A:B
+                    // Ищем тех, кто покупает карты на том же сервере X по курсу >= A:B
+                    all.filter { it.type == BUY_MAP && it.sourceServerId == userRequest.sourceServerId }
+                        .filter {
+                            // Проверяем что курс совпадает или выгоднее
+                            it.targetResourcePrice == userRequest.targetResourcePrice &&
+                            it.sourceResourcePrice == userRequest.sourceResourcePrice
+                        }
+                        .forEach { results.add(it) }
+                }
+
+                BUY_MAP -> {
+                    // Пользователь покупает карты на сервере X по курсу A:B
+                    // Ищем тех, кто продает карты на том же сервере X по курсу <= A:B
+                    all.filter { it.type == SELL_MAP && it.sourceServerId == userRequest.sourceServerId }
+                        .filter {
+                            // Проверяем что курс совпадает или выгоднее
+                            it.sourceResourcePrice == userRequest.targetResourcePrice &&
+                            it.targetResourcePrice == userRequest.sourceResourcePrice
+                        }
+                        .forEach { results.add(it) }
+                }
+
+                EXCHANGE_MAP -> {
+                    // Пользователь хочет обменять карты: сервер A → сервер B
+                    // Ищем тех, кто хочет обменять: сервер B → сервер A (обратное направление)
+                    all.filter { it.type == EXCHANGE_MAP }
+                        .filter {
+                            it.sourceServerId == userRequest.targetServerId &&
+                            it.targetServerId == userRequest.sourceServerId
+                        }
+                        .forEach { results.add(it) }
+                }
+
+                EXCHANGE_VOID -> {
+                    // Пользователь хочет обменять пустоты: сервер A → сервер B
+                    // Ищем тех, кто хочет обменять: сервер B → сервер A (обратное направление)
+                    all.filter { it.type == EXCHANGE_VOID }
+                        .filter {
+                            it.sourceServerId == userRequest.targetServerId &&
+                            it.targetServerId == userRequest.sourceServerId
+                        }
+                        .forEach { results.add(it) }
+                }
+            }
         }
 
-        val sellRequests = if (self.any{it.type == BUY_MAP }) {
-            all.filter{ it.type == SELL_MAP }
-        } else {
-            emptyList()
-        }
-
-        val mapRequest = self.filter { it.type == EXCHANGE_MAP }
-        val voidRequest = self.filter { it.type == EXCHANGE_VOID }
-        val exchangeMapRequest = all.filter { it.type == EXCHANGE_MAP }.filter {mapRequest.any { req -> req.targetServerId == it.sourceServerId } }
-        val exchangeVoidRequest = all.filter { it.type == EXCHANGE_VOID }.filter {voidRequest.any { req -> req.targetServerId == it.sourceServerId } }
-
-        return buyRequests + sellRequests + exchangeMapRequest + exchangeVoidRequest
+        return results.distinct()
     }
 
     private fun publishSearchEvent(
