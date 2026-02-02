@@ -19,4 +19,5 @@ interface ExchangeRequestService {
     fun setRequestInactiveById(requestId: Long)
     fun getRequestById(requestId: Long): ExchangeRequest?
     fun getActiveExchangeRequestsByUser(user: User): List<ExchangeRequest>
+    fun getGlobalExchangeMatches(user: User): Map<ExchangeRequest, List<ExchangeRequest>>
 }

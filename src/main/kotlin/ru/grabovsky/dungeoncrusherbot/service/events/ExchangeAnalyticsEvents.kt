@@ -22,3 +22,11 @@ data class ExchangeContactsSharedEvent(
     val targetServerId: Int?,
     val occurredAt: Instant = Instant.now(),
 )
+
+data class GlobalExchangeSearchPerformedEvent(
+    val userId: Long,
+    val userRequestsCount: Int,
+    val totalMatchesCount: Int,
+    val matchesPerRequest: Map<Long, Int>,
+    val occurredAt: Instant = Instant.now(),
+)

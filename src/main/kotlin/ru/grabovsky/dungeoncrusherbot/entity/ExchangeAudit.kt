@@ -47,4 +47,5 @@ data class ExchangeAudit(
 enum class ExchangeAuditEventType {
     SEARCH_PERFORMED,
     CONTACTS_SHARED,
+    GLOBAL_SEARCH_PERFORMED,
 }

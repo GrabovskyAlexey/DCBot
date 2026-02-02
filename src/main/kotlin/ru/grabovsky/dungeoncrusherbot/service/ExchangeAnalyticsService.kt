@@ -9,6 +9,7 @@ import ru.grabovsky.dungeoncrusherbot.entity.ExchangeAuditEventType
 import ru.grabovsky.dungeoncrusherbot.repository.ExchangeAuditRepository
 import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeContactsSharedEvent
 import ru.grabovsky.dungeoncrusherbot.service.events.ExchangeSearchPerformedEvent
+import ru.grabovsky.dungeoncrusherbot.service.events.GlobalExchangeSearchPerformedEvent
 
 @Service
 class ExchangeAnalyticsService(
@@ -66,8 +67,37 @@ class ExchangeAnalyticsService(
         ).increment()
     }
 
+    @EventListener
+    @Transactional
+    fun onGlobalSearchPerformed(event: GlobalExchangeSearchPerformedEvent) {
+        exchangeAuditRepository.save(
+            ExchangeAudit(
+                eventType = ExchangeAuditEventType.GLOBAL_SEARCH_PERFORMED,
+                userId = event.userId,
+                matchesCount = event.totalMatchesCount,
+                metadata = buildMap {
+                    put("userRequestsCount", event.userRequestsCount)
+                    put("totalMatchesCount", event.totalMatchesCount)
+                    if (event.matchesPerRequest.isNotEmpty()) {
+                        put("matchesPerRequest", event.matchesPerRequest)
+                    }
+                }
+            )
+        )
+        meterRegistry.counter(
+            GLOBAL_SEARCH_COUNTER_NAME,
+        ).increment()
+        meterRegistry.counter(
+            "$GLOBAL_SEARCH_COUNTER_NAME.matches",
+        ).increment(event.totalMatchesCount.toDouble())
+        meterRegistry.counter(
+            "$GLOBAL_SEARCH_COUNTER_NAME.user_requests",
+        ).increment(event.userRequestsCount.toDouble())
+    }
+
     companion object {
         private const val SEARCH_COUNTER_NAME = "exchange.search.performed"
         private const val CONTACTS_COUNTER_NAME = "exchange.contacts.shared"
+        private const val GLOBAL_SEARCH_COUNTER_NAME = "exchange.global_search.performed"
     }
 }

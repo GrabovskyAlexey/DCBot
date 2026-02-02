@@ -15,6 +15,7 @@ import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowCallbackPayl
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowEngine
 import ru.grabovsky.dungeoncrusherbot.strategy.flow.core.engine.FlowKey
 import ru.grabovsky.dungeoncrusherbot.util.LocaleUtils
+import ru.grabovsky.dungeoncrusherbot.util.TelegramLogUtils
 import java.util.*
 
 @Service
@@ -35,9 +36,10 @@ class ReceiverServiceImpl(
 
     private fun processMessage(message: Message) {
         val user = message.from
+        logger.debug { "Received: ${TelegramLogUtils.formatMessage(message)}" }
         userService.createOrUpdateUser(user)
         val flowState = flowStateService.findListFlow(user.id) ?: run {
-            logger.debug { "Skip message ${message.messageId} from ${user.id}: no active flow" }
+            logger.debug { "Skip message ${message.messageId} from userId=${user.id}: no active flow" }
             return
         }
         val handled = flowEngine.onMessage(
@@ -48,13 +50,13 @@ class ReceiverServiceImpl(
         )
         if (!handled) {
             logger.debug {
-                "Active flow ${flowState.flowKey} ignored message ${message.messageId} from ${user.id}"
+                "Active flow ${flowState.flowKey} ignored message ${message.messageId} from userId=${user.id}"
             }
         }
     }
 
     private fun processCallback(callbackQuery: CallbackQuery) {
-        logger.debug {"Start process callback: $callbackQuery"}
+        logger.debug { "Received: ${TelegramLogUtils.formatCallbackQuery(callbackQuery)}" }
         if (callbackQuery.data?.contains("ADMIN_MESSAGE") == true) {
             logger.info { "Admin callback raw data: ${callbackQuery.data}" }
         }

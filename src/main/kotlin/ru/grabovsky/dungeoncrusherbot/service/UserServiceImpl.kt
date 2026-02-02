@@ -55,7 +55,11 @@ class UserServiceImpl(
                 profile.isBlocked
         val usernameChanged = entity.userName != user.userName
         if (hasProfileChanges) {
-            logger.info { "Update user: $user, entity: $entity" }
+            logger.info {
+                "User profile updated: userId=${user.id}, username=${user.userName}, " +
+                "firstName=${user.firstName}, languageCode=${user.languageCode}, " +
+                "oldUsername=${entity.userName}, isBlocked=${profile.isBlocked}"
+            }
         }
         profile.isBlocked = false
         entity.firstName = user.firstName
@@ -71,7 +75,10 @@ class UserServiceImpl(
     }
 
     private fun createNewUser(userFromTelegram: User): User {
-        logger.info { "Save new user: $userFromTelegram" }
+        logger.info {
+            "Creating new user: userId=${userFromTelegram.userId}, username=${userFromTelegram.userName}, " +
+            "firstName=${userFromTelegram.firstName}, languageCode=${userFromTelegram.language}"
+        }
         cleanOldMaze(userFromTelegram.userId)
         userFromTelegram.apply {
             lastActionAt = Instant.now()
