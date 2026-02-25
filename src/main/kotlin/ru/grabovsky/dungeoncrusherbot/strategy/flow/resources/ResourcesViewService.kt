@@ -90,7 +90,7 @@ class ResourcesViewService(
             voidCount = serverData.voidCount,
             balance = serverData.balance,
             exchange = serverData.exchange.escapeMarkdown(),
-            exchangeUsername = serverData.exchangeUsername?.removePrefix("@")?.escapeMarkdown(),
+            exchangeUsername = serverData.exchangeUsername?.removePrefix("@"),
             history = if (includeHistory) history else null,
             hasHistory = historyList.isNotEmpty(),
             notifyDisable = serverData.notifyDisable,
