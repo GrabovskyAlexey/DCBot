@@ -17,23 +17,24 @@ class SchedulerService(
     private val userRepository: UserRepository,
     private val telegramBotService: TelegramBotService,
     private val notifyHistoryService: NotifyHistoryService,
-    private val resourceServerStateRepository: ResourceServerStateRepository
+    private val resourceServerStateRepository: ResourceServerStateRepository,
+    private val metrics: BotMetrics,
 ) {
 
     @Scheduled(cron = "\${scheduler.cron.siege}")
-    fun scheduleSiege() {
+    fun scheduleSiege() = metrics.job<Unit>("siege") {
         val dateTime = LocalDateTime.now(ZoneId.ofOffset("UTC", ZoneOffset.of("+03:00:00")))
         if (dateTime.isNotSiegeTime()) {
-            return
+            return@job
         }
         sendSiegeNotification(dateTime.toLocalTime(), false)
     }
 
     @Scheduled(cron = "\${scheduler.cron.before-siege}")
-    fun scheduleBeforeSiege() {
+    fun scheduleBeforeSiege() = metrics.job<Unit>("before_siege") {
         val dateTime = LocalDateTime.now(ZoneId.ofOffset("UTC", ZoneOffset.of("+03:00:00"))).plusMinutes(5)
         if (dateTime.isNotSiegeTime()) {
-            return
+            return@job
         }
         sendSiegeNotification(dateTime.toLocalTime(), true)
     }
@@ -61,6 +62,7 @@ class SchedulerService(
             }.filterValues { it.isNotEmpty() }
         usersToNotify.forEach {
             val result = telegramBotService.sendNotification(it.key, NotificationType.SIEGE, it.value, isBefore)
+            metrics.notification("SIEGE", result)
             if (!result) {
                 val user = users.firstOrNull { u -> u.userId == it.key }
                 user?.let { u -> processBlockedUser(u) }
@@ -82,17 +84,17 @@ class SchedulerService(
                 (this.dayOfWeek == DayOfWeek.MONDAY && this.hour < 3)
 
     @Scheduled(cron = "\${scheduler.cron.delete-old-notify}")
-    fun deleteOldNotify() {
+    fun deleteOldNotify() = metrics.job<Unit>("delete_old_notify") {
         telegramBotService.deleteOldNotify()
         notifyHistoryService.deleteOldEvents()
     }
 
     @Scheduled(cron = "\${scheduler.cron.clear-disable-notify}")
-    fun clearDisableNotify() {
+    fun clearDisableNotify() = metrics.job<Unit>("clear_disable_notify") {
         logger.info { "Start enable all server siege notification" }
         val states = resourceServerStateRepository.findAllByNotifyDisableTrue()
         if (states.isEmpty()) {
-            return
+            return@job
         }
         states.onEach { state ->
             state.notifyDisable = false
@@ -101,7 +103,7 @@ class SchedulerService(
     }
 
     @Scheduled(cron = "\${scheduler.cron.clan-mine}")
-    fun sendClanMineNotification() {
+    fun sendClanMineNotification() = metrics.job<Unit>("clan_mine") {
         val users = userRepository.findAllNotBlockedUser()
         val usersToNotify = users
             .filter { user ->
@@ -110,6 +112,7 @@ class SchedulerService(
 
         usersToNotify.forEach {
             val result = telegramBotService.sendNotification(it.userId, NotificationType.MINE)
+            metrics.notification("MINE", result)
             if (!result) {
                 processBlockedUser(it)
             }
