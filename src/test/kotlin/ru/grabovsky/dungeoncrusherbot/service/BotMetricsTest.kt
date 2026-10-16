@@ -17,6 +17,13 @@ class BotMetricsTest : ShouldSpec({
         count(BotMetrics.UPDATE, "type", "callback", "outcome", "ok") shouldBe 1L
     }
 
+    should("count new users") {
+        metrics.newUser()
+        metrics.newUser()
+
+        registry.get(BotMetrics.NEW_USERS).counter().count() shouldBe 2.0
+    }
+
     should("record a failing job with the error outcome and rethrow the exception") {
         shouldThrow<IllegalStateException> { metrics.job("siege") { error("boom") } }
 

@@ -43,11 +43,17 @@ class BotMetrics(
             .register(registry).increment()
     }
 
+    /** Новый пользователь бота (первое обращение). */
+    fun newUser() {
+        Counter.builder(NEW_USERS).register(registry).increment()
+    }
+
     companion object {
         const val UPDATE = "bot.update"
         const val JOB = "bot.job"
         const val FLOW = "bot.flow"
         const val NOTIFICATIONS = "bot.notifications"
+        const val NEW_USERS = "bot.new.users"
         private const val OUTCOME = "outcome"
         private const val OK = "ok"
         private const val ERROR = "error"
