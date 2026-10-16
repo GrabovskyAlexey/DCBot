@@ -3,6 +3,7 @@ package ru.grabovsky.dungeoncrusherbot.service
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import ru.grabovsky.dungeoncrusherbot.entity.User
 import ru.grabovsky.dungeoncrusherbot.entity.UserProfile
@@ -34,7 +35,8 @@ class UserServiceImplTest : ShouldSpec({
         flowStateService,
         payloadSerializer,
         adminMessageViewBuilder,
-        actionExecutor
+        actionExecutor,
+        BotMetrics(SimpleMeterRegistry()),
     )
 
     beforeTest {

@@ -31,7 +31,8 @@ class UserServiceImpl(
     private val flowStateService: FlowStateService,
     private val payloadSerializer: FlowPayloadSerializer,
     private val adminMessageViewBuilder: AdminMessageViewBuilder,
-    private val telegramFlowActionExecutor: FlowActionExecutor
+    private val telegramFlowActionExecutor: FlowActionExecutor,
+    private val metrics: BotMetrics,
 ) : UserService {
     companion object {
         private const val NOTES_LIMIT = 20
@@ -92,6 +93,7 @@ class UserServiceImpl(
             profile = UserProfile(user = this)
         }
         val saved = userRepository.saveAndFlush(userFromTelegram)
+        metrics.newUser()
         logger.info { "Save user entity with id = ${saved.userId}" }
         return saved
     }
