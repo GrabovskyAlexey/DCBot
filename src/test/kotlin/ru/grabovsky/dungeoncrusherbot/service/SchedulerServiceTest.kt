@@ -2,6 +2,7 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import ru.grabovsky.dungeoncrusherbot.entity.*
 import ru.grabovsky.dungeoncrusherbot.repository.ResourceServerStateRepository
@@ -18,7 +19,10 @@ class SchedulerServiceTest : ShouldSpec({
     val telegramBotService = mockk<TelegramBotService>()
     val notifyHistoryService = mockk<NotifyHistoryService>()
     val resourceServerStateRepository = mockk<ResourceServerStateRepository>()
-    val scheduler = SchedulerService(userRepository, telegramBotService, notifyHistoryService, resourceServerStateRepository)
+    val scheduler = SchedulerService(
+        userRepository, telegramBotService, notifyHistoryService, resourceServerStateRepository,
+        BotMetrics(SimpleMeterRegistry()),
+    )
 
     beforeTest {
         clearMocks(userRepository, telegramBotService, notifyHistoryService, resourceServerStateRepository, answers = true)

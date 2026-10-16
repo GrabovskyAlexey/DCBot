@@ -24,13 +24,22 @@ class ReceiverServiceImpl(
     private val objectMapper: ObjectMapper,
     private val flowEngine: FlowEngine,
     private val flowStateService: FlowStateService,
+    private val metrics: BotMetrics,
 ) : ReceiverService {
 
     override fun execute(update: Update) {
-        when {
-            update.hasCallbackQuery() -> processCallback(update.callbackQuery)
-            update.hasMessage() -> processMessage(update.message)
-            update.hasMyChatMember() -> processMyChatMember(update.myChatMember)
+        val type = when {
+            update.hasCallbackQuery() -> "callback"
+            update.hasMessage() -> "message"
+            update.hasMyChatMember() -> "member"
+            else -> "other"
+        }
+        metrics.update(type) {
+            when (type) {
+                "callback" -> processCallback(update.callbackQuery)
+                "message" -> processMessage(update.message)
+                "member" -> processMyChatMember(update.myChatMember)
+            }
         }
     }
 

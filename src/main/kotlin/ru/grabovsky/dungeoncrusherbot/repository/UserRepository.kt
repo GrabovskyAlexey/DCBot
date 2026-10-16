@@ -12,4 +12,7 @@ interface UserRepository: JpaRepository<User, Long> {
 
     @Query("select u from User u left join fetch u.profile p where p is null or p.isBlocked=false")
     fun findAllNotBlockedUser(): List<User>
+
+    @Query("select count(u) from User u left join u.profile p where p is null or p.isBlocked=false")
+    fun countNotBlocked(): Long
 }

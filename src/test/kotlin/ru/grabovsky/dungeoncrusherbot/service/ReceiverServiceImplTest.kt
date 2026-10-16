@@ -2,6 +2,7 @@ package ru.grabovsky.dungeoncrusherbot.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.ShouldSpec
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -24,7 +25,7 @@ class ReceiverServiceImplTest : ShouldSpec({
     val flowEngine = mockk<FlowEngine>()
     val flowStateService = mockk<FlowStateService>()
     val objectMapper = ObjectMapper().findAndRegisterModules()
-    val service = ReceiverServiceImpl(userService, objectMapper, flowEngine, flowStateService)
+    val service = ReceiverServiceImpl(userService, objectMapper, flowEngine, flowStateService, BotMetrics(SimpleMeterRegistry()))
 
     beforeTest {
         clearMocks(userService, flowEngine, flowStateService)

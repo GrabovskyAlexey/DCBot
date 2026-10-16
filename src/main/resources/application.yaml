@@ -17,6 +17,21 @@ telegram:
   token: ${TELEGRAM_BOT_TOKEN}
 server:
   port: ${USE_PORT:8080}
+  # порт слушает только localhost: на нём отдаются метрики для Prometheus, наружу они не выходят
+  address: 127.0.0.1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      # гистограммы для наших таймеров (bot.*): по ним в Grafana считаются перцентили
+      percentiles-histogram:
+        bot: true
 
 logging:
   file:
