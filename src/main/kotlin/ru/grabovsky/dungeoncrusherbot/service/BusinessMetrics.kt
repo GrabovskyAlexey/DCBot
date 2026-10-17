@@ -74,9 +74,9 @@ class BusinessMetrics(
             GROUP BY s.id, s.name"""
 
         const val MAIN_SERVER_SQL = """
-            SELECT s.id AS server_id, s.name AS name, COUNT(*) AS cnt
+            SELECT COALESCE(s.id, 0) AS server_id, COALESCE(s.name, 'Не выбран') AS name, COUNT(*) AS cnt
             FROM dc_bot.user_profile p
-            JOIN dc_bot.servers s ON s.id = p.main_server_id
+            LEFT JOIN dc_bot.servers s ON s.id = p.main_server_id
             WHERE p.is_blocked = false
             GROUP BY s.id, s.name"""
 
